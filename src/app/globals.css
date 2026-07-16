@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-pretendard: Pretendard;
+  color: #1d2b2a;
+  background: #fff7e8;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #fff7e8;
+  color: #1d2b2a;
+  font-family: var(--font-pretendard), Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.65;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+a {
+  transition-duration: 300ms;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(221, 245, 233, 0.95);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: #ddf5e9;
+  color: #123c35;
+}
+
+/* TODO: Put Pretendard font files under /public/fonts and wire them with next/font/local when ready. */
+/* TODO: Add a small Intersection Observer hook for scroll fade-in once the page structure stabilizes. */
+
+.prose-policy {
+  color: rgba(29, 43, 42, 0.78);
+  font-size: 1rem;
+  line-height: 1.9;
+}
+
+.prose-policy h2 {
+  margin-top: 2rem;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #123c35;
+}
+
+.prose-policy h3 {
+  margin-top: 1.25rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #123c35;
+}
+
+.prose-policy ul,
+.prose-policy ol {
+  margin-top: 0.8rem;
+  padding-left: 1.2rem;
+}
+
+.prose-policy li {
+  margin-top: 0.35rem;
+}
