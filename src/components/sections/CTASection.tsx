@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 
 export function CTASection({
@@ -8,7 +9,16 @@ export function CTASection({
   description?: string;
 }) {
   return (
-    <section className="bg-navy px-5 py-16 text-white md:py-24">
+    <section className="relative isolate overflow-hidden bg-navy px-5 py-16 text-white md:py-24">
+      <Image
+        src="/images/property/busan-skyline.jpg"
+        alt="도시 스카이라인 야경"
+        fill
+        sizes="100vw"
+        className="absolute inset-0 -z-10 object-cover"
+      />
+      <div className="absolute inset-0 -z-10 bg-navy/85" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-navy via-navy/70 to-navy/40" />
       <div className="mx-auto flex max-w-6xl flex-col items-start gap-7 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="max-w-3xl text-3xl font-black leading-tight md:text-5xl">{title}</h2>

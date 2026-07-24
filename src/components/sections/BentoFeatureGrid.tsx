@@ -1,6 +1,8 @@
+import Image from "next/image";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { SectionTitle } from "@/components/ui/SectionTitle";
+import { cn } from "@/lib/cn";
 
 const bentoCards = [
   {
@@ -8,6 +10,7 @@ const bentoCards = [
     description: "퇴거자가 남긴 생활 정보로 채광, 수납, 결로, 주차, 반려동물 생활 팁을 확인합니다.",
     tags: ["채광", "수압", "결로", "주차", "반려동물"],
     className: "md:col-span-2 md:row-span-2 bg-forest text-white",
+    image: "/images/property/living-room.jpg",
   },
   {
     title: "계약 안전 체크패스",
@@ -52,7 +55,22 @@ export function BentoFeatureGrid() {
         />
         <div className="mt-10 grid gap-5 md:grid-cols-4">
           {bentoCards.map((card) => (
-            <Card key={card.title} className={card.className}>
+            <Card
+              key={card.title}
+              className={cn(card.image && "relative isolate overflow-hidden", card.className)}
+            >
+              {card.image ? (
+                <>
+                  <Image
+                    src={card.image}
+                    alt={card.title}
+                    fill
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                    className="absolute inset-0 -z-10 object-cover opacity-45"
+                  />
+                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-forest via-forest/85 to-forest/50" />
+                </>
+              ) : null}
               <div className="flex h-full min-h-[210px] flex-col justify-between">
                 <div>
                   <h3 className="text-2xl font-black">{card.title}</h3>
