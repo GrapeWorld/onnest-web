@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const mapMarkers = [
   { label: "인수인계 3건", className: "left-[16%] top-[28%]" },
   { label: "반려동물 확인 필요", className: "right-[8%] top-[36%]" },
@@ -29,6 +31,19 @@ export function HeroMockup() {
             <span className="rounded-full bg-white px-3 py-2 text-xs font-bold text-forest shadow-card">
               공간 인수인계
             </span>
+          </div>
+
+          <div className="absolute right-5 top-24 z-30 flex items-center gap-2 rounded-full bg-white/95 p-1.5 pr-4 shadow-soft">
+            <span className="relative h-9 w-9 overflow-hidden rounded-full border-2 border-white shadow-sm">
+              <Image
+                src="/images/property/keys-lock-home.jpg"
+                alt="실제 열쇠 인계 사진"
+                fill
+                sizes="36px"
+                className="object-cover"
+              />
+            </span>
+            <span className="text-xs font-bold text-forest">실사진 인증됨</span>
           </div>
 
           {mapMarkers.map((marker) => (
