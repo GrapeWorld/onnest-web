@@ -1,32 +1,25 @@
-export const appStats = [
-  ["진행 중 프로젝트", "3건"],
-  ["검수 대기 인수인계서", "12건"],
-  ["이번 주 서비스 연결", "28건"],
-  ["파트너 응답률", "91%"]
-];
-
 export const buildingCards = [
   {
     id: "hannam-101",
     name: "한남 리버하우스 101동",
     address: "서울 용산구 한남동",
     tags: ["채광 좋음", "야간 주차 확인 필요", "반려동물 확인 필요"],
-    handoverStatus: "인수인계서 2건"
+    handoverStatus: "인수인계서 2건",
   },
   {
     id: "seongsu-atelier",
     name: "성수 공유오피스 5층",
     address: "서울 성동구 성수동",
     tags: ["사무실", "인터넷 설치 이력", "소음 시간대 체크"],
-    handoverStatus: "인수인계서 1건"
+    handoverStatus: "인수인계서 1건",
   },
   {
     id: "gimpo-factory",
     name: "김포 소형공장 B동",
     address: "경기 김포시 양촌읍",
     tags: ["공장", "전력 확인 필요", "하역 동선 체크"],
-    handoverStatus: "미리보기 가능"
-  }
+    handoverStatus: "미리보기 가능",
+  },
 ];
 
 export const projectChecklist = [
@@ -35,14 +28,7 @@ export const projectChecklist = [
   ["방문 전 체크리스트", "대기"],
   ["계약 안전 체크패스", "대기"],
   ["보증보험 연결", "대기"],
-  ["입주 서비스 연결", "대기"]
-];
-
-export const serviceLeads = [
-  ["입주·이전 청소", "사용 7일 전", "견적 요청 준비"],
-  ["이사·사무실 이전", "사용 14일 전", "파트너 3곳 연결 가능"],
-  ["인터넷 설치", "계약 후", "통신사 선택 필요"],
-  ["보수·시설 점검", "방문 후", "현장 사진 필요"]
+  ["입주 서비스 연결", "대기"],
 ];
 
 export const productSuggestions = [
@@ -51,15 +37,5 @@ export const productSuggestions = [
   "수납장",
   "비데",
   "방충망 보강",
-  "반려동물 매트"
+  "반려동물 매트",
 ];
-
-export const adminTables = {
-  users: ["신규 가입자", "구독 상태", "프로젝트 수", "문의 이력"],
-  buildings: ["건물명", "주소", "인수인계서 수", "검수 상태"],
-  handovers: ["작성자", "건물", "AI 검수", "관리자 검수"],
-  reports: ["리포트 유형", "결제 상태", "발행일", "환불 여부"],
-  serviceLeads: ["문의 유형", "지역", "파트너", "처리 상태"],
-  partners: ["파트너사", "카테고리", "응답률", "정산 상태"],
-  rewards: ["리워드 대상", "인수인계서", "금액", "지급 상태"]
-};
