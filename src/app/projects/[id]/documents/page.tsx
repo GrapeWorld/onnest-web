@@ -1,13 +1,62 @@
+import { notFound, redirect } from "next/navigation";
 import { AppShell } from "@/components/app/AppShell";
-import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { DocumentManager } from "@/components/app/DocumentManager";
+import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { isStorageConfigured } from "@/lib/storage";
+import { formatDate } from "@/lib/dates";
 
-export default function DocumentsPage() {
+export default async function DocumentsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/auth/login");
+
+  const { id } = await params;
+  const project = await prisma.project.findFirst({
+    where: { id, userId: user.id },
+    include: {
+      documents: {
+        orderBy: { createdAt: "desc" },
+        // url은 민감하므로 클라이언트로 내려보내지 않는다.
+        select: {
+          id: true,
+          filename: true,
+          mimeType: true,
+          size: true,
+          createdAt: true,
+        },
+      },
+    },
+  });
+  if (!project) notFound();
+
   return (
-    <AppShell title="문서함" description="계약서, 등기부, 입주 사진, 하자 확인 사진을 보관하는 더미 화면입니다. 민감정보 마스킹 안내를 포함합니다.">
-      <Card>
-        <div className="rounded-2xl border border-dashed border-forest/25 bg-cream p-10 text-center text-forest">파일 업로드 영역</div>
-        <p className="mt-4 text-sm text-ink/60">주민등록번호, 계좌번호 등 불필요한 민감정보는 마스킹 또는 삭제를 권장합니다.</p>
-      </Card>
+    <AppShell
+      title="문서함"
+      description="계약서, 등기부, 입주 사진, 하자 확인 사진을 보관합니다."
+      contentClassName="max-w-3xl"
+    >
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row">
+        <Button href={`/projects/${project.id}`} variant="ghost">
+          프로젝트 홈
+        </Button>
+        <Button href={`/projects/${project.id}/calendar`} variant="secondary">
+          입주 일정
+        </Button>
+      </div>
+
+      <DocumentManager
+        projectId={project.id}
+        storageReady={isStorageConfigured()}
+        documents={project.documents.map((doc) => ({
+          ...doc,
+          createdAt: formatDate(doc.createdAt),
+        }))}
+      />
     </AppShell>
   );
 }
