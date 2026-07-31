@@ -1,4 +1,13 @@
 node_modules/
 .next/
+.next-dev/
 out/
 .env.local
+.env
+
+/prisma/dev.db
+/prisma/dev.db-journal
+*.tsbuildinfo
+
+.claude/settings.local.json
+dev-server.*.log
