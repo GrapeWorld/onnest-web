@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { buildingCards, projectChecklist } from "@/data/appMock";
 import { AppShell, ChecklistPanel } from "@/components/app/AppShell";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+
+// 매물 검색과 함께 MVP 범위 밖이다. /search에서만 도달하며 코드는 남겨둔다.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default function BuildingDetailPage() {
   const building = buildingCards[0];

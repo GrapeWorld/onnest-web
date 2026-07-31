@@ -11,6 +11,11 @@ const bentoCards = [
     tags: ["채광", "수압", "결로", "주차", "반려동물"],
     className: "md:col-span-2 md:row-span-2 bg-forest text-white",
     image: "/images/property/living-room.jpg",
+    report: {
+      title: "유료 리포트",
+      description: "야간 주차 체감, 시간대별 소음, 입주 전 질문지를 더 깊이 확인합니다.",
+      tags: ["주차 체감", "소음", "질문지"],
+    },
   },
   {
     title: "계약 안전 체크패스",
@@ -35,12 +40,6 @@ const bentoCards = [
     description: "제습기, 수납가구, 인터넷, 입주청소 같은 선택지를 집 상태에 맞춰 정리합니다.",
     tags: ["제습기", "수납", "인터넷"],
     className: "bg-white",
-  },
-  {
-    title: "유료 리포트",
-    description: "야간 주차 체감, 시간대별 소음, 입주 전 질문지를 참고 정보로 제공합니다.",
-    tags: ["주차 체감", "소음", "질문지"],
-    className: "bg-navy text-white",
   },
 ];
 
@@ -71,17 +70,42 @@ export function BentoFeatureGrid() {
                   <div className="absolute inset-0 -z-10 bg-gradient-to-t from-forest via-forest/85 to-forest/50" />
                 </>
               ) : null}
-              <div className="flex h-full min-h-[210px] flex-col justify-between">
+              <div
+                className={cn(
+                  "flex h-full min-h-[210px] flex-col",
+                  card.image && "min-h-[430px] md:min-h-[500px]",
+                )}
+              >
                 <div>
                   <h3 className="text-2xl font-black">{card.title}</h3>
                   <p className="mt-4 text-sm leading-7 opacity-75">{card.description}</p>
                 </div>
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {card.tags.map((tag) => (
-                    <Badge key={tag} className="bg-white/80 text-forest">
-                      {tag}
-                    </Badge>
-                  ))}
+                <div className="mt-auto pt-6">
+                  <div className="flex flex-wrap gap-2">
+                    {card.tags.map((tag) => (
+                      <Badge key={tag} className="bg-white/80 text-forest">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                  {card.report ? (
+                    <div className="mt-4 rounded-lg border border-white/15 bg-navy/90 p-4 shadow-lg backdrop-blur-sm">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="max-w-md">
+                          <p className="text-[11px] font-black uppercase text-mint">Premium Report</p>
+                          <h4 className="mt-1 text-xl font-black text-white">{card.report.title}</h4>
+                          <p className="mt-1 text-xs leading-5 text-white/70">{card.report.description}</p>
+                        </div>
+                        <div className="flex shrink-0 flex-wrap gap-2">
+                          {card.report.tags.map((tag) => (
+                            <Badge key={tag} className="bg-white/90 text-navy">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </Card>

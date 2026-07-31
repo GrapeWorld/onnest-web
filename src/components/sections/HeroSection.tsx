@@ -10,7 +10,7 @@ export function HeroSection() {
           <Badge>주거 전환 플랫폼</Badge>
           <h1 className="mt-7 max-w-4xl text-[clamp(2.45rem,6.4vw,4.75rem)] font-black leading-[1.12] text-forest">
             <span className="block whitespace-nowrap">
-              집도 <span className="rounded-xl bg-mint px-2 py-1">"인수인계"</span>가
+              집도 <span className="rounded-xl bg-mint px-2 py-1">&ldquo;인수인계&rdquo;</span>가
             </span>
             <span className="block">필요합니다.</span>
           </h1>

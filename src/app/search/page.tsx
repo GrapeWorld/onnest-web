@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { buildingCards } from "@/data/appMock";
 import { AppShell } from "@/components/app/AppShell";
 import { BuildingCard } from "@/components/app/AppCards";
 import { Card } from "@/components/ui/Card";
+
+// 매물 검색은 MVP 범위 밖이다. 코드는 추후 개발을 위해 남겨두되,
+// 내비게이션에서 뺐고 검색엔진에도 올라가지 않게 한다.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default function SearchPage() {
   return (
