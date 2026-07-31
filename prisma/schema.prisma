@@ -1,0 +1,182 @@
+// 배포 대상은 Vercel + Postgres다. provider 한 줄만 바꿔 이전할 수 있도록
+// SQLite에 없는 기능(enum, 배열, native type)은 쓰지 않는다.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         String    @default("user")
+  // 가입 시 약관·개인정보처리방침 동의 시각. 이 기능 이전 가입자는 null이다.
+  termsAgreedAt DateTime?
+  createdAt    DateTime  @default(now())
+  projects     Project[]
+}
+
+model Project {
+  id         String             @id @default(cuid())
+  userId     String
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  spaceType  String
+  address    String?
+  moveInDate DateTime?
+  budget     String?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  stepStates ProjectStepState[]
+  checks     ProjectCheckItem[]
+  events     ProjectEvent[]
+  requests   ServiceRequest[]
+  documents  Document[]
+  handover   Handover?
+
+  @@index([userId, createdAt])
+}
+
+// 계약서·등기부·현장 사진. 파일 자체는 외부 스토리지에 비공개로 있고
+// 여기에는 경로(storageKey)만 둔다. 공개 URL은 존재하지 않으며,
+// 소유권을 확인한 API가 서버 토큰으로 읽어서 중계한다.
+model Document {
+  id         String   @id @default(cuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  filename   String
+  mimeType   String
+  size       Int
+  storageKey String
+  createdAt  DateTime @default(now())
+
+  @@index([projectId, createdAt])
+}
+
+// 이사·청소·인터넷 등 파트너 연결 신청. 서비스 유형마다 담당 파트너가 달라
+// 여러 개를 한 번에 신청해도 유형별로 한 건씩 만든다.
+// serviceType과 status 값은 src/data/serviceRequests.ts와 대응한다.
+model ServiceRequest {
+  id            String    @id @default(cuid())
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  serviceType   String
+  preferredDate DateTime?
+  region        String
+  message       String?
+  contactName   String
+  contactPhone  String
+  status        String    @default("신규")
+  owner         String?
+  // 연락처를 파트너에게 전달하는 것에 동의한 시각. 이 기능 이전 신청은 null이다.
+  privacyAgreedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@index([projectId, createdAt])
+}
+
+// 입주 준비 일정. date는 시각 없이 날짜만 쓰므로 UTC 자정으로 저장하고
+// 표시할 때도 UTC 기준으로 읽어 시간대에 따라 하루가 밀리지 않게 한다.
+model ProjectEvent {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title     String
+  date      DateTime
+  memo      String?
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([projectId, date])
+}
+
+// 단계 안의 개별 체크리스트 항목. label은 projectSteps.ts의 checklist 문자열과 대응한다.
+// 행이 없으면 미체크로 간주한다.
+model ProjectCheckItem {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stepSlug  String
+  label     String
+  checked   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, stepSlug, label])
+}
+
+// 프로젝트당 1개. 기본은 비공개이고, 소유자가 공유를 켤 때만 shareToken이 생긴다.
+model Handover {
+  id         String         @id @default(cuid())
+  projectId  String         @unique
+  project    Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  summary    String
+  visibility String         @default("private")
+  shareToken String?        @unique
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  items      HandoverItem[]
+}
+
+// label은 handoverRules.ts의 allowedHandoverItems 중 하나여야 한다.
+model HandoverItem {
+  id         String   @id @default(cuid())
+  handoverId String
+  handover   Handover @relation(fields: [handoverId], references: [id], onDelete: Cascade)
+  label      String
+  note       String
+
+  @@unique([handoverId, label])
+}
+
+// slug는 src/data/projectSteps.ts의 10단계 slug와 대응한다.
+// 행이 없으면 "대기"로 간주하므로 생성 시 미리 채우지 않는다.
+model ProjectStepState {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  slug      String
+  status    String   @default("대기")
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, slug])
+}
+
+// 요청 횟수 제한 기록. 서버리스에서는 메모리 카운터를 믿을 수 없어 DB에 남긴다.
+// 창을 벗어난 행은 checkRateLimit이 호출될 때 함께 정리한다.
+model RateLimitHit {
+  id         String   @id @default(cuid())
+  action     String
+  identifier String
+  createdAt  DateTime @default(now())
+
+  @@index([action, identifier, createdAt])
+  @@index([createdAt])
+}
+
+model Inquiry {
+  id              String   @id @default(cuid())
+  name            String
+  organization    String?
+  email           String
+  phone           String
+  type            String
+  region          String?
+  spaceType       String?
+  message         String
+  status          String   @default("신규")
+  owner           String?
+  nextAction      String?
+  privacyAgreedAt DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status, createdAt])
+}
