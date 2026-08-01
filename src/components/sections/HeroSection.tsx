@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/Button";
 import { HeroMockup } from "./HeroMockup";
 
 export function HeroSection() {
+  // HeroMockup의 장식용 글로우가 좁은 화면에서 오른쪽으로 삐져나와 페이지 전체에
+  // 가로 스크롤을 만든다. 섹션에서 잘라 스크롤만 막는다.
   return (
-    <section className="bg-cream">
+    <section className="overflow-x-clip bg-cream">
       <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 md:grid-cols-[0.88fr_1.12fr] md:items-center md:py-24">
         <div>
           <Badge>주거 전환 플랫폼</Badge>
