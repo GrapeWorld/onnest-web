@@ -110,6 +110,33 @@ export function SafetyCheckpassMockup() {
   );
 }
 
+export function InsuranceGuidanceMockup() {
+  const channels = [
+    ["HUG 주택도시보증공사", "전세보증금반환보증 공식 가입 채널 안내"],
+    ["HF 한국주택금융공사", "전세지킴보증 공식 가입 채널 안내"],
+    ["SGI 서울보증", "전세금보장신용보험 공식 가입 채널 안내"],
+  ];
+
+  return (
+    <Card className="bg-white">
+      <p className="text-sm font-bold text-sage">Official Channel</p>
+      <h3 className="mt-3 text-2xl font-black text-forest">비교·판매가 아닌, 공식 채널 연결</h3>
+      <div className="mt-5 space-y-3">
+        {channels.map(([title, description]) => (
+          <div key={title} className="rounded-2xl border border-forest/10 bg-cream/70 p-4">
+            <p className="font-bold text-forest">{title}</p>
+            <p className="mt-1 text-sm leading-6 text-ink/65">{description}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-5 rounded-2xl bg-mint p-4 text-sm font-semibold leading-7 text-forest">
+        온네스트는 보증보험 상품을 비교·판매하지 않습니다. 공식기관 채널로 연결하고 가입 여부를
+        확인하도록 돕습니다.
+      </div>
+    </Card>
+  );
+}
+
 export function AdminReviewMockup() {
   return (
     <Card className="bg-white">

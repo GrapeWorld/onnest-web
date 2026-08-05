@@ -251,6 +251,65 @@ export function KeyHandoverIllustration({ className }: IllustrationProps) {
   );
 }
 
+/** 공식 채널로 이어지는 인증 경로 */
+export function VerifiedChannelIllustration({ className }: IllustrationProps) {
+  return (
+    <Frame className={className}>
+      <rect width="320" height="240" fill={mint} />
+
+      {/* 공식 채널로 향하는 점선 경로 */}
+      <path
+        d="M40 190 C110 190 130 120 168 100"
+        stroke={sage}
+        strokeWidth="4"
+        strokeDasharray="9 9"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <circle cx="40" cy="190" r="8" fill="#FFFFFF" stroke={forest} strokeWidth="4" />
+
+      {/* 방패 */}
+      <path
+        d="M168 46 L222 66 V118 C222 156 198 178 168 194 C138 178 114 156 114 118 V66 Z"
+        fill="#FFFFFF"
+        stroke={forest}
+        strokeWidth="5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M168 46 L222 66 V118 C222 156 198 178 168 194 C138 178 114 156 114 118 V66 Z"
+        fill={navy}
+        opacity="0.08"
+      />
+
+      {/* 확인 체크 */}
+      <path
+        d="M144 116 L162 136 L196 92"
+        fill="none"
+        stroke={forest}
+        strokeWidth="7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* 공식 문서 */}
+      <rect
+        x="234"
+        y="146"
+        width="58"
+        height="70"
+        rx="8"
+        fill="#FFFFFF"
+        stroke={forest}
+        strokeWidth="4"
+      />
+      {[164, 180, 196].map((y) => (
+        <line key={y} x1="246" y1={y} x2="280" y2={y} stroke={sage} strokeWidth="4" strokeLinecap="round" />
+      ))}
+    </Frame>
+  );
+}
+
 /** 계약 확인과 확정일자 */
 export function ContractIllustration({ className }: IllustrationProps) {
   return (
