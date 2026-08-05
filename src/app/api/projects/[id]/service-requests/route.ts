@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { serviceRequestSchema } from "@/lib/serviceRequestSchema";
 import { checkRateLimit, formatRetryAfter } from "@/lib/rateLimit";
+import { escapeHtml, notifyAdmin } from "@/lib/email";
+import { getAppUrl } from "@/lib/appUrl";
 
 /** 서비스 연결 신청. 선택한 유형마다 한 건씩 만든다. */
 export async function POST(
@@ -40,7 +42,7 @@ export async function POST(
   const { id } = await params;
   const project = await prisma.project.findFirst({
     where: { id, userId: user.id },
-    select: { id: true },
+    select: { id: true, name: true },
   });
   if (!project) {
     return NextResponse.json(
@@ -75,6 +77,26 @@ export async function POST(
       privacyAgreedAt,
     })),
   });
+
+  // 알림 발송(또는 그 URL 조립)이 실패해도 이미 저장된 신청 응답은 막지 않는다.
+  try {
+    const adminUrl = new URL("/admin/service-leads", getAppUrl()).toString();
+    await notifyAdmin({
+      subject: `[ONNEST] 신규 서비스 연결 신청: ${escapeHtml(project.name)}`,
+      html: `
+        <p>새 서비스 연결 신청이 접수됐습니다.</p>
+        <ul>
+          <li>프로젝트: ${escapeHtml(project.name)}</li>
+          <li>신청 유형: ${uniqueTypes.map((type) => escapeHtml(type)).join(", ")}</li>
+          <li>담당자: ${escapeHtml(contactName)}</li>
+          <li>연락처: ${escapeHtml(contactPhone)}</li>
+        </ul>
+        <p><a href="${adminUrl}">관리자 페이지에서 확인하기</a></p>
+      `,
+    });
+  } catch (error) {
+    console.error("[email] service request admin notification failed", error);
+  }
 
   return NextResponse.json({ created: uniqueTypes.length }, { status: 201 });
 }

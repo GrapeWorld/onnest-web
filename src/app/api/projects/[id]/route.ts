@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { projectSchema } from "@/lib/projectSchema";
+import { projectWizardSchema } from "@/lib/projectWizardSchema";
+import { subtypesByCategory, type SpaceCategory } from "@/data/projectSpace";
+import { deleteProjectWithDocuments } from "@/lib/projectDeletion";
 
 export async function PATCH(
   request: Request,
@@ -16,7 +18,7 @@ export async function PATCH(
   }
 
   const body = await request.json().catch(() => null);
-  const parsed = projectSchema.safeParse(body);
+  const parsed = projectWizardSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.issues[0]?.message ?? "입력값을 확인해주세요." },
@@ -25,17 +27,38 @@ export async function PATCH(
   }
 
   const { id } = await params;
-  const { name, spaceType, address, moveInDate, budget } = parsed.data;
+  const data = parsed.data;
+
+  const spaceTypeLabel =
+    subtypesByCategory[data.spaceCategory as SpaceCategory].find(
+      (subtype) => subtype.value === data.spaceSubtype,
+    )?.label ?? data.spaceSubtype;
+  const fullAddress = [data.address, data.addressDetail, data.unitNumber]
+    .filter(Boolean)
+    .join(" ");
 
   // userId 조건을 걸어 남의 프로젝트는 수정 대상에서 제외한다.
   const result = await prisma.project.updateMany({
     where: { id, userId: user.id },
     data: {
-      name,
-      spaceType,
-      address: address || null,
-      moveInDate: moveInDate ? new Date(moveInDate) : null,
-      budget: budget || null,
+      name: data.name,
+      spaceType: spaceTypeLabel,
+      spaceCategory: data.spaceCategory,
+      transactionType: data.transactionType,
+      address: data.addressPending ? null : fullAddress || null,
+      addressPending: data.addressPending,
+      moveInDate:
+        !data.scheduleUndecided && data.moveInDate
+          ? new Date(data.moveInDate)
+          : null,
+      contractDate:
+        !data.scheduleUndecided && data.contractDate
+          ? new Date(data.contractDate)
+          : null,
+      scheduleUndecided: data.scheduleUndecided,
+      budget: data.budget || null,
+      projectStage: data.projectStage,
+      details: data.details,
     },
   });
 
@@ -54,7 +77,7 @@ export async function PATCH(
  * 단계 상태·체크·일정·인수인계서·서비스 신청은 스키마의 onDelete: Cascade로 함께 지워진다.
  */
 export async function DELETE(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getCurrentUser();
@@ -67,17 +90,31 @@ export async function DELETE(
 
   const { id } = await params;
 
-  // userId 조건을 걸어 남의 프로젝트는 삭제 대상에서 제외한다.
-  const result = await prisma.project.deleteMany({
-    where: { id, userId: user.id },
+  const result = await deleteProjectWithDocuments({
+    projectId: id,
+    userId: user.id,
   });
 
-  if (result.count === 0) {
-    return NextResponse.json(
-      { error: "프로젝트를 찾을 수 없습니다." },
-      { status: 404 },
-    );
+  switch (result.status) {
+    case 404:
+      return NextResponse.json(
+        { error: "프로젝트를 찾을 수 없습니다." },
+        { status: 404 },
+      );
+    case 503:
+      return NextResponse.json(
+        { error: "문서 저장소를 확인할 수 없어 프로젝트를 삭제하지 못했습니다." },
+        { status: 503 },
+      );
+    case 502:
+      return NextResponse.json(
+        {
+          error:
+            "문서 정리에 실패해 프로젝트를 삭제하지 못했습니다. 다시 시도해주세요.",
+        },
+        { status: 502 },
+      );
+    case 200:
+      return NextResponse.json({ id: result.id });
   }
-
-  return NextResponse.json({ id });
 }

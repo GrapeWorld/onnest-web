@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { isStorageConfigured, putProjectFile } from "@/lib/storage";
-import { validateUpload } from "@/lib/documents";
+import {
+  deleteProjectFile,
+  isStorageConfigured,
+  putProjectFile,
+} from "@/lib/storage";
+import { validateUpload, validateUploadContents } from "@/lib/documents";
 
 /** 문서 업로드. multipart/form-data의 file 필드를 받는다. */
 export async function POST(
@@ -43,6 +47,10 @@ export async function POST(
   if (invalid) {
     return NextResponse.json({ error: invalid }, { status: 400 });
   }
+  const invalidContents = await validateUploadContents(file);
+  if (invalidContents) {
+    return NextResponse.json({ error: invalidContents }, { status: 400 });
+  }
 
   if (!isStorageConfigured()) {
     return NextResponse.json(
@@ -55,17 +63,27 @@ export async function POST(
 
   const stored = await putProjectFile(id, file);
 
-  const document = await prisma.document.create({
-    data: {
-      projectId: id,
-      filename: file.name.slice(0, 200),
-      mimeType: file.type,
-      size: file.size,
-      storageKey: stored.storageKey,
-    },
-    // storageKey는 응답에 넣지 않는다. 내려받기는 문서 id로만 한다.
-    select: { id: true, filename: true, size: true, createdAt: true },
-  });
+  let document;
+  try {
+    document = await prisma.document.create({
+      data: {
+        projectId: id,
+        filename: file.name.slice(0, 200),
+        mimeType: file.type,
+        size: file.size,
+        storageKey: stored.storageKey,
+      },
+      // storageKey는 응답에 넣지 않는다. 내려받기는 문서 id로만 한다.
+      select: { id: true, filename: true, size: true, createdAt: true },
+    });
+  } catch (error) {
+    try {
+      await deleteProjectFile(stored.storageKey);
+    } catch {
+      console.error(`[document-upload] orphan blob cleanup failed for project ${id}`);
+    }
+    throw error;
+  }
 
   return NextResponse.json(document, { status: 201 });
 }

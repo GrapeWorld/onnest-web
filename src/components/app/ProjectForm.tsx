@@ -4,59 +4,52 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
-import { spaceTypes } from "@/data/inquiries";
+import { SpaceSelectFields } from "./project-wizard/SpaceSelectFields";
+import { TransactionConditionFields } from "./project-wizard/TransactionConditionFields";
+import { ScheduleFields } from "./project-wizard/ScheduleFields";
+import type { ProjectWizardValues } from "./project-wizard/shared";
+import { projectWizardSchema } from "@/lib/projectWizardSchema";
 
-const fieldClass =
-  "rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink outline-none focus:border-forest";
+const submitButtonClass =
+  "inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-forest px-5 py-3 text-sm font-semibold text-white shadow-soft transition duration-300 hover:-translate-y-0.5 hover:bg-navy hover:shadow-glow focus-visible:outline focus-visible:outline-4 focus-visible:outline-mint/80 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0";
+const cancelLinkClass =
+  "inline-flex min-h-11 items-center justify-center rounded-full border border-forest/15 bg-white px-5 py-3 text-sm font-semibold text-forest hover:border-forest/40";
 
-export type ProjectFormValues = {
-  name: string;
-  spaceType: string;
-  address: string;
-  moveInDate: string;
-  budget: string;
-};
-
+/** 프로젝트 수정 전용 폼. 생성은 3단계 위저드(project-wizard/ProjectWizard.tsx)를 쓴다. */
 export function ProjectForm({
   projectId,
   initialValues,
 }: {
-  projectId?: string;
-  initialValues?: ProjectFormValues;
+  projectId: string;
+  initialValues: ProjectWizardValues;
 }) {
   const router = useRouter();
-  const isEdit = Boolean(projectId);
-  const [form, setForm] = useState<ProjectFormValues>(
-    initialValues ?? {
-      name: "",
-      spaceType: spaceTypes[0],
-      address: "",
-      moveInDate: "",
-      budget: "",
-    },
-  );
+  const [values, setValues] = useState<ProjectWizardValues>(initialValues);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  function update(key: keyof ProjectFormValues) {
-    return (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((prev) => ({ ...prev, [key]: event.target.value }));
+  function update(patch: Partial<ProjectWizardValues>) {
+    setValues((prev) => ({ ...prev, ...patch }));
   }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
-    setLoading(true);
 
+    const parsed = projectWizardSchema.safeParse(values);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "입력값을 확인해주세요.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      const res = await fetch(
-        isEdit ? `/api/projects/${projectId}` : "/api/projects",
-        {
-          method: isEdit ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
-        },
-      );
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsed.data),
+      });
       const data = await res.json();
 
       if (!res.ok) {
@@ -75,76 +68,40 @@ export function ProjectForm({
 
   return (
     <Card>
-      <form onSubmit={handleSubmit} className="grid gap-4" noValidate>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
-          프로젝트 이름
-          <input
-            required
-            value={form.name}
-            onChange={update("name")}
-            className={fieldClass}
-            placeholder="예: 별내 오피스텔 입주"
+      <form onSubmit={handleSubmit} className="grid gap-8" noValidate>
+        <section>
+          <h3 className="mb-4 text-lg font-bold text-forest">공간 정보</h3>
+          <SpaceSelectFields
+            values={values}
+            onChange={update}
+            onCategoryReset={() =>
+              setNotice("공간 유형 변경으로 기존 거래 조건이 초기화됩니다.")
+            }
           />
-        </label>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
-          공간 유형
-          <select
-            value={form.spaceType}
-            onChange={update("spaceType")}
-            className={fieldClass}
-          >
-            {spaceTypes.map((type) => (
-              <option key={type}>{type}</option>
-            ))}
-          </select>
-        </label>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
-          주소 <span className="font-normal text-ink/50">선택 입력</span>
-          <input
-            value={form.address}
-            onChange={update("address")}
-            className={fieldClass}
-            placeholder="예: 남양주시 별내동"
-          />
-        </label>
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="grid gap-2 text-sm font-semibold text-forest">
-            입주 예정일{" "}
-            <span className="font-normal text-ink/50">선택 입력</span>
-            <input
-              type="date"
-              value={form.moveInDate}
-              onChange={update("moveInDate")}
-              className={fieldClass}
-            />
-          </label>
-          <label className="grid gap-2 text-sm font-semibold text-forest">
-            예산 범위 <span className="font-normal text-ink/50">선택 입력</span>
-            <input
-              value={form.budget}
-              onChange={update("budget")}
-              className={fieldClass}
-              placeholder="예: 보증금 1억 / 월 60만원"
-            />
-          </label>
-        </div>
+        </section>
+        <section>
+          <h3 className="mb-4 text-lg font-bold text-forest">거래 조건</h3>
+          <TransactionConditionFields values={values} onChange={update} />
+        </section>
+        <section>
+          <h3 className="mb-4 text-lg font-bold text-forest">일정 및 이름</h3>
+          <ScheduleFields values={values} onChange={update} />
+        </section>
+
+        {notice && (
+          <p className="rounded-2xl bg-cream px-4 py-3 text-sm font-semibold text-forest">
+            {notice}
+          </p>
+        )}
         {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
+
         <div className="mt-2 flex flex-col gap-3 sm:flex-row">
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-forest px-5 py-3 text-sm font-semibold text-white shadow-soft transition duration-300 hover:-translate-y-0.5 hover:bg-navy hover:shadow-glow focus-visible:outline focus-visible:outline-4 focus-visible:outline-mint/80 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-          >
-            {loading ? "저장 중..." : isEdit ? "수정 저장" : "프로젝트 만들기"}
+          <button type="submit" disabled={loading} className={submitButtonClass}>
+            {loading ? "저장 중..." : "수정 저장"}
           </button>
-          {isEdit && (
-            <Link
-              href={`/projects/${projectId}`}
-              className="inline-flex min-h-11 items-center justify-center rounded-full border border-forest/15 bg-white px-5 py-3 text-sm font-semibold text-forest hover:border-forest/40"
-            >
-              취소
-            </Link>
-          )}
+          <Link href={`/projects/${projectId}`} className={cancelLinkClass}>
+            취소
+          </Link>
         </div>
       </form>
     </Card>

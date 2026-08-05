@@ -18,7 +18,7 @@ async function findOwnedEvent(
   });
 }
 
-/** 완료 표시 토글 */
+/** 완료 토글 또는 제목·날짜·메모 수정 (필드는 모두 선택적) */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string; eventId: string }> },
@@ -34,7 +34,10 @@ export async function PATCH(
   const body = await request.json().catch(() => null);
   const parsed = eventPatchSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "잘못된 요청입니다." }, { status: 400 });
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "잘못된 요청입니다." },
+      { status: 400 },
+    );
   }
 
   const { id, eventId } = await params;
@@ -46,12 +49,19 @@ export async function PATCH(
     );
   }
 
-  await prisma.projectEvent.update({
+  const { title, date, memo, done } = parsed.data;
+  const updated = await prisma.projectEvent.update({
     where: { id: eventId },
-    data: { done: parsed.data.done },
+    data: {
+      ...(title !== undefined && { title }),
+      ...(date !== undefined && { date: new Date(date) }),
+      ...(memo !== undefined && { memo: memo || null }),
+      ...(done !== undefined && { done }),
+    },
+    select: { id: true, title: true, date: true, memo: true, done: true },
   });
 
-  return NextResponse.json({ id: eventId, done: parsed.data.done });
+  return NextResponse.json(updated);
 }
 
 /** 일정 삭제 */

@@ -53,6 +53,9 @@ export async function PUT(
   }
 
   // 항목은 통째로 교체한다. 부분 갱신보다 상태가 단순하다.
+  // 내용을 수정하면 검수 상태를 "검토 대기"로 되돌린다 — 이전 검수 결과는
+  // 새 내용을 반영하지 못하므로 다시 검토가 필요하다. 새로 만드는
+  // 인수인계서는 컬럼 기본값(pending)을 그대로 쓰면 되므로 손대지 않는다.
   const handover = await prisma.handover.upsert({
     where: { projectId: id },
     create: {
@@ -63,6 +66,11 @@ export async function PUT(
     update: {
       summary,
       items: { deleteMany: {}, create: filled },
+      moderationStatus: "pending",
+      moderationReason: null,
+      moderatedAt: null,
+      moderatorId: null,
+      moderatorEmail: null,
     },
     select: { id: true },
   });

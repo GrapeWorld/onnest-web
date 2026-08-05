@@ -6,7 +6,13 @@ import { EventForm } from "@/components/app/EventForm";
 import { EventList, type EventRow } from "@/components/app/EventList";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { formatDate, formatWeekday, formatDDay, daysUntil } from "@/lib/dates";
+import {
+  formatDate,
+  formatWeekday,
+  formatDDay,
+  daysUntil,
+  toDateInputValue,
+} from "@/lib/dates";
 
 export default async function CalendarPage({
   params,
@@ -30,6 +36,7 @@ export default async function CalendarPage({
     memo: event.memo,
     done: event.done,
     dateLabel: formatDate(event.date),
+    dateValue: toDateInputValue(event.date),
     weekday: formatWeekday(event.date),
     dday: formatDDay(event.date),
     past: daysUntil(event.date) < 0,
