@@ -1,6 +1,15 @@
 import { Card } from "@/components/ui/Card";
 import { serviceStatusClassName } from "@/data/serviceRequests";
 import { formatDate } from "@/lib/dates";
+import { isQuoteMutableStatus } from "@/lib/serviceRequestQuotes";
+import { ServiceRequestQuoteOption } from "@/components/app/ServiceRequestQuoteOption";
+
+type QuoteItem = {
+  id: string;
+  title: string;
+  description: string | null;
+  amount: number;
+};
 
 type ServiceRequestItem = {
   id: string;
@@ -12,6 +21,8 @@ type ServiceRequestItem = {
   createdAt: Date;
   /** /my처럼 여러 프로젝트가 섞이는 곳에서만 넘긴다. */
   projectName?: string;
+  quotes: QuoteItem[];
+  selectedQuoteId: string | null;
 };
 
 export function ServiceRequestList({
@@ -75,6 +86,28 @@ export function ServiceRequestList({
             <p className="mt-3 whitespace-pre-wrap rounded-2xl bg-cream/70 p-4 text-sm leading-7 text-ink/70">
               {request.message}
             </p>
+          )}
+
+          {request.quotes.length > 0 && (
+            <div className="mt-4 rounded-2xl border border-sage/30 bg-sage/5 p-4">
+              <p className="text-sm font-bold text-forest">
+                받은 견적 {request.quotes.length}건
+                {!request.selectedQuoteId &&
+                  isQuoteMutableStatus(request.status) &&
+                  " · 견적을 비교하고 선택해주세요"}
+              </p>
+              <div className="mt-3 grid gap-2">
+                {request.quotes.map((quote) => (
+                  <ServiceRequestQuoteOption
+                    key={quote.id}
+                    requestId={request.id}
+                    quote={quote}
+                    selected={quote.id === request.selectedQuoteId}
+                    selectable={isQuoteMutableStatus(request.status)}
+                  />
+                ))}
+              </div>
+            </div>
           )}
         </Card>
       ))}

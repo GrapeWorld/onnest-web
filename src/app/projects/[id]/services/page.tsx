@@ -17,7 +17,12 @@ export default async function ProjectServicesPage({
   const { id } = await params;
   const project = await prisma.project.findFirst({
     where: { id, userId: user.id },
-    include: { requests: { orderBy: { createdAt: "desc" } } },
+    include: {
+      requests: {
+        orderBy: { createdAt: "desc" },
+        include: { quotes: { orderBy: { createdAt: "asc" } } },
+      },
+    },
   });
   if (!project) notFound();
 

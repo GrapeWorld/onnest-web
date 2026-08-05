@@ -31,4 +31,5 @@ export const serviceRequestSchema = z.object({
 export const serviceRequestPatchSchema = z.object({
   status: z.enum(serviceRequestStatuses).optional(),
   owner: z.string().trim().max(50).optional(),
+  partnerId: z.string().min(1).nullable().optional(),
 });
