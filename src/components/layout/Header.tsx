@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { LogoutButton } from "@/components/app/LogoutButton";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, isAdmin } from "@/lib/auth";
 import logoHorizontal from "../../../public/images/brand/onnest-logo-horizontal-web.png";
 import logoMark from "../../../public/images/brand/onnest-mark.png";
 
@@ -50,7 +50,7 @@ export async function Header() {
         <div className="hidden items-center gap-3 md:flex">
           {user ? (
             <>
-              {user.role === "admin" && (
+              {isAdmin(user) && (
                 <Link
                   href="/admin"
                   className="rounded-full bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-forest"
