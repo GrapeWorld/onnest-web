@@ -4,10 +4,14 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getSession } from "@/lib/session";
-import { deleteProjectFile } from "@/lib/storage";
+import { deleteProjectFiles } from "@/lib/storage";
+import { isDeleteApproved } from "@/lib/oauth/deleteApproval";
 
+// 비밀번호 회원은 password가 필수다. 소셜 전용 회원은 비밀번호가 아예
+// 없으므로 이 필드를 생략하고, 대신 최근 delete-confirm 재인증 여부를
+// 세션에서 확인한다(아래 본문 로직 참고).
 const bodySchema = z.object({
-  password: z.string().min(1, "비밀번호를 입력해주세요."),
+  password: z.string().min(1).optional(),
 });
 
 /**
@@ -37,7 +41,8 @@ export async function POST(request: Request) {
     );
   }
 
-  // 세션만으로 지우지 않고 비밀번호를 한 번 더 확인한다.
+  // 세션만으로 지우지 않고 한 번 더 확인한다 — 비밀번호 회원은 비밀번호,
+  // 소셜 전용 회원은 최근 provider 재인증(delete-confirm) 여부로.
   const record = await prisma.user.findUnique({
     where: { id: user.id },
     select: { passwordHash: true },
@@ -49,15 +54,31 @@ export async function POST(request: Request) {
     );
   }
 
-  const matches = await bcrypt.compare(
-    parsed.data.password,
-    record.passwordHash,
-  );
-  if (!matches) {
-    return NextResponse.json(
-      { error: "비밀번호가 올바르지 않습니다." },
-      { status: 403 },
-    );
+  if (record.passwordHash) {
+    if (!parsed.data.password) {
+      return NextResponse.json(
+        { error: "비밀번호를 입력해주세요." },
+        { status: 400 },
+      );
+    }
+    const matches = await bcrypt.compare(parsed.data.password, record.passwordHash);
+    if (!matches) {
+      return NextResponse.json(
+        { error: "비밀번호가 올바르지 않습니다." },
+        { status: 403 },
+      );
+    }
+  } else {
+    // 소셜 전용 회원: 단순 로그인 세션만으로는 즉시 삭제하지 않는다.
+    // /api/auth/oauth/[provider]/callback(mode=delete-confirm)이 연결된
+    // provider 재인증에 성공했을 때만 짧은 시간(5분) 동안 이 값을 남긴다.
+    const session = await getSession();
+    if (!isDeleteApproved(session.deleteApprovedAt)) {
+      return NextResponse.json(
+        { error: "본인 확인이 필요합니다. 연결된 계정으로 다시 인증해주세요." },
+        { status: 403 },
+      );
+    }
   }
 
   const documents = await prisma.document.findMany({
@@ -65,26 +86,27 @@ export async function POST(request: Request) {
     select: { storageKey: true },
   });
 
-  // 파일 삭제가 하나 실패해도 나머지와 계정 삭제는 계속 진행한다.
+  // 파일 삭제가 일부 실패해도 나머지와 계정 삭제는 계속 진행한다.
   // 남은 파일은 스토리지에 고아로 남지만, 계정 삭제를 막는 것보다 낫다.
-  const orphanedKeys: string[] = [];
-  for (const doc of documents) {
-    try {
-      await deleteProjectFile(doc.storageKey);
-    } catch {
-      orphanedKeys.push(doc.storageKey);
-    }
-  }
+  // (프로젝트 삭제와는 다른 정책이다 — 계정 탈퇴는 사용자가 비밀번호까지
+  // 확인한 명시적 요청이라 실패에 더 관대해야 한다.)
+  //
+  // 실패한 storageKey는 로그에 남긴다. 계정 삭제는 아래에서 User를 지우는
+  // 순간 Document 행도 cascade로 함께 사라지므로, 이 로그가 나중에 고아 파일을
+  // 정리할 유일한 단서가 된다. storageKey는 개인정보나 접근 가능한 URL이
+  // 아니라 Blob 안의 내부 경로일 뿐이라 로그에 남겨도 안전하다.
+  const { failedCount, failedKeys } = await deleteProjectFiles(
+    documents.map((doc) => doc.storageKey),
+  );
 
   await prisma.user.delete({ where: { id: user.id } });
 
   const session = await getSession();
   session.destroy();
 
-  if (orphanedKeys.length > 0) {
+  if (failedCount > 0) {
     console.warn(
-      `[delete-account] 스토리지에서 지우지 못한 파일 ${orphanedKeys.length}건`,
-      orphanedKeys,
+      `[delete-account] 스토리지에서 지우지 못한 파일 ${failedCount}건 (userId=${user.id}) — 재처리 대상 storageKey: ${failedKeys.join(", ")}`,
     );
   }
 

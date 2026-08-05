@@ -13,6 +13,7 @@ export function AppShell({
   title,
   description,
   showNav = true,
+  navItems,
   contentClassName,
   children,
 }: {
@@ -20,6 +21,8 @@ export function AppShell({
   description: string;
   /** 로그인·회원가입처럼 앱 내비게이션이 필요 없는 화면에서는 끈다. */
   showNav?: boolean;
+  /** 기본 고객용 내비(새 프로젝트/내 정보) 대신 쓸 항목. 업체 포털처럼 다른 영역에서 쓴다. */
+  navItems?: [string, string][];
   /**
    * 콘텐츠 영역(내비·제목·본문 전체)의 너비를 좁히고 싶을 때 쓴다.
    * 폼처럼 좁은 화면은 `max-w-3xl`을 넘겨 제목과 본문의 좌우 기준선을 맞춘다.
@@ -33,7 +36,7 @@ export function AppShell({
       <div className={cn("mx-auto w-full max-w-7xl", contentClassName)}>
         {showNav && (
           <nav className="mb-8 flex flex-wrap gap-2 text-sm font-semibold">
-            {appNav.map(([label, href]) => (
+            {(navItems ?? appNav).map(([label, href]) => (
               <Link
                 key={href}
                 href={href}

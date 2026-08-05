@@ -61,6 +61,7 @@ export async function POST(request: Request) {
 
     const session = await getSession();
     session.userId = user.id;
+    session.authVersion = user.authVersion;
     await session.save();
 
     return NextResponse.json(
