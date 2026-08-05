@@ -61,3 +61,23 @@ export async function readProjectFile(storageKey: string) {
 export async function deleteProjectFile(storageKey: string) {
   await del(storageKey);
 }
+
+/**
+ * 여러 파일을 Blob에서 지운다. 외부 스토리지와 DB는 하나의 트랜잭션으로 묶을 수
+ * 없으므로, 호출부가 실패 개수를 보고 DB를 지울지 스스로 판단해야 한다.
+ * 개별 실패 원인(예외 메시지)은 여기서 삼킨다 — 원인 자체는 호출부 로그에
+ * 남길 정보가 아니다. 다만 실패한 storageKey 목록은 함께 돌려준다:
+ * storageKey는 `projects/{projectId}/{임의문자열}.{ext}` 형태의 내부 경로일
+ * 뿐 개인정보나 접근 가능한 URL이 아니고(Blob은 private 접근이라 이 키만으로는
+ * 열 수 없다), 회원 탈퇴처럼 실패해도 계속 진행하는 흐름에서는 DB 레코드가
+ * 함께 지워지기 때문에 이 반환값이 나중에 재처리할 유일한 단서가 된다.
+ */
+export async function deleteProjectFiles(storageKeys: string[]) {
+  const results = await Promise.allSettled(
+    storageKeys.map((key) => deleteProjectFile(key)),
+  );
+  const failedKeys = storageKeys.filter(
+    (_, index) => results[index]!.status === "rejected",
+  );
+  return { failedCount: failedKeys.length, failedKeys, total: results.length };
+}

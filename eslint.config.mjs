@@ -1,12 +1,9 @@
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const compat = new FlatCompat({
-  baseDirectory: dirname(fileURLToPath(import.meta.url)),
-});
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTypeScript from "eslint-config-next/typescript";
 
 const config = [
+  ...nextVitals,
+  ...nextTypeScript,
   {
     ignores: [
       ".next/**",
@@ -19,7 +16,6 @@ const config = [
       "next-env.d.ts",
     ],
   },
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {
       // API 응답 본문 등 외부 입력을 다루는 지점에서는 any가 불가피한 경우가 있어 경고로 둔다.

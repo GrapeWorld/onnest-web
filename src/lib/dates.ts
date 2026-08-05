@@ -60,3 +60,13 @@ export function formatDDay(date: Date, from = todayInSeoul()) {
   if (days > 0) return `D-${days}`;
   return `${Math.abs(days)}일 지남`;
 }
+
+/**
+ * "YYYY-MM-DD"(서울 기준 달력일)를 그 날 서울 자정에 해당하는 UTC Date로
+ * 변환한다. createdAt처럼 실제 시각까지 담긴 값을 날짜 기간으로 필터링할 때
+ * 쓴다 — 단순히 T00:00:00.000Z로 파싱하면 UTC 자정(=서울 오전 9시)이 돼
+ * 자정~오전 9시 사이 값이 하루 어긋난다.
+ */
+export function kstDateStringToUtc(value: string) {
+  return new Date(`${value}T00:00:00.000+09:00`);
+}

@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 :root {
-  --font-pretendard: Pretendard;
   color: #1d2b2a;
   background: #fff7e8;
 }
@@ -20,7 +19,7 @@ body {
   margin: 0;
   background: #fff7e8;
   color: #1d2b2a;
-  font-family: var(--font-pretendard), Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-pretendard), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.65;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -48,7 +47,6 @@ a {
   color: #123c35;
 }
 
-/* TODO: Put Pretendard font files under /public/fonts and wire them with next/font/local when ready. */
 /* TODO: Add a small Intersection Observer hook for scroll fade-in once the page structure stabilizes. */
 
 .prose-policy {
