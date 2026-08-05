@@ -6,16 +6,33 @@ import { Button } from "@/components/ui/Button";
 import { LogoutButton } from "@/components/app/LogoutButton";
 import { ServiceRequestList } from "@/components/app/ServiceRequestList";
 import { DeleteAccountControl } from "@/components/app/DeleteAccountControl";
+import { SocialAccountsPanel } from "@/components/app/SocialAccountsPanel";
 import { projectSteps } from "@/data/projectSteps";
+import { oauthProviders, type OAuthProvider } from "@/data/oauthProviders";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/dates";
+import { getSession } from "@/lib/session";
+import { isProviderConfigured } from "@/lib/oauth/providers";
+import { isDeleteApproved } from "@/lib/oauth/deleteApproval";
 
 export default async function MyPage() {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/auth/login");
   }
+
+  const socialAccounts = await prisma.socialAccount.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, provider: true, providerEmail: true },
+  });
+  const configuredProviders = oauthProviders.filter((provider) =>
+    isProviderConfigured(provider),
+  );
+
+  const session = await getSession();
+  const deleteApproved = isDeleteApproved(session.deleteApprovedAt);
 
   const projects = await prisma.project.findMany({
     where: { userId: user.id },
@@ -37,8 +54,13 @@ export default async function MyPage() {
   const requests = await prisma.serviceRequest.findMany({
     where: { project: { userId: user.id } },
     orderBy: { createdAt: "desc" },
-    include: { project: { select: { name: true } } },
+    include: {
+      project: { select: { name: true } },
+      quotes: { orderBy: { createdAt: "asc" } },
+    },
   });
+
+  const inquiryCount = await prisma.inquiry.count({ where: { userId: user.id } });
 
   return (
     <AppShell
@@ -58,6 +80,7 @@ export default async function MyPage() {
           ["내 프로젝트", `${projects.length}건`],
           ["완료한 단계", `${totalDone}건`],
           ["서비스 신청", `${requests.length}건`],
+          ["내 문의", `${inquiryCount}건`],
           ["구독 상태", "무료"],
         ]}
       />
@@ -136,8 +159,45 @@ export default async function MyPage() {
       </section>
 
       <section className="mt-10">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-forest/10 bg-white p-5 shadow-card">
+          <div>
+            <h2 className="text-xl font-black text-forest">내 문의</h2>
+            <p className="mt-1 text-sm text-ink/60">
+              보낸 문의의 진행 상황과 답변을 확인하고, 추가로 질문할 수 있습니다.
+            </p>
+          </div>
+          <Button href="/my/inquiries">내 문의 보기</Button>
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <div className="rounded-[24px] border border-forest/10 bg-white p-5 shadow-card">
+          <h2 className="text-xl font-black text-forest">로그인 방법</h2>
+          <p className="mt-1 text-sm text-ink/60">
+            비밀번호와 연결된 소셜 계정을 확인·관리합니다.
+          </p>
+          <div className="mt-4">
+            <SocialAccountsPanel
+              connections={socialAccounts.map((account) => ({
+                id: account.id,
+                provider: account.provider as OAuthProvider,
+                providerEmail: account.providerEmail,
+              }))}
+              hasPassword={Boolean(user.passwordHash)}
+              configuredProviders={configuredProviders}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-10">
         <DeleteAccountControl
           counts={{ projects: projects.length, documents: documentCount }}
+          hasPassword={Boolean(user.passwordHash)}
+          connections={socialAccounts.map((account) => ({
+            provider: account.provider as OAuthProvider,
+          }))}
+          deleteApproved={deleteApproved}
         />
       </section>
     </AppShell>
