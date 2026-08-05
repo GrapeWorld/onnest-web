@@ -17,8 +17,10 @@ export default async function SharedHandoverPage({
   const { token } = await params;
 
   const handover = await prisma.handover.findFirst({
-    // visibility까지 조건에 넣어 공유를 끈 뒤에는 토큰을 알아도 열리지 않게 한다.
-    where: { shareToken: token, visibility: "link" },
+    // visibility·moderationStatus까지 조건에 넣어 공유를 끄거나(visibility)
+    // 관리자가 비공개 처리(hidden)해도 토큰을 알아도 열리지 않게 한다.
+    // 베타 정책상 승인(approved)된 인수인계서만 실제로 공유된다.
+    where: { shareToken: token, visibility: "link", moderationStatus: "approved" },
     select: {
       summary: true,
       items: { select: { label: true, note: true } },

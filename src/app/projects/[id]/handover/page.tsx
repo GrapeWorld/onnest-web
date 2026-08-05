@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { AppShell } from "@/components/app/AppShell";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { HandoverModerationStatus } from "@/components/app/HandoverModerationStatus";
 import { HandoverShareControl } from "@/components/app/HandoverShareControl";
 import { HandoverView } from "@/components/app/HandoverView";
 import { getCurrentUser } from "@/lib/auth";
@@ -40,6 +41,10 @@ export default async function ProjectHandoverPage({
 
       {handover ? (
         <div className="grid gap-5">
+          <HandoverModerationStatus
+            status={handover.moderationStatus}
+            reason={handover.moderationReason}
+          />
           <HandoverShareControl
             projectId={project.id}
             shared={handover.visibility === "link"}
