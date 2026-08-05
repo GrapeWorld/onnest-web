@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { AppShell, MetricGrid } from "@/components/app/AppShell";
 import { Card } from "@/components/ui/Card";
+import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/dates";
+
+const SUPER_ONLY_HREFS = ["/admin/admins"];
 
 const sections = [
   {
@@ -26,9 +29,25 @@ const sections = [
     title: "인수인계서 검수",
     description: "작성된 인수인계서 내용과 공개 상태를 확인합니다.",
   },
+  {
+    href: "/admin/admins",
+    title: "관리자 계정",
+    description: "관리자 권한을 부여·변경·회수합니다. (최고관리자 전용)",
+  },
+  {
+    href: "/admin/partners",
+    title: "제휴업체 관리",
+    description: "이사·청소 등 서비스 신청을 넘길 외주 업체를 등록·관리합니다.",
+  },
 ];
 
 export default async function AdminPage() {
+  const currentAdmin = await getCurrentUser();
+  const isSuper = Boolean(currentAdmin && isSuperAdmin(currentAdmin));
+  const visibleSections = sections.filter(
+    (section) => isSuper || !SUPER_ONLY_HREFS.includes(section.href),
+  );
+
   const [
     userCount,
     projectCount,
@@ -84,7 +103,7 @@ export default async function AdminPage() {
       <section className="mt-8">
         <h2 className="mb-4 text-xl font-black text-forest">운영 화면</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          {sections.map((section) => (
+          {visibleSections.map((section) => (
             <Link key={section.href} href={section.href}>
               <Card className="h-full p-5">
                 <h3 className="text-lg font-black text-forest">

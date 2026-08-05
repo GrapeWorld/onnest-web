@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
+export { getClientIp } from "@/lib/clientIp";
+
 /**
  * 요청 횟수 제한.
  *
@@ -19,23 +21,43 @@ export type RateLimitRule = {
 
 export const rateLimits = {
   login: { windowSeconds: 600, max: 10 },
+  loginEmail: { windowSeconds: 600, max: 10 },
   signup: { windowSeconds: 3600, max: 5 },
   inquiry: { windowSeconds: 3600, max: 5 },
   serviceRequest: { windowSeconds: 3600, max: 10 },
+  forgotPassword: { windowSeconds: 3600, max: 5 },
+  resetPassword: { windowSeconds: 3600, max: 10 },
+  findId: { windowSeconds: 3600, max: 5 },
+  oauthStart: { windowSeconds: 600, max: 20 },
+  oauthCallback: { windowSeconds: 600, max: 20 },
+  oauthSignupComplete: { windowSeconds: 600, max: 10 },
+  oauthLink: { windowSeconds: 600, max: 10 },
+  inquiryMessage: { windowSeconds: 3600, max: 10 },
+  inquiryLinkRequest: { windowSeconds: 3600, max: 5 },
+  inquirySatisfaction: { windowSeconds: 3600, max: 10 },
 } satisfies Record<string, RateLimitRule>;
-
-/**
- * 프록시를 거치므로 소켓 주소 대신 헤더에서 클라이언트 IP를 읽는다.
- * 헤더가 없으면(로컬 등) 단일 키로 묶어 최소한의 제한은 걸리게 한다.
- */
-export function getClientIp(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]!.trim();
-  return request.headers.get("x-real-ip") ?? "unknown";
-}
 
 export type RateLimitResult =
   { ok: true } | { ok: false; retryAfterSeconds: number };
+
+export function getRateLimitWindow(now: Date, windowSeconds: number) {
+  const windowMs = windowSeconds * 1000;
+  const startMs = Math.floor(now.getTime() / windowMs) * windowMs;
+  return {
+    windowStart: new Date(startMs),
+    expiresAt: new Date(startMs + windowMs),
+  };
+}
+
+async function cleanupExpiredBuckets(now: Date) {
+  // 정리는 요청의 핵심 경로가 아니므로 일부 요청에서만 실행하고 실패를 전파하지 않는다.
+  if (Math.random() >= 0.01) return;
+  try {
+    await prisma.rateLimitBucket.deleteMany({ where: { expiresAt: { lt: now } } });
+  } catch {
+    console.warn("[rate-limit] expired bucket cleanup failed");
+  }
+}
 
 /**
  * 제한에 걸리면 ok:false를 돌려준다.
@@ -47,36 +69,34 @@ export async function checkRateLimit(
 ): Promise<RateLimitResult> {
   const rule = rateLimits[action];
   const now = new Date();
-  const windowStart = new Date(now.getTime() - rule.windowSeconds * 1000);
+  const { windowStart, expiresAt } = getRateLimitWindow(
+    now,
+    rule.windowSeconds,
+  );
 
-  // 지난 기록은 지워 테이블이 무한정 커지지 않게 한다.
-  await prisma.rateLimitHit.deleteMany({
-    where: { createdAt: { lt: windowStart } },
+  // 복합 PK에 대한 upsert/increment는 DB가 원자적으로 처리하므로 여러 서버
+  // 인스턴스에서 동시에 요청해도 count+insert 사이로 우회할 수 없다.
+  const bucket = await prisma.rateLimitBucket.upsert({
+    where: {
+      action_identifier_windowStart: { action, identifier, windowStart },
+    },
+    create: { action, identifier, windowStart, expiresAt, count: 1 },
+    update: { count: { increment: 1 } },
+    select: { count: true },
   });
 
-  const count = await prisma.rateLimitHit.count({
-    where: { action, identifier, createdAt: { gte: windowStart } },
-  });
+  await cleanupExpiredBuckets(now);
 
-  if (count >= rule.max) {
-    const oldest = await prisma.rateLimitHit.findFirst({
-      where: { action, identifier, createdAt: { gte: windowStart } },
-      orderBy: { createdAt: "asc" },
-      select: { createdAt: true },
-    });
-    const resetAt = oldest
-      ? oldest.createdAt.getTime() + rule.windowSeconds * 1000
-      : now.getTime() + rule.windowSeconds * 1000;
+  if (bucket.count > rule.max) {
     return {
       ok: false,
       retryAfterSeconds: Math.max(
         1,
-        Math.ceil((resetAt - now.getTime()) / 1000),
+        Math.ceil((expiresAt.getTime() - now.getTime()) / 1000),
       ),
     };
   }
 
-  await prisma.rateLimitHit.create({ data: { action, identifier } });
   return { ok: true };
 }
 
