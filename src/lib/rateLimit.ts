@@ -35,6 +35,15 @@ export const rateLimits = {
   inquiryMessage: { windowSeconds: 3600, max: 10 },
   inquiryLinkRequest: { windowSeconds: 3600, max: 5 },
   inquirySatisfaction: { windowSeconds: 3600, max: 10 },
+  partnerInvite: { windowSeconds: 3600, max: 20 },
+  partnerRequestStatus: { windowSeconds: 3600, max: 100 },
+  partnerRequestStaff: { windowSeconds: 3600, max: 100 },
+  partnerRequestNote: { windowSeconds: 3600, max: 100 },
+  partnerRequestContact: { windowSeconds: 3600, max: 100 },
+  // 견적 등록(POST)·삭제(DELETE)가 버킷을 공유한다 — 같은 하위 자원에 대한
+  // 쓰기라 따로 셀 이유가 없다. 파일 업로드·삭제도 마찬가지.
+  partnerRequestQuote: { windowSeconds: 3600, max: 60 },
+  partnerRequestFile: { windowSeconds: 3600, max: 60 },
 } satisfies Record<string, RateLimitRule>;
 
 export type RateLimitResult =

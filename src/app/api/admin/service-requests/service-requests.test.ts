@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   userFindMany: vi.fn(),
   notifyPartnerStaff: vi.fn(),
   quoteDeleteMany: vi.fn(),
+  activityCreate: vi.fn(),
+  transaction: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -20,6 +22,8 @@ vi.mock("@/lib/prisma", () => ({
     partner: { findUnique: mocks.findUniquePartner },
     user: { findMany: mocks.userFindMany },
     serviceRequestQuote: { deleteMany: mocks.quoteDeleteMany },
+    serviceRequestActivity: { create: mocks.activityCreate },
+    $transaction: mocks.transaction,
   },
 }));
 vi.mock("@/lib/email", () => ({
@@ -41,17 +45,89 @@ function call(body: unknown, id = "request-1") {
 describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.getCurrentUser.mockResolvedValue({ id: "admin-1", adminRole: "super" });
+    mocks.getCurrentUser.mockResolvedValue({
+      id: "admin-1",
+      email: "admin@onnest.example.com",
+      name: "관리자",
+      adminRole: "super",
+    });
     mocks.findUniqueRequest.mockResolvedValue({
       id: "request-1",
       serviceType: "이사",
       status: "신규",
       partnerId: null,
+      privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
     });
     mocks.update.mockResolvedValue({ id: "request-1", partnerId: "partner-1" });
     mocks.userFindMany.mockResolvedValue([{ email: "staff@partner.example.com" }]);
     mocks.notifyPartnerStaff.mockResolvedValue(undefined);
     mocks.quoteDeleteMany.mockResolvedValue({ count: 0 });
+    mocks.activityCreate.mockResolvedValue({});
+    mocks.transaction.mockImplementation(async (callback) =>
+      callback({
+        serviceRequest: { findUnique: mocks.findUniqueRequest, update: mocks.update },
+        partner: { findUnique: mocks.findUniquePartner },
+        serviceRequestQuote: { deleteMany: mocks.quoteDeleteMany },
+        serviceRequestActivity: { create: mocks.activityCreate },
+      }),
+    );
+  });
+
+  it("returns 409 on a concurrent-conflict transaction failure", async () => {
+    mocks.transaction.mockRejectedValue(new Error("could not serialize access"));
+
+    const response = await call({ partnerId: "partner-1" });
+    const data = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(data.error).toBe("다른 요청과 충돌해 처리하지 못했습니다. 다시 시도해주세요.");
+  });
+
+  it("runs the update and quote cleanup inside a single Serializable transaction", async () => {
+    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+
+    await call({ partnerId: "partner-1" });
+
+    expect(mocks.transaction).toHaveBeenCalledWith(expect.any(Function), {
+      isolationLevel: "Serializable",
+    });
+    // update()와 deleteMany()가 같은 트랜잭션 콜백 안에서, 트랜잭션이 성공한
+    // 뒤에야 호출됐는지 확인한다 — 분리된 별개 호출이면 이 순서 보장이 없다.
+    expect(mocks.update).toHaveBeenCalled();
+    expect(mocks.quoteDeleteMany).toHaveBeenCalled();
+  });
+
+  it("rejects assigning a partner to a request the customer hasn't consented to share PII on", async () => {
+    mocks.findUniqueRequest.mockResolvedValue({
+      id: "request-1",
+      serviceType: "이사",
+      status: "신규",
+      partnerId: null,
+      privacyAgreedAt: null,
+    });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+
+    const response = await call({ partnerId: "partner-1" });
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe(
+      "고객이 개인정보 제공에 동의하지 않은 신청은 업체에 배정할 수 없습니다.",
+    );
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("allows a status-only update on a non-consented request (no partnerId in the body)", async () => {
+    mocks.findUniqueRequest.mockResolvedValue({
+      id: "request-1",
+      serviceType: "이사",
+      status: "신규",
+      partnerId: null,
+      privacyAgreedAt: null,
+    });
+
+    const response = await call({ status: "확인 중" });
+    expect(response.status).toBe(200);
   });
 
   it("rejects assigning a partner that doesn't exist", async () => {
@@ -108,7 +184,13 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
 
     expect(mocks.update).toHaveBeenCalledWith({
       where: { id: "request-1" },
-      data: { partnerId: "partner-1", status: "신규", selectedQuoteId: null, selectedAt: null },
+      data: {
+        partnerId: "partner-1",
+        status: "신규",
+        selectedQuoteId: null,
+        selectedAt: null,
+        partnerStaffId: null,
+      },
       select: { id: true, status: true, owner: true, partnerId: true },
     });
   });
@@ -119,6 +201,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
       serviceType: "이사",
       status: "작업 완료",
       partnerId: null,
+      privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
     });
     mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
 
@@ -126,7 +209,12 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
 
     expect(mocks.update).toHaveBeenCalledWith({
       where: { id: "request-1" },
-      data: { partnerId: "partner-1", selectedQuoteId: null, selectedAt: null },
+      data: {
+        partnerId: "partner-1",
+        selectedQuoteId: null,
+        selectedAt: null,
+        partnerStaffId: null,
+      },
       select: { id: true, status: true, owner: true, partnerId: true },
     });
   });
@@ -137,6 +225,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
       serviceType: "이사",
       status: "취소",
       partnerId: "old-partner",
+      privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
     });
     mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
 
@@ -144,7 +233,13 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
 
     expect(mocks.update).toHaveBeenCalledWith({
       where: { id: "request-1" },
-      data: { partnerId: "partner-1", status: "신규", selectedQuoteId: null, selectedAt: null },
+      data: {
+        partnerId: "partner-1",
+        status: "신규",
+        selectedQuoteId: null,
+        selectedAt: null,
+        partnerStaffId: null,
+      },
       select: { id: true, status: true, owner: true, partnerId: true },
     });
   });
@@ -155,6 +250,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
       serviceType: "이사",
       status: "확인 중",
       partnerId: "partner-1",
+      privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
     });
     mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
 
@@ -174,13 +270,19 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
       serviceType: "이사",
       status: "확인 중",
       partnerId: "partner-1",
+      privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
     });
 
     await call({ partnerId: null });
 
     expect(mocks.update).toHaveBeenCalledWith({
       where: { id: "request-1" },
-      data: { partnerId: null, selectedQuoteId: null, selectedAt: null },
+      data: {
+        partnerId: null,
+        selectedQuoteId: null,
+        selectedAt: null,
+        partnerStaffId: null,
+      },
       select: { id: true, status: true, owner: true, partnerId: true },
     });
   });
@@ -201,6 +303,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
       serviceType: "이사",
       status: "확인 중",
       partnerId: "partner-1",
+      privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
     });
 
     await call({ partnerId: null });
@@ -216,6 +319,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
       serviceType: "이사",
       status: "확인 중",
       partnerId: "partner-1",
+      privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
     });
     mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
 
@@ -258,5 +362,84 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
     const response = await call({ partnerId: "partner-1" });
 
     expect(response.status).toBe(200);
+  });
+
+  it("logs a STATUS_CHANGED activity when the status actually changes", async () => {
+    mocks.findUniqueRequest.mockResolvedValue({
+      id: "request-1",
+      serviceType: "이사",
+      status: "확인 중",
+      partnerId: "partner-1",
+      privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
+    });
+    mocks.update.mockResolvedValue({
+      id: "request-1",
+      status: "작업 예정",
+      owner: null,
+      partnerId: "partner-1",
+    });
+
+    await call({ status: "작업 예정" });
+
+    expect(mocks.activityCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        serviceRequestId: "request-1",
+        action: "STATUS_CHANGED",
+        changes: { from: "확인 중", to: "작업 예정" },
+        actorId: "admin-1",
+        actorEmail: "admin@onnest.example.com",
+        actorName: "관리자",
+        actorRole: "ADMIN",
+        partnerId: "partner-1",
+      }),
+    });
+  });
+
+  it("does not log an activity when the status doesn't change", async () => {
+    mocks.findUniqueRequest.mockResolvedValue({
+      id: "request-1",
+      serviceType: "이사",
+      status: "확인 중",
+      partnerId: "partner-1",
+      privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
+    });
+    mocks.update.mockResolvedValue({
+      id: "request-1",
+      status: "확인 중",
+      owner: null,
+      partnerId: "partner-1",
+    });
+
+    await call({ status: "확인 중" });
+
+    expect(mocks.activityCreate).not.toHaveBeenCalled();
+  });
+
+  it("logs a STATUS_CHANGED activity for the implicit 신규 reset on reassignment", async () => {
+    mocks.findUniqueRequest.mockResolvedValue({
+      id: "request-1",
+      serviceType: "이사",
+      status: "취소",
+      partnerId: "old-partner",
+      privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
+    });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+    mocks.update.mockResolvedValue({
+      id: "request-1",
+      status: "신규",
+      owner: null,
+      partnerId: "partner-1",
+    });
+
+    await call({ partnerId: "partner-1" });
+
+    expect(mocks.activityCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "STATUS_CHANGED",
+        changes: { from: "취소", to: "신규" },
+        actorRole: "ADMIN",
+        partnerId: "partner-1",
+      }),
+    });
   });
 });

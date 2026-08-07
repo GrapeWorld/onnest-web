@@ -14,6 +14,8 @@ export default defineConfig({
       "src/lib/passwordReset.test.ts",
       "src/lib/rateLimit.concurrency.test.ts",
       "src/lib/inquiryLink.test.ts",
+      "src/lib/serviceRequestPartnerSnapshot.test.ts",
+      "src/lib/partnerInvitation.test.ts",
     ],
     globalSetup: "./vitest.global-setup.ts",
     env: {

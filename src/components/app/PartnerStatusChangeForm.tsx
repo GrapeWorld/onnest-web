@@ -2,11 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  serviceRequestStatuses,
-  serviceRequestCancelledStatus,
-  type ServiceRequestStatus,
-} from "@/data/serviceRequests";
+import { serviceRequestCancelledStatus, type ServiceRequestStatus } from "@/data/serviceRequests";
+import { getValidNextStatuses } from "@/lib/serviceRequestStatus";
 
 const ACCEPTED_STATUS: ServiceRequestStatus = "확인 중";
 
@@ -18,7 +15,8 @@ export function PartnerStatusChangeForm({
   currentStatus: ServiceRequestStatus;
 }) {
   const router = useRouter();
-  const [status, setStatus] = useState<ServiceRequestStatus>(currentStatus);
+  const nextStatuses = getValidNextStatuses(currentStatus);
+  const [status, setStatus] = useState<ServiceRequestStatus | null>(nextStatuses[0] ?? null);
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,11 +46,15 @@ export function PartnerStatusChangeForm({
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    save(status, reason);
+    if (status) save(status, reason);
   }
 
   return (
     <div className="grid gap-3">
+      <p className="text-sm text-ink/55">
+        현재 상태: <span className="font-semibold text-forest">{currentStatus}</span>
+      </p>
+
       {currentStatus === "신규" && (
         <div className="flex gap-2">
           <button
@@ -74,49 +76,51 @@ export function PartnerStatusChangeForm({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="grid gap-3">
-        <div className="grid gap-1">
-          <label className="text-sm font-semibold text-forest">진행 상태</label>
-          <select
-            value={status}
-            onChange={(event) => setStatus(event.target.value as ServiceRequestStatus)}
-            disabled={saving}
-            className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
-          >
-            {serviceRequestStatuses.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {status === serviceRequestCancelledStatus && (
+      {nextStatuses.length === 0 ? (
+        <p className="text-sm text-ink/50">종료된 요청은 더 이상 상태를 변경할 수 없습니다.</p>
+      ) : (
+        <form onSubmit={handleSubmit} className="grid gap-3">
           <div className="grid gap-1">
-            <label className="text-sm font-semibold text-forest">
-              {status === currentStatus ? "취소 사유" : "거절/취소 사유 (필수)"}
-            </label>
-            <textarea
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
+            <label className="text-sm font-semibold text-forest">다음 상태</label>
+            <select
+              value={status ?? ""}
+              onChange={(event) => setStatus(event.target.value as ServiceRequestStatus)}
               disabled={saving}
-              rows={3}
-              placeholder="예: 요청 지역이 서비스 가능 범위 밖입니다."
-              className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
-            />
+              className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+            >
+              {nextStatuses.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
           </div>
-        )}
 
-        {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
+          {status === serviceRequestCancelledStatus && (
+            <div className="grid gap-1">
+              <label className="text-sm font-semibold text-forest">거절/취소 사유 (필수)</label>
+              <textarea
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                disabled={saving}
+                rows={3}
+                placeholder="예: 요청 지역이 서비스 가능 범위 밖입니다."
+                className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+              />
+            </div>
+          )}
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="justify-self-start rounded-full bg-forest px-5 py-2.5 text-sm font-bold text-white hover:bg-forest/90 disabled:opacity-60"
-        >
-          {saving ? "저장 중..." : "상태 저장"}
-        </button>
-      </form>
+          {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="justify-self-start rounded-full bg-forest px-5 py-2.5 text-sm font-bold text-white hover:bg-forest/90 disabled:opacity-60"
+          >
+            {saving ? "저장 중..." : "상태 저장"}
+          </button>
+        </form>
+      )}
     </div>
   );
 }
