@@ -153,6 +153,7 @@ describe("PATCH /api/my/service-requests/[id]", () => {
         },
         actorId: "user-1",
         actorRole: "CUSTOMER",
+        partnerId: "partner-1",
       }),
     });
   });

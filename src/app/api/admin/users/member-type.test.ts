@@ -7,6 +7,11 @@ const mocks = vi.hoisted(() => ({
   userUpdate: vi.fn(),
   historyCreate: vi.fn(),
   transaction: vi.fn(),
+  membershipFindUnique: vi.fn(),
+  membershipUpdate: vi.fn(),
+  membershipUpdateMany: vi.fn(),
+  membershipCreate: vi.fn(),
+  membershipCount: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -18,6 +23,13 @@ vi.mock("@/lib/prisma", () => ({
     user: { findUnique: mocks.userFindUnique, update: mocks.userUpdate },
     partner: { findUnique: mocks.partnerFindUnique },
     memberTypeHistory: { create: mocks.historyCreate },
+    partnerMembership: {
+      findUnique: mocks.membershipFindUnique,
+      update: mocks.membershipUpdate,
+      updateMany: mocks.membershipUpdateMany,
+      create: mocks.membershipCreate,
+      count: mocks.membershipCount,
+    },
     $transaction: mocks.transaction,
   },
 }));
@@ -52,6 +64,11 @@ describe("PATCH /api/admin/users/[id]/member-type", () => {
     mocks.partnerFindUnique.mockResolvedValue({ id: "partner-1", active: true });
     mocks.userUpdate.mockResolvedValue({});
     mocks.historyCreate.mockResolvedValue({});
+    mocks.membershipFindUnique.mockResolvedValue(null);
+    mocks.membershipUpdate.mockResolvedValue({});
+    mocks.membershipUpdateMany.mockResolvedValue({ count: 0 });
+    mocks.membershipCreate.mockResolvedValue({});
+    mocks.membershipCount.mockResolvedValue(0);
     // 실제 라우트는 인터랙티브 트랜잭션(콜백)을 쓴다 — tx가 곧 prisma mock과
     // 같은 함수들을 쓰도록 흉내낸다.
     mocks.transaction.mockImplementation(async (callback) =>
@@ -59,6 +76,13 @@ describe("PATCH /api/admin/users/[id]/member-type", () => {
         user: { findUnique: mocks.userFindUnique, update: mocks.userUpdate },
         partner: { findUnique: mocks.partnerFindUnique },
         memberTypeHistory: { create: mocks.historyCreate },
+        partnerMembership: {
+          findUnique: mocks.membershipFindUnique,
+          update: mocks.membershipUpdate,
+          updateMany: mocks.membershipUpdateMany,
+          create: mocks.membershipCreate,
+          count: mocks.membershipCount,
+        },
       }),
     );
   });
@@ -151,6 +175,98 @@ describe("PATCH /api/admin/users/[id]/member-type", () => {
       where: { id: "user-1" },
       data: { memberType: "CUSTOMER", partnerId: null, authVersion: { increment: 1 } },
     });
+  });
+
+  it("creates an OWNER membership when connecting to a partner with no active owner yet", async () => {
+    mocks.membershipCount.mockResolvedValue(0);
+
+    await call({ memberType: "PARTNER", partnerId: "partner-1", reason: "최초 연결" });
+
+    expect(mocks.membershipCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        partnerId: "partner-1",
+        userId: "user-1",
+        role: "OWNER",
+        status: "ACTIVE",
+      }),
+    });
+  });
+
+  it("creates a STAFF membership when the partner already has an active owner", async () => {
+    mocks.membershipCount.mockResolvedValue(1);
+
+    await call({ memberType: "PARTNER", partnerId: "partner-1", reason: "직원 연결" });
+
+    expect(mocks.membershipCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ role: "STAFF", status: "ACTIVE" }),
+    });
+  });
+
+  it("reactivates an existing (e.g. previously revoked) membership instead of creating a duplicate", async () => {
+    mocks.membershipFindUnique.mockResolvedValue({ id: "old-membership", status: "REVOKED" });
+
+    await call({ memberType: "PARTNER", partnerId: "partner-1", reason: "재합류" });
+
+    expect(mocks.membershipCreate).not.toHaveBeenCalled();
+    expect(mocks.membershipUpdate).toHaveBeenCalledWith({
+      where: { id: "old-membership" },
+      data: { status: "ACTIVE" },
+    });
+  });
+
+  it("revokes the old membership when moving PARTNER to a different partner", async () => {
+    mocks.userFindUnique.mockResolvedValue({
+      id: "user-1",
+      memberType: "PARTNER",
+      partnerId: "old-partner",
+      adminRole: null,
+    });
+
+    await call({ memberType: "PARTNER", partnerId: "new-partner", reason: "업체 이동" });
+
+    expect(mocks.membershipUpdateMany).toHaveBeenCalledWith({
+      where: { partnerId: "old-partner", userId: "user-1", status: "ACTIVE" },
+      data: { status: "REVOKED" },
+    });
+  });
+
+  it("revokes the membership when moving PARTNER back to CUSTOMER, without creating a new one", async () => {
+    mocks.userFindUnique.mockResolvedValue({
+      id: "user-1",
+      memberType: "PARTNER",
+      partnerId: "partner-1",
+      adminRole: null,
+    });
+
+    await call({ memberType: "CUSTOMER", reason: "계약 종료" });
+
+    expect(mocks.membershipUpdateMany).toHaveBeenCalledWith({
+      where: { partnerId: "partner-1", userId: "user-1", status: "ACTIVE" },
+      data: { status: "REVOKED" },
+    });
+    expect(mocks.membershipCreate).not.toHaveBeenCalled();
+  });
+
+  it("blocks assigning PARTNER to an account that already has adminRole", async () => {
+    mocks.userFindUnique.mockResolvedValue({
+      id: "user-1",
+      memberType: "CUSTOMER",
+      partnerId: null,
+      adminRole: "viewer",
+    });
+
+    const response = await call({
+      memberType: "PARTNER",
+      partnerId: "partner-1",
+      reason: "테스트",
+    });
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe("관리자 권한이 있는 계정은 업체 직원으로 지정할 수 없습니다.");
+    expect(mocks.userUpdate).not.toHaveBeenCalled();
+    // 관리자 충돌 검사가 업체 조회보다 먼저 걸려야 한다.
+    expect(mocks.partnerFindUnique).not.toHaveBeenCalled();
   });
 
   it("blocks connecting to a non-existent partner with 404", async () => {

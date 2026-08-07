@@ -37,7 +37,7 @@ export default async function LoginPage({
 
           <SocialLoginButtons configuredProviders={configuredProviders} returnTo={params.returnTo} />
 
-          <LoginForm />
+          <LoginForm returnTo={params.returnTo} />
 
           <p className="mt-4 text-center text-sm text-ink/60">
             <Link

@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { sanitizeReturnTo } from "@/lib/oauth/returnTo";
 
-export function LoginForm() {
+export function LoginForm({ returnTo }: { returnTo?: string } = {}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,7 +29,7 @@ export function LoginForm() {
         return;
       }
 
-      router.push("/my");
+      router.push(sanitizeReturnTo(returnTo));
       router.refresh();
     } catch {
       setError("네트워크 오류가 발생했습니다. 다시 시도해주세요.");

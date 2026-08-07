@@ -3,12 +3,16 @@ import type { Prisma } from "@prisma/client";
 import { AppShell, MetricGrid } from "@/components/app/AppShell";
 import { Card } from "@/components/ui/Card";
 import { PartnerRequestFilterBar } from "@/components/app/PartnerRequestFilterBar";
-import { requirePartnerStaff } from "@/lib/partnerAuth";
+import { requirePartnerMembership } from "@/lib/partnerAuth";
 import { prisma } from "@/lib/prisma";
 import { serviceRequestStatuses, serviceStatusClassName } from "@/data/serviceRequests";
 
 const PAGE_SIZE = 20;
-const partnerNav: [string, string][] = [["요청 목록", "/partner"]];
+const partnerNav: [string, string][] = [
+  ["요청 목록", "/partner"],
+  ["팀 관리", "/partner/team"],
+  ["업체 정보", "/partner/company"],
+];
 
 const receivedFormatter = new Intl.DateTimeFormat("ko-KR", {
   dateStyle: "medium",
@@ -30,7 +34,7 @@ export default async function PartnerPortalPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string; staff?: string; page?: string }>;
 }) {
-  const user = await requirePartnerStaff();
+  const { user, membership } = await requirePartnerMembership();
   const partnerId = user.partnerId;
 
   const params = await searchParams;
@@ -46,8 +50,15 @@ export default async function PartnerPortalPage({
 
   const where: Prisma.ServiceRequestWhereInput = { partnerId };
   if (status) where.status = status;
-  if (staff === "unassigned") where.partnerStaffId = null;
-  else if (staff) where.partnerStaffId = staff;
+  // STAFF는 담당 건만 본다 — staff 쿼리 파라미터로 다른 직원·미배정을
+  // 골라 우회하지 못하도록 역할 분기를 마지막에 둬 항상 덮어쓴다.
+  if (membership.role === "STAFF") {
+    where.partnerStaffId = user.id;
+  } else if (staff === "unassigned") {
+    where.partnerStaffId = null;
+  } else if (staff) {
+    where.partnerStaffId = staff;
+  }
   if (q) {
     where.OR = [
       { contactName: { contains: q, mode: "insensitive" } },
@@ -60,7 +71,9 @@ export default async function PartnerPortalPage({
   const [totalCount, allStatusCounts, requests, staffOptions] = await Promise.all([
     prisma.serviceRequest.count({ where }),
     prisma.serviceRequest.groupBy({
-      where: { partnerId },
+      // 상단 상태별 집계도 목록과 같은 스코프여야 한다 — 안 그러면 STAFF가
+      // 자기 담당이 아닌 건수까지 집계로 보게 된다.
+      where: membership.role === "STAFF" ? { partnerId, partnerStaffId: user.id } : { partnerId },
       by: ["status"],
       _count: { _all: true },
     }),
@@ -145,7 +158,12 @@ export default async function PartnerPortalPage({
                 </div>
 
                 <div className="flex min-w-64 flex-col gap-1 text-sm text-ink/65">
-                  <span>고객: {request.contactName} · {request.contactPhone}</span>
+                  <span>
+                    고객:{" "}
+                    {request.privacyAgreedAt
+                      ? `${request.contactName} · ${request.contactPhone}`
+                      : "동의 대기 중"}
+                  </span>
                   <span>담당 직원: {request.partnerStaff?.name ?? "미배정"}</span>
                   <span>접수: {receivedFormatter.format(request.createdAt)}</span>
                   <Link

@@ -113,6 +113,26 @@ export async function notifyPartnerStaff({
 }
 
 /**
+ * 업체 대표·매니저가 직원을 초대할 때 보내는 알림. notifyAdmin과 같은
+ * 원칙 — 발송 실패가 호출부의 저장 흐름을 막지 않도록 에러를 삼킨다.
+ */
+export async function notifyPartnerInvitation({
+  to,
+  subject,
+  html,
+}: {
+  to: string;
+  subject: string;
+  html: string;
+}) {
+  try {
+    await sendEmail({ to, subject, html });
+  } catch (error) {
+    console.error("[email] partner invitation notification failed", error);
+  }
+}
+
+/**
  * 문의를 남긴 고객에게 보내는 알림(접수 확인·답변·상태 변경).
  * notifyAdmin과 같은 원칙 — 발송 실패가 호출부의 저장 흐름을 막지 않도록
  * 에러를 삼킨다.

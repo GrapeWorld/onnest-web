@@ -10,7 +10,8 @@ import { PartnerRequestFileUpload } from "@/components/app/PartnerRequestFileUpl
 import { PartnerRequestFileList } from "@/components/app/PartnerRequestFileList";
 import { PartnerQuoteForm } from "@/components/app/PartnerQuoteForm";
 import { PartnerQuoteList } from "@/components/app/PartnerQuoteList";
-import { requirePartnerStaff } from "@/lib/partnerAuth";
+import { ViewerReadOnlyNotice } from "@/components/app/ViewerReadOnlyNotice";
+import { requirePartnerMembership, evaluateServiceRequestReadAccess } from "@/lib/partnerAuth";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/dates";
 import { isQuoteMutableStatus } from "@/lib/serviceRequestQuotes";
@@ -23,7 +24,11 @@ import {
 } from "@/data/serviceRequestActivity";
 import { formatWon } from "@/lib/currency";
 
-const partnerNav: [string, string][] = [["요청 목록", "/partner"]];
+const partnerNav: [string, string][] = [
+  ["요청 목록", "/partner"],
+  ["팀 관리", "/partner/team"],
+  ["업체 정보", "/partner/company"],
+];
 
 const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
   dateStyle: "medium",
@@ -73,7 +78,7 @@ export default async function PartnerRequestDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await requirePartnerStaff();
+  const { user, membership } = await requirePartnerMembership();
   const { id } = await params;
 
   const request = await prisma.serviceRequest.findFirst({
@@ -87,6 +92,7 @@ export default async function PartnerRequestDetailPage({
       preferredDate: true,
       contactName: true,
       contactPhone: true,
+      partnerId: true,
       partnerStaffId: true,
       privacyAgreedAt: true,
       createdAt: true,
@@ -95,12 +101,19 @@ export default async function PartnerRequestDetailPage({
     },
   });
   // 다른 업체 소속이거나 존재하지 않는 요청은 같은 404로 처리한다 —
-  // 다른 업체 요청은 절대 볼 수 없어야 한다.
-  if (!request) notFound();
+  // 다른 업체 요청은 절대 볼 수 없어야 한다. STAFF가 담당하지 않은 건도
+  // 같은 404로 처리해 존재 자체를 숨긴다.
+  if (!request || !evaluateServiceRequestReadAccess(membership, user.id, request)) notFound();
+
+  const canWrite =
+    membership.role === "OWNER" || membership.role === "MANAGER" || request.partnerStaffId === user.id;
+  const canManageStaff = membership.role === "OWNER" || membership.role === "MANAGER";
 
   const [activities, staffOptions, files, quotes] = await Promise.all([
     prisma.serviceRequestActivity.findMany({
-      where: { serviceRequestId: id },
+      // 재배정 전 다른 업체가 남긴 내부 메모·연락 기록이 보이지 않도록
+      // 작성 당시 담당 업체(partnerId) 스냅샷으로도 스코프를 좁힌다.
+      where: { serviceRequestId: id, partnerId: user.partnerId },
       orderBy: { createdAt: "desc" },
     }),
     prisma.user.findMany({
@@ -109,7 +122,9 @@ export default async function PartnerRequestDetailPage({
       select: { id: true, name: true, email: true },
     }),
     prisma.document.findMany({
-      where: { serviceRequestId: id },
+      // 재배정 전 다른 업체가 올린 견적서·계약서·사진이 보이지 않도록
+      // 업로드 당시 담당 업체(partnerId) 스냅샷으로도 스코프를 좁힌다.
+      where: { serviceRequestId: id, partnerId: user.partnerId },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -172,7 +187,9 @@ export default async function PartnerRequestDetailPage({
               <div>
                 <dt className="text-ink/50">고객 연락처</dt>
                 <dd className="font-semibold text-forest">
-                  {request.contactName} · {request.contactPhone}
+                  {request.privacyAgreedAt
+                    ? `${request.contactName} · ${request.contactPhone}`
+                    : "동의 대기 중"}
                 </dd>
               </div>
               <div>
@@ -222,7 +239,11 @@ export default async function PartnerRequestDetailPage({
                 locked={!quoteMutable}
               />
             </div>
-            {quoteMutable ? (
+            {!canWrite ? (
+              <div className="mt-4">
+                <ViewerReadOnlyNotice>조회전용 계정은 견적을 등록할 수 없습니다.</ViewerReadOnlyNotice>
+              </div>
+            ) : quoteMutable ? (
               <div className="mt-4">
                 <PartnerQuoteForm requestId={request.id} />
               </div>
@@ -235,7 +256,11 @@ export default async function PartnerRequestDetailPage({
             <h2 className="text-xl font-black text-forest">첨부 파일</h2>
             <p className="mt-1 text-sm text-ink/55">견적서·작업 사진·계약서를 올립니다.</p>
             <div className="mt-4">
-              <PartnerRequestFileUpload requestId={request.id} />
+              {canWrite ? (
+                <PartnerRequestFileUpload requestId={request.id} />
+              ) : (
+                <ViewerReadOnlyNotice>조회전용 계정은 파일을 올릴 수 없습니다.</ViewerReadOnlyNotice>
+              )}
             </div>
             <div className="mt-4">
               <PartnerRequestFileList
@@ -276,35 +301,51 @@ export default async function PartnerRequestDetailPage({
           <Card>
             <h2 className="text-xl font-black text-forest">상태 처리</h2>
             <div className="mt-4">
-              <PartnerStatusChangeForm
-                requestId={request.id}
-                currentStatus={request.status as ServiceRequestStatus}
-              />
+              {canWrite ? (
+                <PartnerStatusChangeForm
+                  requestId={request.id}
+                  currentStatus={request.status as ServiceRequestStatus}
+                />
+              ) : (
+                <ViewerReadOnlyNotice>조회전용 계정은 상태를 변경할 수 없습니다.</ViewerReadOnlyNotice>
+              )}
             </div>
           </Card>
 
           <Card>
             <h2 className="text-xl font-black text-forest">담당 직원</h2>
             <div className="mt-4">
-              <PartnerStaffAssignForm
-                requestId={request.id}
-                currentStaffId={request.partnerStaffId}
-                staffOptions={staffOptions}
-              />
+              {canManageStaff ? (
+                <PartnerStaffAssignForm
+                  requestId={request.id}
+                  currentStaffId={request.partnerStaffId}
+                  staffOptions={staffOptions}
+                />
+              ) : (
+                <ViewerReadOnlyNotice>대표·매니저만 담당자를 지정할 수 있습니다.</ViewerReadOnlyNotice>
+              )}
             </div>
           </Card>
 
           <Card>
             <h2 className="text-xl font-black text-forest">내부 메모</h2>
             <div className="mt-4">
-              <PartnerRequestNoteForm requestId={request.id} />
+              {canWrite ? (
+                <PartnerRequestNoteForm requestId={request.id} />
+              ) : (
+                <ViewerReadOnlyNotice>조회전용 계정은 메모를 남길 수 없습니다.</ViewerReadOnlyNotice>
+              )}
             </div>
           </Card>
 
           <Card>
             <h2 className="text-xl font-black text-forest">연락 기록</h2>
             <div className="mt-4">
-              <PartnerRequestContactLogForm requestId={request.id} />
+              {canWrite ? (
+                <PartnerRequestContactLogForm requestId={request.id} />
+              ) : (
+                <ViewerReadOnlyNotice>조회전용 계정은 연락 기록을 남길 수 없습니다.</ViewerReadOnlyNotice>
+              )}
             </div>
           </Card>
         </div>

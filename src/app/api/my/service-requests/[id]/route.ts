@@ -71,6 +71,7 @@ export async function PATCH(
           actorEmail: user.email,
           actorName: user.name,
           actorRole: "CUSTOMER",
+          partnerId: existing.partnerId,
         },
       });
       return {

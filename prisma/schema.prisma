@@ -58,6 +58,7 @@ model User {
   // 관계(InquiryAssignee)와 겹치지 않도록 명시적 이름을 쓴다.
   inquiries         Inquiry[]          @relation("InquiryOwner")
   inquiryLinkTokens InquiryLinkToken[]
+  partnerMemberships PartnerMembership[]
 }
 
 // Google/Kakao/Naver 계정 연결. provider+providerAccountId(이메일이 아니라
@@ -234,6 +235,10 @@ model Document {
   uploadedByRole String  @default("CUSTOMER")
   uploadedById   String?
   uploadedByName String?
+  // 업로드 당시 이 요청을 담당하던 업체(서비스 신청 파일에서만 쓴다).
+  // 재배정 후 다른 업체가 예전 견적서·계약서·사진을 보거나 지우지
+  // 못하게 막는 스냅샷이다 — uploadedById 등과 같은 원칙.
+  partnerId String?
 
   @@index([projectId, createdAt])
   @@index([serviceRequestId, createdAt])
@@ -329,6 +334,9 @@ model ServiceRequestActivity {
   // 요청에 흔적을 남길 수 있어 누가 처리자인지 구분해 둔다.
   actorRole        String
   createdAt        DateTime @default(now())
+  // 작성 당시 이 요청을 담당하던 업체. 재배정 후 다른 업체가 예전 내부
+  // 메모·연락 기록을 보지 못하게 막는 스냅샷이다(actorId 등과 같은 원칙).
+  partnerId String?
 
   @@index([serviceRequestId, createdAt])
 }
@@ -342,7 +350,14 @@ model Partner {
   serviceType  String
   contactName  String?
   contactPhone String?
-  memo         String?
+  // 관리자 전용 내부 메모 — 파트너 포털에는 절대 노출되지 않는다(super
+  // admin만 조회·수정). 예전에는 이 필드와 companyDescription이 memo라는
+  // 이름의 컬럼 하나를 같이 썼는데, 그러면 파트너 OWNER가 관리자의 내부
+  // 메모를 읽고 덮어쓸 수 있어 컬럼을 분리했다.
+  adminMemo    String?
+  // 업체가 스스로 남기는 소개/메모 — 관리자 화면에서도 참고용으로 조회
+  // 가능하지만, 파트너가 직접 쓰고 고치는 필드다(adminMemo와 반대).
+  companyDescription String?
   // 물리적 삭제 대신 비활성화만 한다(회원 소프트 삭제와 같은 원칙) —
   // 과거 배정 기록(ServiceRequest.partnerId)이 남아있기 때문.
   active       Boolean  @default(true)
@@ -350,9 +365,56 @@ model Partner {
   requests     ServiceRequest[]
   // 이 업체와 연결된 로그인 계정(User.memberType="PARTNER"). 업체 자체는 로그인
   // 계정이 아니며, 이 관계는 회원 분류·연결용일 뿐 파트너 포털 권한과 무관하다.
+  // PartnerMembership 도입 후에도 호환용으로 계속 동기화한다.
   members      User[]
+  // 외부 화면·검색에 쓰는 공개 식별자. 내부 id(cuid)와 별개로 둔다.
+  partnerCode  String   @unique
+  memberships  PartnerMembership[]
+  invitations  PartnerInvitation[]
 
   @@index([serviceType, active])
+}
+
+// 업체-직원 소속 관계. User.partnerId(호환용, 계속 동기화)와 달리 이력을
+// 보존한다 — REVOKED 후 다른 업체에 다시 합류해도 과거 관계가 남는다.
+model PartnerMembership {
+  id          String    @id @default(cuid())
+  partnerId   String
+  partner     Partner   @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // "OWNER" | "MANAGER" | "STAFF" | "VIEWER"
+  role        String
+  // "ACTIVE" | "SUSPENDED" | "REVOKED"
+  status      String
+  invitedById String?
+  invitedAt   DateTime?
+  joinedAt    DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([partnerId, userId])
+  @@index([userId, status])
+}
+
+// PasswordResetToken·InquiryLinkToken과 완전히 같은 원자적 소비 패턴 — 원문
+// 토큰은 저장하지 않는다. 아직 계정이 없거나 없을 수도 있는 이메일 앞으로
+// 보내는 것이라 PartnerMembership과는 분리된 모델이다.
+model PartnerInvitation {
+  id          String    @id @default(cuid())
+  partnerId   String
+  partner     Partner   @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  email       String
+  // "MANAGER" | "STAFF" | "VIEWER" — OWNER는 초대로 줄 수 없다.
+  role        String
+  tokenHash   String    @unique
+  invitedById String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([partnerId, email])
 }
 
 // 입주 준비 일정. date는 시각 없이 날짜만 쓰므로 UTC 자정으로 저장하고
