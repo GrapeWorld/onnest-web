@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   activityCreate: vi.fn(),
   transaction: vi.fn(),
+  membershipFindFirst: vi.fn(),
+  checkRateLimit: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -15,8 +17,13 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     serviceRequest: { findUnique: mocks.findUnique, update: mocks.update },
     serviceRequestActivity: { create: mocks.activityCreate },
+    partnerMembership: { findFirst: mocks.membershipFindFirst },
     $transaction: mocks.transaction,
   },
+}));
+vi.mock("@/lib/rateLimit", () => ({
+  checkRateLimit: mocks.checkRateLimit,
+  formatRetryAfter: vi.fn(() => "1분"),
 }));
 
 import { PATCH } from "@/app/api/partner/service-requests/[id]/route";
@@ -39,14 +46,23 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
       name: "김직원",
       memberType: "PARTNER",
       partnerId: "partner-1",
+      status: "ACTIVE",
     });
     mocks.findUnique.mockResolvedValue({
       id: "request-1",
       status: "신규",
       partnerId: "partner-1",
+      partnerStaffId: null,
     });
     mocks.update.mockResolvedValue({});
     mocks.activityCreate.mockResolvedValue({});
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "OWNER",
+      partner: { active: true },
+    });
+    mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         serviceRequest: { findUnique: mocks.findUnique, update: mocks.update },
@@ -95,6 +111,7 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
         action: "STATUS_CHANGED",
         changes: { from: "신규", to: "취소", reason: "서비스 가능 지역 밖" },
         actorRole: "PARTNER",
+        partnerId: "partner-1",
       }),
     });
   });
@@ -114,6 +131,7 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
       id: "request-1",
       status: "신규",
       partnerId: "other-partner",
+      partnerStaffId: null,
     });
 
     const response = await call({ status: "확인 중" });
@@ -121,6 +139,56 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
 
     expect(response.status).toBe(404);
     expect(data.error).toBe("요청을 찾을 수 없습니다.");
+  });
+
+  it("rejects a VIEWER with 403", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "VIEWER",
+      partner: { active: true },
+    });
+
+    const response = await call({ status: "확인 중" });
+    expect(response.status).toBe(403);
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("hides an unassigned STAFF's access as 404 (not their request)", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "STAFF",
+      partner: { active: true },
+    });
+    mocks.findUnique.mockResolvedValue({
+      id: "request-1",
+      status: "신규",
+      partnerId: "partner-1",
+      partnerStaffId: "someone-else",
+    });
+
+    const response = await call({ status: "확인 중" });
+    expect(response.status).toBe(404);
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("allows an assigned STAFF to change status", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "STAFF",
+      partner: { active: true },
+    });
+    mocks.findUnique.mockResolvedValue({
+      id: "request-1",
+      status: "신규",
+      partnerId: "partner-1",
+      partnerStaffId: "staff-1",
+    });
+
+    const response = await call({ status: "확인 중" });
+    expect(response.status).toBe(200);
   });
 
   it("returns 404 for a request that doesn't exist", async () => {
@@ -137,6 +205,52 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
     expect(response.status).toBe(400);
     expect(data.error).toBe("이미 같은 상태입니다.");
     expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("allows skipping several steps forward", async () => {
+    const response = await call({ status: "작업 예정" });
+    expect(response.status).toBe(200);
+  });
+
+  it("rejects moving backward", async () => {
+    mocks.findUnique.mockResolvedValue({
+      id: "request-1",
+      status: "작업 예정",
+      partnerId: "partner-1",
+      partnerStaffId: null,
+    });
+
+    const response = await call({ status: "확인 중" });
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe("이 상태로는 변경할 수 없습니다.");
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects any change out of a terminal status (작업 완료)", async () => {
+    mocks.findUnique.mockResolvedValue({
+      id: "request-1",
+      status: "작업 완료",
+      partnerId: "partner-1",
+      partnerStaffId: null,
+    });
+
+    const response = await call({ status: "취소", reason: "요청 실수" });
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe("이 상태로는 변경할 수 없습니다.");
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("returns 429 when rate limited", async () => {
+    mocks.checkRateLimit.mockResolvedValue({ ok: false, retryAfterSeconds: 60 });
+
+    const response = await call({ status: "확인 중" });
+
+    expect(response.status).toBe(429);
+    expect(mocks.transaction).not.toHaveBeenCalled();
   });
 
   it("runs inside a Serializable transaction", async () => {

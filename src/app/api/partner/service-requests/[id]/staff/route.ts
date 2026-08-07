@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { isPartnerStaff } from "@/lib/partnerAuth";
+import { getActiveMembership, evaluateStaffAssignmentAccess } from "@/lib/partnerAuth";
+import { checkRateLimit, formatRetryAfter } from "@/lib/rateLimit";
 
 const updateSchema = z.object({
   partnerStaffId: z.string().min(1).nullable(),
@@ -14,8 +15,17 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user || !isPartnerStaff(user)) {
+  const membership = user ? await getActiveMembership(user) : null;
+  if (!user || !membership) {
     return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+  }
+
+  const limit = await checkRateLimit("partnerRequestStaff", user.id);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: `요청이 너무 많습니다. ${formatRetryAfter(limit.retryAfterSeconds)} 후에 다시 시도해주세요.` },
+      { status: 429 },
+    );
   }
 
   const body = await request.json().catch(() => null);
@@ -30,7 +40,9 @@ export async function PATCH(
   const { id } = await params;
   const { partnerStaffId } = parsed.data;
 
-  let result: { error: "notfound" | "notfound-staff" | "staff-blocked" | "same" | null };
+  let result: {
+    error: "notfound" | "forbidden" | "notfound-staff" | "staff-blocked" | "same" | null;
+  };
   try {
     result = await prisma.$transaction(
       async (tx) => {
@@ -38,9 +50,10 @@ export async function PATCH(
           where: { id },
           select: { id: true, partnerId: true, partnerStaffId: true },
         });
-        if (!existing || existing.partnerId !== user.partnerId) {
-          return { error: "notfound" as const };
-        }
+        if (!existing) return { error: "notfound" as const };
+        // 담당자 배정은 OWNER/MANAGER만 가능하다 — 담당 STAFF 본인도 불가.
+        const permission = evaluateStaffAssignmentAccess(membership, user.id, existing);
+        if (!permission.ok) return { error: permission.reason };
         if (existing.partnerStaffId === partnerStaffId) {
           return { error: "same" as const };
         }
@@ -76,6 +89,7 @@ export async function PATCH(
             actorEmail: user.email,
             actorName: user.name,
             actorRole: "PARTNER",
+            partnerId: user.partnerId,
           },
         });
         return { error: null };
@@ -94,6 +108,9 @@ export async function PATCH(
       { error: "요청을 찾을 수 없습니다." },
       { status: 404 },
     );
+  }
+  if (result.error === "forbidden") {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
   }
   if (result.error === "notfound-staff") {
     return NextResponse.json(

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { isPartnerStaff } from "@/lib/partnerAuth";
+import { getActiveMembership, evaluateServiceRequestWriteAccess } from "@/lib/partnerAuth";
+import { checkRateLimit, formatRetryAfter } from "@/lib/rateLimit";
 import { isQuoteMutableStatus } from "@/lib/serviceRequestQuotes";
 
 /** 업체 포털 — 미선택 견적만 삭제 가능. 고객이 선택한 견적, 잠긴 상태의 요청은 거부. */
@@ -10,22 +11,33 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; quoteId: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user || !isPartnerStaff(user)) {
+  const membership = user ? await getActiveMembership(user) : null;
+  if (!user || !membership) {
     return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+  }
+
+  const limit = await checkRateLimit("partnerRequestQuote", user.id);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: `요청이 너무 많습니다. ${formatRetryAfter(limit.retryAfterSeconds)} 후에 다시 시도해주세요.` },
+      { status: 429 },
+    );
   }
 
   const { id, quoteId } = await params;
 
-  let result: { error: "notfound" | "locked" | "quote-notfound" | "selected" | null };
+  let result: {
+    error: "notfound" | "forbidden" | "locked" | "quote-notfound" | "selected" | null;
+  };
   try {
     result = await prisma.$transaction(async (tx) => {
       const existing = await tx.serviceRequest.findUnique({
         where: { id },
-        select: { id: true, partnerId: true, status: true, selectedQuoteId: true },
+        select: { id: true, partnerId: true, partnerStaffId: true, status: true, selectedQuoteId: true },
       });
-      if (!existing || existing.partnerId !== user.partnerId) {
-        return { error: "notfound" as const };
-      }
+      if (!existing) return { error: "notfound" as const };
+      const permission = evaluateServiceRequestWriteAccess(membership, user.id, existing);
+      if (!permission.ok) return { error: permission.reason };
       if (!isQuoteMutableStatus(existing.status)) {
         return { error: "locked" as const };
       }
@@ -51,6 +63,7 @@ export async function DELETE(
           actorEmail: user.email,
           actorName: user.name,
           actorRole: "PARTNER",
+          partnerId: user.partnerId,
         },
       });
       return { error: null };
@@ -64,6 +77,9 @@ export async function DELETE(
 
   if (result.error === "notfound") {
     return NextResponse.json({ error: "요청을 찾을 수 없습니다." }, { status: 404 });
+  }
+  if (result.error === "forbidden") {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
   }
   if (result.error === "locked") {
     return NextResponse.json({ error: "이 상태에서는 견적을 삭제할 수 없습니다." }, { status: 400 });

@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   activityCreate: vi.fn(),
   transaction: vi.fn(),
   notifyServiceRequestCustomer: vi.fn(),
+  membershipFindFirst: vi.fn(),
+  checkRateLimit: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -17,6 +19,7 @@ vi.mock("@/lib/prisma", () => ({
     serviceRequest: { findUnique: mocks.findUnique },
     serviceRequestQuote: { create: mocks.quoteCreate },
     serviceRequestActivity: { create: mocks.activityCreate },
+    partnerMembership: { findFirst: mocks.membershipFindFirst },
     $transaction: mocks.transaction,
   },
 }));
@@ -26,6 +29,10 @@ vi.mock("@/lib/email", () => ({
 }));
 vi.mock("@/lib/appUrl", () => ({
   getAppUrl: () => "https://app.example.com",
+}));
+vi.mock("@/lib/rateLimit", () => ({
+  checkRateLimit: mocks.checkRateLimit,
+  formatRetryAfter: vi.fn(() => "1분"),
 }));
 
 import { POST } from "@/app/api/partner/service-requests/[id]/quotes/route";
@@ -48,13 +55,21 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
       name: "김직원",
       memberType: "PARTNER",
       partnerId: "partner-1",
+      status: "ACTIVE",
     });
     mocks.findUnique.mockResolvedValue({
       id: "request-1",
       partnerId: "partner-1",
+      partnerStaffId: null,
       status: "신규",
       serviceType: "이사",
       project: { id: "project-1", user: { email: "customer@example.com", name: "고객" } },
+    });
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "OWNER",
+      partner: { active: true },
     });
     mocks.quoteCreate.mockResolvedValue({
       id: "quote-1",
@@ -65,6 +80,7 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
     });
     mocks.activityCreate.mockResolvedValue({});
     mocks.notifyServiceRequestCustomer.mockResolvedValue(undefined);
+    mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         serviceRequest: { findUnique: mocks.findUnique },
@@ -123,6 +139,40 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
     expect(response.status).toBe(404);
   });
 
+  it("rejects a VIEWER with 403", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "VIEWER",
+      partner: { active: true },
+    });
+
+    const response = await call({ title: "기본형", amount: 500000 });
+    expect(response.status).toBe(403);
+    expect(mocks.quoteCreate).not.toHaveBeenCalled();
+  });
+
+  it("hides an unassigned STAFF's access as 404 (not their request)", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "STAFF",
+      partner: { active: true },
+    });
+    mocks.findUnique.mockResolvedValue({
+      id: "request-1",
+      partnerId: "partner-1",
+      partnerStaffId: "someone-else",
+      status: "신규",
+      serviceType: "이사",
+      project: { id: "project-1", user: { email: "customer@example.com", name: "고객" } },
+    });
+
+    const response = await call({ title: "기본형", amount: 500000 });
+    expect(response.status).toBe(404);
+    expect(mocks.quoteCreate).not.toHaveBeenCalled();
+  });
+
   it("blocks adding a quote once the status is locked", async () => {
     mocks.findUnique.mockResolvedValue({
       id: "request-1",
@@ -138,6 +188,15 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
     expect(response.status).toBe(400);
     expect(data.error).toBe("이 상태에서는 새 견적을 등록할 수 없습니다.");
     expect(mocks.quoteCreate).not.toHaveBeenCalled();
+  });
+
+  it("returns 429 when rate limited", async () => {
+    mocks.checkRateLimit.mockResolvedValue({ ok: false, retryAfterSeconds: 60 });
+
+    const response = await call({ title: "기본형", amount: 500000 });
+
+    expect(response.status).toBe(429);
+    expect(mocks.transaction).not.toHaveBeenCalled();
   });
 
   it("creates a quote and logs a QUOTE_ADDED activity", async () => {
@@ -161,6 +220,7 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
         action: "QUOTE_ADDED",
         changes: { quoteId: "quote-1", title: "기본형", amount: 500000 },
         actorRole: "PARTNER",
+        partnerId: "partner-1",
       }),
     });
   });

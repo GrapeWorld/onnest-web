@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   requestFindUnique: vi.fn(),
   activityCreate: vi.fn(),
+  membershipFindFirst: vi.fn(),
+  checkRateLimit: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -13,7 +15,12 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     serviceRequest: { findUnique: mocks.requestFindUnique },
     serviceRequestActivity: { create: mocks.activityCreate },
+    partnerMembership: { findFirst: mocks.membershipFindFirst },
   },
+}));
+vi.mock("@/lib/rateLimit", () => ({
+  checkRateLimit: mocks.checkRateLimit,
+  formatRetryAfter: vi.fn(() => "1분"),
 }));
 
 import { POST } from "@/app/api/partner/service-requests/[id]/notes/route";
@@ -36,9 +43,21 @@ describe("POST /api/partner/service-requests/[id]/notes", () => {
       name: "김직원",
       memberType: "PARTNER",
       partnerId: "partner-1",
+      status: "ACTIVE",
     });
-    mocks.requestFindUnique.mockResolvedValue({ id: "request-1", partnerId: "partner-1" });
+    mocks.requestFindUnique.mockResolvedValue({
+      id: "request-1",
+      partnerId: "partner-1",
+      partnerStaffId: null,
+    });
     mocks.activityCreate.mockResolvedValue({ id: "activity-1" });
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "OWNER",
+      partner: { active: true },
+    });
+    mocks.checkRateLimit.mockResolvedValue({ ok: true });
   });
 
   it("rejects a non-partner member with 403", async () => {
@@ -56,10 +75,71 @@ describe("POST /api/partner/service-requests/[id]/notes", () => {
   });
 
   it("returns 404 for a request belonging to a different partner", async () => {
-    mocks.requestFindUnique.mockResolvedValue({ id: "request-1", partnerId: "other-partner" });
+    mocks.requestFindUnique.mockResolvedValue({
+      id: "request-1",
+      partnerId: "other-partner",
+      partnerStaffId: null,
+    });
 
     const response = await call({ body: "메모" });
     expect(response.status).toBe(404);
+  });
+
+  it("rejects a VIEWER with 403", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "VIEWER",
+      partner: { active: true },
+    });
+
+    const response = await call({ body: "메모" });
+    expect(response.status).toBe(403);
+    expect(mocks.activityCreate).not.toHaveBeenCalled();
+  });
+
+  it("hides an unassigned STAFF's access as 404 (not their request)", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "STAFF",
+      partner: { active: true },
+    });
+    mocks.requestFindUnique.mockResolvedValue({
+      id: "request-1",
+      partnerId: "partner-1",
+      partnerStaffId: "someone-else",
+    });
+
+    const response = await call({ body: "메모" });
+    expect(response.status).toBe(404);
+    expect(mocks.activityCreate).not.toHaveBeenCalled();
+  });
+
+  it("allows an assigned STAFF to write a note", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "STAFF",
+      partner: { active: true },
+    });
+    mocks.requestFindUnique.mockResolvedValue({
+      id: "request-1",
+      partnerId: "partner-1",
+      partnerStaffId: "staff-1",
+    });
+
+    const response = await call({ body: "메모" });
+    expect(response.status).toBe(201);
+  });
+
+  it("returns 429 when rate limited", async () => {
+    mocks.checkRateLimit.mockResolvedValue({ ok: false, retryAfterSeconds: 60 });
+
+    const response = await call({ body: "메모" });
+
+    expect(response.status).toBe(429);
+    expect(mocks.activityCreate).not.toHaveBeenCalled();
   });
 
   it("creates a NOTE_ADDED activity with actorRole PARTNER", async () => {
@@ -75,6 +155,7 @@ describe("POST /api/partner/service-requests/[id]/notes", () => {
         actorEmail: "staff@partner.example.com",
         actorName: "김직원",
         actorRole: "PARTNER",
+        partnerId: "partner-1",
       },
     });
   });

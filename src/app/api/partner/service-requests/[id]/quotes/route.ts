@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { isPartnerStaff } from "@/lib/partnerAuth";
+import { getActiveMembership, evaluateServiceRequestWriteAccess } from "@/lib/partnerAuth";
+import { checkRateLimit, formatRetryAfter } from "@/lib/rateLimit";
 import { isQuoteMutableStatus } from "@/lib/serviceRequestQuotes";
 import { escapeHtml, notifyServiceRequestCustomer } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
@@ -23,8 +24,17 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user || !isPartnerStaff(user)) {
+  const membership = user ? await getActiveMembership(user) : null;
+  if (!user || !membership) {
     return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
+  }
+
+  const limit = await checkRateLimit("partnerRequestQuote", user.id);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: `요청이 너무 많습니다. ${formatRetryAfter(limit.retryAfterSeconds)} 후에 다시 시도해주세요.` },
+      { status: 429 },
+    );
   }
 
   const body = await request.json().catch(() => null);
@@ -39,7 +49,7 @@ export async function POST(
   const { id } = await params;
 
   let result: {
-    error: "notfound" | "locked" | null;
+    error: "notfound" | "forbidden" | "locked" | null;
     success?: {
       quote: { id: string; title: string; description: string | null; amount: number; createdAt: Date };
       customer: { email: string; name: string } | null;
@@ -54,14 +64,15 @@ export async function POST(
         select: {
           id: true,
           partnerId: true,
+          partnerStaffId: true,
           status: true,
           serviceType: true,
           project: { select: { id: true, user: { select: { email: true, name: true } } } },
         },
       });
-      if (!existing || existing.partnerId !== user.partnerId) {
-        return { error: "notfound" as const };
-      }
+      if (!existing) return { error: "notfound" as const };
+      const permission = evaluateServiceRequestWriteAccess(membership, user.id, existing);
+      if (!permission.ok) return { error: permission.reason };
       if (!isQuoteMutableStatus(existing.status)) {
         return { error: "locked" as const };
       }
@@ -86,6 +97,7 @@ export async function POST(
           actorEmail: user.email,
           actorName: user.name,
           actorRole: "PARTNER",
+          partnerId: user.partnerId,
         },
       });
       return {
@@ -107,6 +119,9 @@ export async function POST(
 
   if (result.error === "notfound") {
     return NextResponse.json({ error: "요청을 찾을 수 없습니다." }, { status: 404 });
+  }
+  if (result.error === "forbidden") {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
   }
   if (result.error === "locked") {
     return NextResponse.json(

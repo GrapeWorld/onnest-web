@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   quoteDelete: vi.fn(),
   activityCreate: vi.fn(),
   transaction: vi.fn(),
+  membershipFindFirst: vi.fn(),
+  checkRateLimit: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -17,8 +19,13 @@ vi.mock("@/lib/prisma", () => ({
     serviceRequest: { findUnique: mocks.findUnique },
     serviceRequestQuote: { findFirst: mocks.quoteFindFirst, delete: mocks.quoteDelete },
     serviceRequestActivity: { create: mocks.activityCreate },
+    partnerMembership: { findFirst: mocks.membershipFindFirst },
     $transaction: mocks.transaction,
   },
+}));
+vi.mock("@/lib/rateLimit", () => ({
+  checkRateLimit: mocks.checkRateLimit,
+  formatRetryAfter: vi.fn(() => "1분"),
 }));
 
 import { DELETE } from "@/app/api/partner/service-requests/[id]/quotes/[quoteId]/route";
@@ -40,16 +47,25 @@ describe("DELETE /api/partner/service-requests/[id]/quotes/[quoteId]", () => {
       name: "김직원",
       memberType: "PARTNER",
       partnerId: "partner-1",
+      status: "ACTIVE",
     });
     mocks.findUnique.mockResolvedValue({
       id: "request-1",
       partnerId: "partner-1",
+      partnerStaffId: null,
       status: "신규",
       selectedQuoteId: null,
+    });
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "OWNER",
+      partner: { active: true },
     });
     mocks.quoteFindFirst.mockResolvedValue({ id: "quote-1", title: "기본형", amount: 500000 });
     mocks.quoteDelete.mockResolvedValue({});
     mocks.activityCreate.mockResolvedValue({});
+    mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         serviceRequest: { findUnique: mocks.findUnique },
@@ -71,12 +87,46 @@ describe("DELETE /api/partner/service-requests/[id]/quotes/[quoteId]", () => {
     mocks.findUnique.mockResolvedValue({
       id: "request-1",
       partnerId: "other-partner",
+      partnerStaffId: null,
       status: "신규",
       selectedQuoteId: null,
     });
 
     const response = await call();
     expect(response.status).toBe(404);
+  });
+
+  it("rejects a VIEWER with 403", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "VIEWER",
+      partner: { active: true },
+    });
+
+    const response = await call();
+    expect(response.status).toBe(403);
+    expect(mocks.quoteDelete).not.toHaveBeenCalled();
+  });
+
+  it("hides an unassigned STAFF's access as 404 (not their request)", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "STAFF",
+      partner: { active: true },
+    });
+    mocks.findUnique.mockResolvedValue({
+      id: "request-1",
+      partnerId: "partner-1",
+      partnerStaffId: "someone-else",
+      status: "신규",
+      selectedQuoteId: null,
+    });
+
+    const response = await call();
+    expect(response.status).toBe(404);
+    expect(mocks.quoteDelete).not.toHaveBeenCalled();
   });
 
   it("blocks deleting once the status is locked", async () => {
@@ -121,6 +171,15 @@ describe("DELETE /api/partner/service-requests/[id]/quotes/[quoteId]", () => {
     expect(mocks.quoteDelete).not.toHaveBeenCalled();
   });
 
+  it("returns 429 when rate limited", async () => {
+    mocks.checkRateLimit.mockResolvedValue({ ok: false, retryAfterSeconds: 60 });
+
+    const response = await call();
+
+    expect(response.status).toBe(429);
+    expect(mocks.transaction).not.toHaveBeenCalled();
+  });
+
   it("deletes an unselected quote and logs a QUOTE_REMOVED activity", async () => {
     const response = await call();
 
@@ -132,6 +191,7 @@ describe("DELETE /api/partner/service-requests/[id]/quotes/[quoteId]", () => {
         action: "QUOTE_REMOVED",
         changes: { quoteId: "quote-1", title: "기본형", amount: 500000 },
         actorRole: "PARTNER",
+        partnerId: "partner-1",
       }),
     });
   });

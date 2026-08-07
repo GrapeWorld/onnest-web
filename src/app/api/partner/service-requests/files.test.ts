@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   isStorageConfigured: vi.fn(),
   putProjectFile: vi.fn(),
   deleteProjectFile: vi.fn(),
+  membershipFindFirst: vi.fn(),
+  checkRateLimit: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ getCurrentUser: mocks.getCurrentUser }));
@@ -14,12 +16,17 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     serviceRequest: { findUnique: mocks.requestFindUnique },
     document: { create: mocks.documentCreate },
+    partnerMembership: { findFirst: mocks.membershipFindFirst },
   },
 }));
 vi.mock("@/lib/storage", () => ({
   isStorageConfigured: mocks.isStorageConfigured,
   putProjectFile: mocks.putProjectFile,
   deleteProjectFile: mocks.deleteProjectFile,
+}));
+vi.mock("@/lib/rateLimit", () => ({
+  checkRateLimit: mocks.checkRateLimit,
+  formatRetryAfter: vi.fn(() => "1분"),
 }));
 
 import { POST } from "@/app/api/partner/service-requests/[id]/files/route";
@@ -48,12 +55,21 @@ describe("POST /api/partner/service-requests/[id]/files", () => {
       name: "김직원",
       memberType: "PARTNER",
       partnerId: "partner-1",
+      status: "ACTIVE",
     });
     mocks.requestFindUnique.mockResolvedValue({
       id: "request-1",
       partnerId: "partner-1",
+      partnerStaffId: null,
       projectId: "project-1",
     });
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "OWNER",
+      partner: { active: true },
+    });
+    mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.isStorageConfigured.mockReturnValue(true);
     mocks.putProjectFile.mockResolvedValue({ storageKey: "private-key" });
     mocks.deleteProjectFile.mockResolvedValue(undefined);
@@ -79,6 +95,7 @@ describe("POST /api/partner/service-requests/[id]/files", () => {
     mocks.requestFindUnique.mockResolvedValue({
       id: "request-1",
       partnerId: "other-partner",
+      partnerStaffId: null,
       projectId: "project-1",
     });
 
@@ -86,6 +103,52 @@ describe("POST /api/partner/service-requests/[id]/files", () => {
     const response = await call(file, "QUOTE");
 
     expect(response.status).toBe(404);
+    expect(mocks.putProjectFile).not.toHaveBeenCalled();
+  });
+
+  it("rejects a VIEWER with 403", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "VIEWER",
+      partner: { active: true },
+    });
+
+    const file = new File([pdfBytes], "quote.pdf", { type: "application/pdf" });
+    const response = await call(file, "QUOTE");
+
+    expect(response.status).toBe(403);
+    expect(mocks.putProjectFile).not.toHaveBeenCalled();
+  });
+
+  it("hides an unassigned STAFF's access as 404 (not their request)", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "STAFF",
+      partner: { active: true },
+    });
+    mocks.requestFindUnique.mockResolvedValue({
+      id: "request-1",
+      partnerId: "partner-1",
+      partnerStaffId: "someone-else",
+      projectId: "project-1",
+    });
+
+    const file = new File([pdfBytes], "quote.pdf", { type: "application/pdf" });
+    const response = await call(file, "QUOTE");
+
+    expect(response.status).toBe(404);
+    expect(mocks.putProjectFile).not.toHaveBeenCalled();
+  });
+
+  it("returns 429 when rate limited", async () => {
+    mocks.checkRateLimit.mockResolvedValue({ ok: false, retryAfterSeconds: 60 });
+
+    const file = new File([pdfBytes], "quote.pdf", { type: "application/pdf" });
+    const response = await call(file, "QUOTE");
+
+    expect(response.status).toBe(429);
     expect(mocks.putProjectFile).not.toHaveBeenCalled();
   });
 
@@ -120,6 +183,7 @@ describe("POST /api/partner/service-requests/[id]/files", () => {
           uploadedByRole: "PARTNER",
           uploadedById: "staff-1",
           uploadedByName: "김직원",
+          partnerId: "partner-1",
         }),
       }),
     );

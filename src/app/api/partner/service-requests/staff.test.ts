@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   userFindUnique: vi.fn(),
   activityCreate: vi.fn(),
   transaction: vi.fn(),
+  membershipFindFirst: vi.fn(),
+  checkRateLimit: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -17,8 +19,13 @@ vi.mock("@/lib/prisma", () => ({
     serviceRequest: { findUnique: mocks.requestFindUnique, update: mocks.requestUpdate },
     user: { findUnique: mocks.userFindUnique },
     serviceRequestActivity: { create: mocks.activityCreate },
+    partnerMembership: { findFirst: mocks.membershipFindFirst },
     $transaction: mocks.transaction,
   },
+}));
+vi.mock("@/lib/rateLimit", () => ({
+  checkRateLimit: mocks.checkRateLimit,
+  formatRetryAfter: vi.fn(() => "1분"),
 }));
 
 import { PATCH } from "@/app/api/partner/service-requests/[id]/staff/route";
@@ -41,11 +48,18 @@ describe("PATCH /api/partner/service-requests/[id]/staff", () => {
       name: "김직원",
       memberType: "PARTNER",
       partnerId: "partner-1",
+      status: "ACTIVE",
     });
     mocks.requestFindUnique.mockResolvedValue({
       id: "request-1",
       partnerId: "partner-1",
       partnerStaffId: null,
+    });
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "OWNER",
+      partner: { active: true },
     });
     mocks.userFindUnique.mockResolvedValue({
       id: "staff-2",
@@ -56,6 +70,7 @@ describe("PATCH /api/partner/service-requests/[id]/staff", () => {
     });
     mocks.requestUpdate.mockResolvedValue({});
     mocks.activityCreate.mockResolvedValue({});
+    mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         serviceRequest: { findUnique: mocks.requestFindUnique, update: mocks.requestUpdate },
@@ -73,6 +88,67 @@ describe("PATCH /api/partner/service-requests/[id]/staff", () => {
     expect(response.status).toBe(403);
   });
 
+  it("rejects a VIEWER with 403", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "VIEWER",
+      partner: { active: true },
+    });
+
+    const response = await call({ partnerStaffId: "staff-2" });
+    expect(response.status).toBe(403);
+    expect(mocks.requestUpdate).not.toHaveBeenCalled();
+  });
+
+  it("rejects a STAFF assigned to the request itself with 403 (staff assignment is OWNER/MANAGER-only)", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "STAFF",
+      partner: { active: true },
+    });
+    mocks.requestFindUnique.mockResolvedValue({
+      id: "request-1",
+      partnerId: "partner-1",
+      partnerStaffId: "staff-1",
+    });
+
+    const response = await call({ partnerStaffId: "staff-2" });
+    expect(response.status).toBe(403);
+    expect(mocks.requestUpdate).not.toHaveBeenCalled();
+  });
+
+  it("hides an unassigned STAFF's access as 404 (not their request)", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "STAFF",
+      partner: { active: true },
+    });
+    mocks.requestFindUnique.mockResolvedValue({
+      id: "request-1",
+      partnerId: "partner-1",
+      partnerStaffId: "someone-else",
+    });
+
+    const response = await call({ partnerStaffId: "staff-2" });
+    expect(response.status).toBe(404);
+    expect(mocks.requestUpdate).not.toHaveBeenCalled();
+  });
+
+  it("allows a MANAGER to assign staff", async () => {
+    mocks.membershipFindFirst.mockResolvedValue({
+      id: "membership-1",
+      partnerId: "partner-1",
+      role: "MANAGER",
+      partner: { active: true },
+    });
+
+    const response = await call({ partnerStaffId: "staff-2" });
+    expect(response.status).toBe(200);
+  });
+
   it("assigns a same-company ACTIVE staff member and records STAFF_ASSIGNED", async () => {
     const response = await call({ partnerStaffId: "staff-2" });
 
@@ -86,6 +162,7 @@ describe("PATCH /api/partner/service-requests/[id]/staff", () => {
         action: "STAFF_ASSIGNED",
         changes: { fromStaffId: null, toStaffId: "staff-2", toStaffName: "이직원" },
         actorRole: "PARTNER",
+        partnerId: "partner-1",
       }),
     });
   });
@@ -161,6 +238,15 @@ describe("PATCH /api/partner/service-requests/[id]/staff", () => {
 
     const response = await call({ partnerStaffId: "staff-2" });
     expect(response.status).toBe(404);
+  });
+
+  it("returns 429 when rate limited", async () => {
+    mocks.checkRateLimit.mockResolvedValue({ ok: false, retryAfterSeconds: 60 });
+
+    const response = await call({ partnerStaffId: "staff-2" });
+
+    expect(response.status).toBe(429);
+    expect(mocks.transaction).not.toHaveBeenCalled();
   });
 
   it("rejects assigning the same staff member again", async () => {

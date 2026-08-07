@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { isPartnerStaff } from "@/lib/partnerAuth";
+import { isPartnerStaff, getServiceRequestWritePermission } from "@/lib/partnerAuth";
+import { checkRateLimit, formatRetryAfter } from "@/lib/rateLimit";
 
 const noteSchema = z.object({
   body: z.string().trim().min(1, "메모 내용을 입력해주세요.").max(2000),
@@ -21,6 +22,14 @@ export async function POST(
     return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
   }
 
+  const limit = await checkRateLimit("partnerRequestNote", user.id);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: `요청이 너무 많습니다. ${formatRetryAfter(limit.retryAfterSeconds)} 후에 다시 시도해주세요.` },
+      { status: 429 },
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = noteSchema.safeParse(body);
   if (!parsed.success) {
@@ -33,12 +42,16 @@ export async function POST(
   const { id } = await params;
   const existing = await prisma.serviceRequest.findUnique({
     where: { id },
-    select: { id: true, partnerId: true },
+    select: { id: true, partnerId: true, partnerStaffId: true },
   });
-  if (!existing || existing.partnerId !== user.partnerId) {
+  if (!existing) {
+    return NextResponse.json({ error: "요청을 찾을 수 없습니다." }, { status: 404 });
+  }
+  const permission = await getServiceRequestWritePermission(user, existing);
+  if (!permission.ok) {
     return NextResponse.json(
-      { error: "요청을 찾을 수 없습니다." },
-      { status: 404 },
+      { error: permission.reason === "forbidden" ? "권한이 없습니다." : "요청을 찾을 수 없습니다." },
+      { status: permission.reason === "forbidden" ? 403 : 404 },
     );
   }
 
@@ -51,6 +64,7 @@ export async function POST(
       actorEmail: user.email,
       actorName: user.name,
       actorRole: "PARTNER",
+      partnerId: user.partnerId,
     },
   });
 
