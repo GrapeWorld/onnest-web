@@ -12,3 +12,6 @@ out/
 
 .claude/settings.local.json
 dev-server.*.log
+
+# Playwright MCP 도구가 남기는 콘솔 로그·스냅샷 스크래치 파일
+.playwright-mcp/

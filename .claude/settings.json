@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(taskkill //PID 24876 //F)",
+      "Bash(npm run *)",
+      "Bash(disown)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:3000 --max-time 2)",
+      "Bash(curl -s \"http://127.0.0.1:3000/_next/static/css/app/layout.css?v=1785598258479\" --max-time 5)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{size_download} bytes\\\\n\" \"http://127.0.0.1:3000/_next/static/media/ff840cfebfb63b0c-s.p.woff2\" --max-time 5)",
+      "Bash(curl -s http://127.0.0.1:3000 -o /tmp/onnest-home2.html --max-time 8)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://127.0.0.1:3000/images/onnest/features/handover.webp\" --max-time 5)"
+    ]
+  }
+}
