@@ -6,7 +6,7 @@ export const createPartnerSchema = z.object({
   serviceType: z.enum(serviceTypes, { error: "서비스 유형을 선택해주세요." }),
   contactName: z.string().trim().max(50).optional().or(z.literal("")),
   contactPhone: z.string().trim().max(30).optional().or(z.literal("")),
-  memo: z.string().trim().max(500).optional().or(z.literal("")),
+  adminMemo: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
 export const updatePartnerSchema = z.object({
@@ -14,6 +14,6 @@ export const updatePartnerSchema = z.object({
   serviceType: z.enum(serviceTypes).optional(),
   contactName: z.string().trim().max(50).optional().or(z.literal("")),
   contactPhone: z.string().trim().max(30).optional().or(z.literal("")),
-  memo: z.string().trim().max(500).optional().or(z.literal("")),
+  adminMemo: z.string().trim().max(500).optional().or(z.literal("")),
   active: z.boolean().optional(),
 });

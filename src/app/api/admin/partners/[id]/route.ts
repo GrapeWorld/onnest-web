@@ -50,14 +50,14 @@ export async function PATCH(
     );
   }
 
-  const { contactName, contactPhone, memo, ...rest } = parsed.data;
+  const { contactName, contactPhone, adminMemo, ...rest } = parsed.data;
   const partner = await prisma.partner.update({
     where: { id },
     data: {
       ...rest,
       ...(contactName !== undefined && { contactName: contactName || null }),
       ...(contactPhone !== undefined && { contactPhone: contactPhone || null }),
-      ...(memo !== undefined && { memo: memo || null }),
+      ...(adminMemo !== undefined && { adminMemo: adminMemo || null }),
     },
   });
 

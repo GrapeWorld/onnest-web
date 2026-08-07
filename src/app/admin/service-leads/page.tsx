@@ -219,6 +219,7 @@ export default async function AdminServiceLeadsPage({
                           (partner) => partner.serviceType === request.serviceType,
                         )}
                         currentAdminEmail={currentAdmin?.email ?? ""}
+                        privacyAgreed={Boolean(request.privacyAgreedAt)}
                       />
                     ) : (
                       <>

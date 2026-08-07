@@ -13,6 +13,7 @@ export function ServiceRequestUpdateForm({
   partnerId,
   partnerOptions,
   currentAdminEmail,
+  privacyAgreed,
 }: {
   requestId: string;
   status: string;
@@ -20,6 +21,7 @@ export function ServiceRequestUpdateForm({
   partnerId: string | null;
   partnerOptions: { id: string; name: string }[];
   currentAdminEmail: string;
+  privacyAgreed: boolean;
 }) {
   const router = useRouter();
   const [statusValue, setStatusValue] = useState(status);
@@ -75,7 +77,7 @@ export function ServiceRequestUpdateForm({
       <select
         value={partnerValue}
         onChange={(event) => setPartnerValue(event.target.value)}
-        disabled={saving}
+        disabled={saving || !privacyAgreed}
         aria-label="담당 업체 배정"
         className="rounded-full border border-forest/15 bg-white px-4 py-2 text-sm font-semibold text-forest outline-none focus:border-forest disabled:opacity-60"
       >
@@ -86,6 +88,11 @@ export function ServiceRequestUpdateForm({
           </option>
         ))}
       </select>
+      {!privacyAgreed && (
+        <p className="text-xs text-ink/45">
+          고객이 개인정보 제공에 동의하지 않아 업체 배정이 막혀 있습니다.
+        </p>
+      )}
 
       <div className="flex gap-2">
         <input

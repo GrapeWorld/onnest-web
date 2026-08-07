@@ -3,10 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { deleteProjectFile, readProjectFile } from "@/lib/storage";
 
-/** 소유자만 조회할 수 있는 문서를 찾는다. */
+/**
+ * 소유자만 조회할 수 있는 문서를 찾는다. 일반 프로젝트 문서함 파일
+ * (uploadedByRole: "CUSTOMER", 고객 본인이 올린 것)만 대상이다 — 파트너가
+ * 서비스 신청에 올린 내부 파일(견적서·계약서·현장사진)은 여기서 제외해야
+ * 한다. 안 그러면 프로젝트 소유자라는 이유만으로 파트너 내부 파일을
+ * 조회·삭제할 수 있게 된다.
+ */
 function findOwnedDocument(docId: string, projectId: string, userId: string) {
   return prisma.document.findFirst({
-    where: { id: docId, projectId, project: { userId } },
+    where: { id: docId, projectId, project: { userId }, uploadedByRole: "CUSTOMER" },
   });
 }
 

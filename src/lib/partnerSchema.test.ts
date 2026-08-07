@@ -32,7 +32,7 @@ describe("createPartnerSchema", () => {
       serviceType: "입주청소",
       contactName: "김담당",
       contactPhone: "010-1234-5678",
-      memo: "주말 가능",
+      adminMemo: "주말 가능",
     });
     expect(result.success).toBe(true);
   });

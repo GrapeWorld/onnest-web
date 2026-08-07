@@ -20,6 +20,9 @@ export default async function DocumentsPage({
     where: { id, userId: user.id },
     include: {
       documents: {
+        // 파트너가 서비스 신청에 올린 내부 파일은 고객 본인의 문서함에
+        // 보이면 안 된다 — 일반 문서함 파일(고객 본인 업로드)만 보여준다.
+        where: { uploadedByRole: "CUSTOMER" },
         orderBy: { createdAt: "desc" },
         // url은 민감하므로 클라이언트로 내려보내지 않는다.
         select: {

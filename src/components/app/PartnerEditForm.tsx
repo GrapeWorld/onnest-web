@@ -10,7 +10,7 @@ export function PartnerEditForm({
   serviceType,
   contactName,
   contactPhone,
-  memo,
+  adminMemo,
   assignedCount,
 }: {
   partnerId: string;
@@ -18,7 +18,7 @@ export function PartnerEditForm({
   serviceType: string;
   contactName: string | null;
   contactPhone: string | null;
-  memo: string | null;
+  adminMemo: string | null;
   assignedCount: number;
 }) {
   const router = useRouter();
@@ -29,7 +29,7 @@ export function PartnerEditForm({
   );
   const [contactNameValue, setContactNameValue] = useState(contactName ?? "");
   const [contactPhoneValue, setContactPhoneValue] = useState(contactPhone ?? "");
-  const [memoValue, setMemoValue] = useState(memo ?? "");
+  const [memoValue, setMemoValue] = useState(adminMemo ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +40,7 @@ export function PartnerEditForm({
     setServiceTypeValue(serviceType as ServiceType);
     setContactNameValue(contactName ?? "");
     setContactPhoneValue(contactPhone ?? "");
-    setMemoValue(memo ?? "");
+    setMemoValue(adminMemo ?? "");
   }
 
   async function handleSave() {
@@ -57,7 +57,7 @@ export function PartnerEditForm({
           serviceType: serviceTypeValue,
           contactName: contactNameValue,
           contactPhone: contactPhoneValue,
-          memo: memoValue,
+          adminMemo: memoValue,
         }),
       });
 
@@ -96,7 +96,7 @@ export function PartnerEditForm({
           {contactName ?? "담당자 미등록"}
           {contactPhone && ` · ${contactPhone}`}
         </p>
-        {memo && <p className="mt-1 text-xs text-ink/50">{memo}</p>}
+        {adminMemo && <p className="mt-1 text-xs text-ink/50">{adminMemo}</p>}
       </div>
     );
   }

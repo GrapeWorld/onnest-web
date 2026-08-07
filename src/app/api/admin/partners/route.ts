@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { createPartnerSchema } from "@/lib/partnerSchema";
+import { generatePartnerCode } from "@/lib/partnerCode";
 
 export async function POST(request: Request) {
   const admin = await getCurrentUser();
@@ -18,14 +19,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const { name, serviceType, contactName, contactPhone, memo } = parsed.data;
+  const { name, serviceType, contactName, contactPhone, adminMemo } = parsed.data;
   const partner = await prisma.partner.create({
     data: {
       name,
       serviceType,
       contactName: contactName || null,
       contactPhone: contactPhone || null,
-      memo: memo || null,
+      adminMemo: adminMemo || null,
+      partnerCode: generatePartnerCode(),
     },
   });
 

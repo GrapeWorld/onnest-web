@@ -24,7 +24,7 @@ export default async function AdminPartnersPage() {
       serviceType: true,
       contactName: true,
       contactPhone: true,
-      memo: true,
+      adminMemo: true,
       active: true,
       _count: { select: { requests: true } },
     },
@@ -76,7 +76,7 @@ export default async function AdminPartnersPage() {
                           serviceType={partner.serviceType}
                           contactName={partner.contactName}
                           contactPhone={partner.contactPhone}
-                          memo={partner.memo}
+                          adminMemo={partner.adminMemo}
                           assignedCount={partner._count.requests}
                         />
                       ) : (
@@ -86,8 +86,8 @@ export default async function AdminPartnersPage() {
                             {partner.contactName ?? "담당자 미등록"}
                             {partner.contactPhone && ` · ${partner.contactPhone}`}
                           </p>
-                          {partner.memo && (
-                            <p className="mt-1 text-xs text-ink/50">{partner.memo}</p>
+                          {partner.adminMemo && (
+                            <p className="mt-1 text-xs text-ink/50">{partner.adminMemo}</p>
                           )}
                         </div>
                       )}
