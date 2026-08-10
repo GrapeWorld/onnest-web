@@ -56,7 +56,7 @@ export default async function CalendarPage({
           프로젝트 홈
         </Button>
         <Button href={`/projects/${project.id}/handover`} variant="secondary">
-          인수인계서
+          생활 정보
         </Button>
       </div>
 

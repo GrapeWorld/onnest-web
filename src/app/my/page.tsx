@@ -62,18 +62,77 @@ export default async function MyPage() {
 
   const inquiryCount = await prisma.inquiry.count({ where: { userId: user.id } });
 
+  const activeProject = projects.find((project) => {
+    const done = project.stepStates.filter((s) => s.status === "완료").length;
+    return done < projectSteps.length;
+  });
+
+  const nextAction =
+    projects.length === 0
+      ? {
+          title: "첫 입주 프로젝트를 만들어보세요",
+          description: "관심 있는 집·사무실·공장을 프로젝트로 저장하면 준비 일정과 서비스 연결을 한곳에서 관리할 수 있습니다.",
+          href: "/projects/new",
+          label: "새 프로젝트 만들기",
+        }
+      : activeProject
+        ? {
+            title: `"${activeProject.name}" 준비를 이어가세요`,
+            description: "진행 중인 단계를 확인하고 다음 할 일을 이어서 처리할 수 있습니다.",
+            href: `/projects/${activeProject.id}`,
+            label: "프로젝트 이어서 보기",
+          }
+        : {
+            title: "모든 프로젝트의 준비 단계를 완료했습니다",
+            description: "새로운 공간을 준비 중이라면 프로젝트를 추가로 만들어보세요.",
+            href: "/projects/new",
+            label: "새 프로젝트 만들기",
+          };
+
   return (
     <AppShell
       title="마이페이지"
       description="내 프로젝트, 구독, 리포트, 문의 이력을 확인하는 사용자 대시보드입니다."
     >
-      <div className="mb-6 flex items-center justify-between rounded-[24px] border border-forest/10 bg-white p-5 shadow-card">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-forest/10 bg-white p-5 shadow-card">
         <div>
           <p className="text-sm text-ink/55">{user.email}</p>
-          <p className="text-lg font-bold text-forest">{user.name}님</p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <p className="text-lg font-bold text-forest">{user.name}님</p>
+            <span className="rounded-full bg-cream px-3 py-1 text-xs font-bold text-forest">
+              무료 플랜
+            </span>
+          </div>
         </div>
         <LogoutButton className="rounded-full border border-forest/15 bg-white px-4 py-2 text-sm font-semibold text-forest hover:border-forest/40 hover:shadow-card" />
       </div>
+
+      <div className="mb-6 flex flex-col gap-3 rounded-[24px] bg-forest p-6 text-white shadow-card sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-bold text-mint">다음 할 일</p>
+          <h2 className="mt-1 text-xl font-black">{nextAction.title}</h2>
+          <p className="mt-2 text-sm leading-6 text-white/75">
+            {nextAction.description}
+          </p>
+        </div>
+        <Button href={nextAction.href} className="shrink-0 bg-white text-forest hover:bg-mint">
+          {nextAction.label}
+        </Button>
+      </div>
+
+      {user.memberType === "PARTNER" && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-forest/10 bg-white p-5 shadow-card">
+          <div>
+            <p className="text-sm font-bold text-forest">업체 파트너 계정으로 등록되어 있습니다</p>
+            <p className="mt-1 text-sm text-ink/60">
+              업체로 받은 서비스 요청과 팀 관리는 파트너 포털에서 확인할 수 있습니다.
+            </p>
+          </div>
+          <Button href="/partner" variant="secondary">
+            파트너 포털로 이동
+          </Button>
+        </div>
+      )}
 
       <MetricGrid
         items={[
@@ -81,7 +140,6 @@ export default async function MyPage() {
           ["완료한 단계", `${totalDone}건`],
           ["서비스 신청", `${requests.length}건`],
           ["내 문의", `${inquiryCount}건`],
-          ["구독 상태", "무료"],
         ]}
       />
 

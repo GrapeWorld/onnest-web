@@ -12,13 +12,13 @@ const pretendard = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "ONNEST | 집도 인수인계가 필요합니다",
+  title: "ONNEST | 입주 준비를 프로젝트로 관리하세요",
   description:
-    "온네스트는 우리집 인수인계서에서 시작해 계약부터 입주까지의 과정을 관리하는 주거 전환 플랫폼입니다.",
+    "온네스트는 입주 준비 일정과 필요한 서비스, 생활 정보를 한곳에서 관리하는 주거 전환 플랫폼입니다.",
   openGraph: {
-    title: "ONNEST | 집도 인수인계가 필요합니다",
+    title: "ONNEST | 입주 준비를 프로젝트로 관리하세요",
     description:
-      "계약부터 입주까지 온네스트 하나로. 공간과 생활 경험을 인수인계하는 주거 전환 플랫폼.",
+      "계약부터 입주까지 온네스트 하나로. 일정 관리부터 생활 정보 확인까지 한곳에서 해결하세요.",
     type: "website",
     locale: "ko_KR"
     // TODO: Add /public/og-image.png when the final brand image is ready.

@@ -17,7 +17,7 @@ export default function HandoverPage() {
             description="온네스트의 우리집 인수인계서는 퇴거자 또는 이전 거주자가 다음 입주자를 위해 남기는 생활 정보입니다. 좋다/나쁘다를 평가하는 리뷰가 아니라, 입주 전 미리 알면 좋은 사용 팁과 확인사항을 전달합니다."
           />
           <Card className="mt-8 bg-mint text-xl font-bold text-forest">
-            온네스트는 사람을 평가하지 않습니다. 공간과 생활 경험을 인수인계합니다.
+            온네스트는 사람을 평가하지 않습니다. 공간과 생활 경험을 기록으로 남깁니다.
           </Card>
         </div>
       </section>
@@ -38,7 +38,7 @@ export default function HandoverPage() {
           </div>
         </div>
       </section>
-      <CTASection title="안전한 생활 인수인계 문화를 함께 만듭니다." />
+      <CTASection title="안전한 생활 정보 공유 문화를 함께 만듭니다." />
     </main>
   );
 }

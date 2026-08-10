@@ -13,7 +13,7 @@ import { StepChecklist } from "@/components/app/StepChecklist";
 // 단계마다 다르지 않고 프로젝트 단위로 실제 존재하는 화면들만 연결한다.
 function stepLinks(projectId: string) {
   return [
-    { label: "인수인계서", href: `/projects/${projectId}/handover` },
+    { label: "생활 정보", href: `/projects/${projectId}/handover` },
     { label: "일정", href: `/projects/${projectId}/calendar` },
     { label: "서비스 연결", href: `/projects/${projectId}/services` },
   ];

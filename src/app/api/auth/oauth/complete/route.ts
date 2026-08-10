@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getOAuthSession } from "@/lib/oauth/session";
+import { sanitizeReturnTo } from "@/lib/oauth/returnTo";
 import { getSession } from "@/lib/session";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
@@ -49,6 +50,10 @@ export async function POST(request: Request) {
 
   const { name, phone } = parsed.data;
   const email = profile.email;
+  // 콜백에서 저장해 둔 목적지 — 보호된 페이지에 접근하다 소셜 신규가입으로
+  // 넘어온 경우 가입 완료 후 그 페이지로 돌려보낸다. 세션이 만료됐거나 값이
+  // 없으면 /my로 대체한다(sanitizeReturnTo 기본값).
+  const returnTo = sanitizeReturnTo(oauthSession.returnTo);
 
   try {
     const user = await prisma.$transaction(async (tx) => {
@@ -80,7 +85,7 @@ export async function POST(request: Request) {
     await realSession.save();
 
     return NextResponse.json(
-      { user: { id: user.id, email: user.email, name: user.name } },
+      { user: { id: user.id, email: user.email, name: user.name }, returnTo },
       { status: 201 },
     );
   } catch (error) {

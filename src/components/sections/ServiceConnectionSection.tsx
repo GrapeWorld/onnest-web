@@ -20,7 +20,7 @@ export function ServiceConnectionSection() {
           <FeatureCard
             key={service}
             title={service}
-            description="집 상태, 예산, 입주 일정, 인수인계 정보를 바탕으로 확인할 선택지를 제공합니다."
+            description="집 상태, 예산, 입주 일정, 생활 정보를 바탕으로 확인할 선택지를 제공합니다."
             icon={icons[index]}
           />
         ))}

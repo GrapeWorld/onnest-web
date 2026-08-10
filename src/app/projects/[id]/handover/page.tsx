@@ -55,7 +55,7 @@ export default async function ProjectHandoverPage({
       ) : (
         <Card className="p-10 text-center">
           <p className="font-semibold text-forest">
-            아직 작성된 인수인계서가 없습니다.
+            아직 남긴 생활 정보가 없습니다.
           </p>
           <p className="mt-2 text-sm text-ink/60">
             채광, 환기, 결로처럼 살아보지 않으면 모르는 정보를 남겨보세요.

@@ -13,7 +13,7 @@ export default function PricingPage() {
           <SectionTitle
             eyebrow="Pricing"
             title="생활 정보의 깊이에 따라 선택하세요."
-            description="온네스트는 기본 인수인계 정보는 무료로 제공하고, 더 깊은 생활 정보와 입주 준비 리포트는 구독형 또는 건별 결제 방식으로 제공합니다."
+            description="온네스트는 기본 생활 정보는 무료로 제공하고, 더 깊은 생활 정보와 입주 준비 리포트는 구독형 또는 건별 결제 방식으로 제공합니다."
           />
           <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {pricingPlans.map((plan) => <PricingCard key={plan.name} {...plan} />)}
@@ -50,7 +50,7 @@ export default function PricingPage() {
               </ul>
             </Card>
             <Card className="bg-cream">
-              유료 리포트는 계약 판단이나 안전성 확정이 아니라, 이전 입주자의 생활 인수인계 데이터와 사용자가 확인해야 할 체크포인트를 구조화한 참고 정보입니다. 온네스트는 특정 집의 계약 적합성, 안전성, 보증보험 가능 여부, 주차 가능 여부를 보장하지 않습니다.
+              유료 리포트는 계약 판단이나 안전성 확정이 아니라, 이전 입주자의 생활 정보 데이터와 사용자가 확인해야 할 체크포인트를 구조화한 참고 정보입니다. 온네스트는 특정 집의 계약 적합성, 안전성, 보증보험 가능 여부, 주차 가능 여부를 보장하지 않습니다.
             </Card>
           </div>
         </div>

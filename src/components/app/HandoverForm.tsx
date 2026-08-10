@@ -137,7 +137,7 @@ export function HandoverForm({
         disabled={saving}
         className="inline-flex min-h-11 items-center justify-center rounded-full bg-forest px-5 py-3 text-sm font-semibold text-white shadow-soft transition duration-300 hover:-translate-y-0.5 hover:bg-navy focus-visible:outline focus-visible:outline-4 focus-visible:outline-mint/80 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
       >
-        {saving ? "저장 중..." : "인수인계서 저장"}
+        {saving ? "저장 중..." : "생활 정보 저장"}
       </button>
     </form>
   );

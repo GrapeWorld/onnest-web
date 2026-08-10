@@ -41,7 +41,7 @@ export default async function ProjectPage({
       description={`${project.spaceType} · ${project.address || "주소 미입력"}`}
     >
       <div className="mb-6 flex flex-col gap-3 sm:flex-row">
-        <Button href={`/projects/${project.id}/handover`}>인수인계서</Button>
+        <Button href={`/projects/${project.id}/handover`}>생활 정보</Button>
         <Button href={`/projects/${project.id}/edit`} variant="ghost">
           프로젝트 수정
         </Button>

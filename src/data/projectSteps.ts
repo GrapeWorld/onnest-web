@@ -29,7 +29,7 @@ export const projectSteps: ProjectStep[] = [
     actions: [
       "후보 비교표 보기",
       "방문 일정 잡기",
-      "인수인계서 존재 여부 확인",
+      "이전 이용자의 기록 있는지 확인",
     ],
     note: "온네스트는 매물 계약을 알선하지 않고, 사용자가 확인할 후보 정보를 정리합니다.",
   },
@@ -37,7 +37,7 @@ export const projectSteps: ProjectStep[] = [
     slug: "handover-check",
     number: 2,
     group: "탐색 및 확인",
-    title: "인수인계서 확인",
+    title: "이전 이용자의 기록 확인",
     summary:
       "이전 사용자가 남긴 생활 정보와 입주 전 확인할 체크포인트를 살펴봅니다.",
     pageDescription:
@@ -48,8 +48,8 @@ export const projectSteps: ProjectStep[] = [
       "주차·소음 체감 정보 확인",
       "반려동물 생활 팁 확인",
     ],
-    actions: ["인수인계서 미리보기", "확인 질문 저장", "리포트 보기"],
-    note: "인수인계서는 사람 평가가 아니라 공간과 사용 경험을 전달하는 참고 정보입니다.",
+    actions: ["생활 정보 미리보기", "확인 질문 저장", "리포트 보기"],
+    note: "이 기록은 사람 평가가 아니라 공간과 사용 경험을 전달하는 참고 정보입니다.",
   },
   {
     slug: "visit-check",
@@ -171,7 +171,7 @@ export const projectSteps: ProjectStep[] = [
     summary:
       "제습기, 수납가구, 인터넷, 생활가전 등 필요한 선택지를 집 상태에 맞춰 정리합니다.",
     pageDescription:
-      "특정 상품 강매가 아니라 집 상태, 예산, 거주 형태, 인수인계 정보를 바탕으로 선택지를 정리합니다.",
+      "특정 상품 강매가 아니라 집 상태, 예산, 거주 형태, 생활 정보를 바탕으로 선택지를 정리합니다.",
     checklist: [
       "예산 범위 선택",
       "필요 제품 선택",
@@ -184,19 +184,19 @@ export const projectSteps: ProjectStep[] = [
   {
     slug: "exit-handover",
     number: 10,
-    group: "다음 인수인계",
-    title: "퇴거 시 다음 사용자에게 인수인계",
+    group: "다음 이용자에게 전달",
+    title: "퇴거 시 다음 이용자에게 정보 남기기",
     summary:
       "내가 사용하며 알게 된 생활 정보를 다음 사용자에게 안전하게 남깁니다.",
     pageDescription:
-      "퇴거 시 다음 사용자에게 남길 인수인계서를 준비하는 단계입니다.",
+      "퇴거 시 다음 이용자를 위해 꼭 알아둘 생활 정보를 남기는 단계입니다.",
     checklist: [
       "생활 팁 작성",
       "확인 필요 항목 선택",
       "개인정보/비방 표현 제거",
       "AI 검수 요청",
     ],
-    actions: ["인수인계서 작성", "검수 상태 보기", "리워드 확인"],
+    actions: ["생활 정보 남기기", "검수 상태 보기", "리워드 확인"],
     note: "사람 평가나 단정 표현이 아니라 공간 사용 경험과 확인 항목을 남깁니다.",
   },
 ];

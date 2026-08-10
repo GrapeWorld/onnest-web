@@ -19,7 +19,7 @@ export default function ServicePage() {
               description="온네스트는 부동산 매물 중개 서비스가 아닙니다. 집, 사무실, 공장처럼 실제 사용 전 확인이 필요한 공간의 인수인계서를 기반으로 계약 전후 확인, 공식 채널 연결, 입주·이전 서비스 준비를 하나의 프로젝트로 관리합니다."
             />
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button href="/handover">인수인계서 보기</Button>
+              <Button href="/handover">생활 정보 보기</Button>
               <Button href="/move-in" variant="ghost">입주 프로젝트 보기</Button>
             </div>
           </div>

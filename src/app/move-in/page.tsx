@@ -12,7 +12,7 @@ export default function MoveInPage() {
         <div className="mx-auto max-w-7xl">
           <SectionTitle
             eyebrow="Move-in Project"
-            title="집 후보 저장부터 퇴거 인수인계까지, 하나의 프로젝트로"
+            title="집 후보 저장부터 퇴거 시 정보 남기기까지, 하나의 프로젝트로"
             description="온네스트는 집을 찾는 앱이 아니라, 집을 선택한 뒤 계약부터 실제 입주 완료까지 필요한 절차를 하나의 프로젝트로 관리하는 서비스입니다."
           />
         </div>

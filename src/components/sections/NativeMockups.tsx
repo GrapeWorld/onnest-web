@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/Card";
 export function HandoverFlowMockup() {
   return (
     <Card className="bg-white">
-      <p className="text-sm font-bold text-sage">우리집 인수인계서 미리보기</p>
+      <p className="text-sm font-bold text-sage">이전 이용자의 기록 미리보기</p>
       <h3 className="mt-3 text-2xl font-black text-forest">이전 사용자가 남긴 생활 정보</h3>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         {["채광 좋음", "수납 넉넉", "결로 확인 필요", "야간 주차 확인 필요"].map((item) => (
@@ -51,7 +51,7 @@ export function ReportPreviewMockup() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-bold text-sage">Premium Report</p>
-          <h3 className="mt-2 text-2xl font-black text-forest">인수인계 리포트 예시</h3>
+          <h3 className="mt-2 text-2xl font-black text-forest">생활 정보 리포트 예시</h3>
           <p className="mt-2 text-sm leading-7 text-ink/65">계약 판단이 아닌, 확인할 체크포인트를 구조화한 참고 정보입니다.</p>
         </div>
         <Badge className="bg-mint text-forest">참고 정보</Badge>

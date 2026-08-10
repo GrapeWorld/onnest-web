@@ -1,6 +1,6 @@
 export const moveInTimeline = [
   "집 후보 저장",
-  "우리집 인수인계서 확인",
+  "이전 이용자의 기록 확인",
   "방문 전 체크리스트",
   "계약 안전 체크패스",
   "보증보험 연결",
@@ -8,7 +8,7 @@ export const moveInTimeline = [
   "입주청소·이사짐센터 연결",
   "인터넷·보수·인테리어 연결",
   "렌탈·생활제품 맞춤 추천",
-  "퇴거 시 인수인계"
+  "퇴거 시 정보 남기기"
 ];
 
 export const handoverFlow = [

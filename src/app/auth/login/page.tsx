@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app/AppShell";
 import { Card } from "@/components/ui/Card";
 import { LoginForm } from "@/components/app/LoginForm";
@@ -6,6 +7,8 @@ import { SocialLoginButtons } from "@/components/app/SocialLoginButtons";
 import { oauthProviders } from "@/data/oauthProviders";
 import { isProviderConfigured } from "@/lib/oauth/providers";
 import { getOAuthErrorMessage } from "@/lib/oauth/errors";
+import { getCurrentUser } from "@/lib/auth";
+import { sanitizeReturnTo } from "@/lib/oauth/returnTo";
 
 export default async function LoginPage({
   searchParams,
@@ -13,6 +16,13 @@ export default async function LoginPage({
   searchParams: Promise<{ oauthError?: string; returnTo?: string }>;
 }) {
   const params = await searchParams;
+
+  // 이미 로그인한 사용자가 로그인 화면을 다시 열면 목적지로 바로 보낸다.
+  const currentUser = await getCurrentUser();
+  if (currentUser) {
+    redirect(sanitizeReturnTo(params.returnTo));
+  }
+
   const errorMessage = getOAuthErrorMessage(params.oauthError);
   const configuredProviders = oauthProviders.filter((provider) =>
     isProviderConfigured(provider),

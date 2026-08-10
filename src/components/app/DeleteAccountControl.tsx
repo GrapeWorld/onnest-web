@@ -64,7 +64,7 @@ export function DeleteAccountControl({
       <ul className="mt-4 grid gap-2 text-sm text-ink/70">
         <li className="rounded-2xl bg-cream px-4 py-3">
           입주 프로젝트 {counts.projects}건 (단계 진행 상태, 체크리스트, 일정,
-          서비스 신청, 인수인계서 포함)
+          서비스 신청, 생활 정보 포함)
         </li>
         <li className="rounded-2xl bg-cream px-4 py-3">
           문서함 파일 {counts.documents}건

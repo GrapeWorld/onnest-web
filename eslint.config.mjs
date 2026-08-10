@@ -8,7 +8,10 @@ const config = [
     ignores: [
       ".next/**",
       ".next-dev/**",
+      ".next-e2e/**",
       "out/**",
+      "playwright-report/**",
+      "test-results/**",
       "node_modules/**",
       "src/generated/**",
       "prisma/migrations/**",

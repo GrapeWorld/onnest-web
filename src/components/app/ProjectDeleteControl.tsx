@@ -32,7 +32,7 @@ export function ProjectDeleteControl({
     counts.steps > 0 && `단계 진행 상태 ${counts.steps}건`,
     counts.events > 0 && `일정 ${counts.events}건`,
     counts.requests > 0 && `서비스 신청 ${counts.requests}건`,
-    counts.handover && "인수인계서 1건",
+    counts.handover && "생활 정보 1건",
   ].filter(Boolean) as string[];
 
   async function handleDelete() {

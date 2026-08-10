@@ -1,0 +1,13 @@
+node_modules
+.next
+.next-dev
+.next-e2e
+.git
+.playwright-mcp
+test-results
+playwright-report
+.vitest-postgres-data
+.e2e-postgres-data
+*.tsbuildinfo
+.env.local
+.env.local.vercel-backup

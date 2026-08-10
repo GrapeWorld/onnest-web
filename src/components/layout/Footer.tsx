@@ -1,6 +1,9 @@
 import Link from "next/link";
 
+// 헤더 상단 메뉴에서는 뺐지만 삭제하지 않은 페이지들의 진입 경로.
 const links = [
+  ["생활 정보 기록", "/handover"],
+  ["제휴 문의", "/partners"],
   ["운영 원칙", "/policy/safety"],
   ["인수인계서 정책", "/policy/handover"],
   ["개인정보처리방침", "/privacy"],
@@ -15,7 +18,7 @@ export function Footer() {
         <div>
           <p className="text-2xl font-black">ONNEST</p>
           <p className="mt-4 max-w-xl text-sm leading-7 text-white/70">
-            온네스트는 부동산 계약을 중개하지 않고, 집·사무실·공장 같은 공간의 실제 사용 경험을 인수인계하며 입주와 이전 준비 과정을 관리하는 공간 전환 플랫폼입니다.
+            온네스트는 부동산 계약을 중개하지 않고, 집·사무실·공장 같은 공간의 실제 사용 경험을 기록으로 남기며 입주와 이전 준비 과정을 관리하는 공간 전환 플랫폼입니다.
           </p>
         </div>
         <div className="flex flex-wrap gap-4 text-sm text-white/75">

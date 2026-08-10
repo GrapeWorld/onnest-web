@@ -33,7 +33,7 @@ export const solutionFeatureCards: SolutionFeatureCard[] = [
     id: "handover",
     label: "Pillar",
     title: "우리집 인수인계서",
-    description: "퇴거자 또는 이전 사용자가 남기는 생활·사용 정보. 후기가 아니라 다음 입주자와 이용자를 위한 인수인계입니다.",
+    description: "퇴거자 또는 이전 사용자가 남기는 생활·사용 정보. 후기가 아니라 다음 입주자와 이용자를 위해 남기는 생활 정보입니다.",
     image: "/images/onnest/features/handover.webp",
     alt: "따뜻한 아침 햇살이 드는 아파트 거실에서 이전 거주자가 새 입주자에게 열쇠와 인수인계 자료를 건네는 모습",
     className: "md:col-span-2 lg:col-span-7 lg:row-span-2"
@@ -60,7 +60,7 @@ export const solutionFeatureCards: SolutionFeatureCard[] = [
     id: "move-in-project",
     label: "Pillar",
     title: "입주 프로젝트 관리",
-    description: "집, 사무실, 공장 후보 저장부터 계약, 이전, 청소, 설치, 보수, 퇴거 인수인계까지 하나의 흐름으로 봅니다.",
+    description: "집, 사무실, 공장 후보 저장부터 계약, 이전, 청소, 설치, 보수, 퇴거 시 정보 남기기까지 하나의 흐름으로 봅니다.",
     image: "/images/onnest/features/move-in-project.webp",
     alt: "집 선택부터 계약, 이사, 입주 완료까지 이어지는 흐름을 그린 편집 일러스트",
     className: "md:col-span-2 lg:col-span-6"
@@ -94,6 +94,6 @@ export const projectTools = [
   "현재 단계 카드",
   "체크리스트 패널",
   "자료 보관함",
-  "인수인계서 뷰",
+  "생활 정보 뷰",
   "맞춤 추천 카드"
 ];

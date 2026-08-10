@@ -28,7 +28,7 @@ export function HandoverView({
       )}
 
       <p className="text-sm leading-7 text-ink/55">
-        인수인계서는 사람 평가가 아니라 공간과 사용 경험을 전달하는 참고
+        이 기록은 사람 평가가 아니라 공간과 사용 경험을 전달하는 참고
         정보입니다. 계약 판단은 공식기관 확인이 필요합니다.
       </p>
     </div>
