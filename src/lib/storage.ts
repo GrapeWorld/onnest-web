@@ -49,6 +49,30 @@ export async function putProjectFile(
   return { storageKey };
 }
 
+/** 업체 인증 서류(사업자등록증·통장사본)용 키. 프로젝트 문서와 경로만 분리한다. */
+function toSafePartnerKey(partnerId: string, filename: string) {
+  const dot = filename.lastIndexOf(".");
+  const ext = dot > -1 ? filename.slice(dot + 1).toLowerCase() : "";
+  const safeExt = /^[a-z0-9]{1,8}$/.test(ext) ? `.${ext}` : "";
+  const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  return `partners/${partnerId}/${unique}${safeExt}`;
+}
+
+export async function putPartnerFile(
+  partnerId: string,
+  file: File,
+): Promise<StoredFile> {
+  const storageKey = toSafePartnerKey(partnerId, file.name);
+
+  await put(storageKey, file, {
+    access: "private",
+    addRandomSuffix: false,
+    contentType: file.type,
+  });
+
+  return { storageKey };
+}
+
 /**
  * 비공개 파일을 읽는다. 토큰을 가진 서버만 호출할 수 있으므로,
  * 호출 전에 반드시 소유권을 확인해야 한다.

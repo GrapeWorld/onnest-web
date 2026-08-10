@@ -4,9 +4,12 @@ import { Card } from "@/components/ui/Card";
 import { PartnerForm } from "@/components/app/PartnerForm";
 import { PartnerActiveToggle } from "@/components/app/PartnerActiveToggle";
 import { PartnerEditForm } from "@/components/app/PartnerEditForm";
+import { PartnerVerificationDocuments } from "@/components/app/PartnerVerificationDocuments";
 import { ViewerReadOnlyNotice } from "@/components/app/ViewerReadOnlyNotice";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isStorageConfigured } from "@/lib/storage";
+import { formatDate } from "@/lib/dates";
 import { serviceTypes } from "@/data/serviceRequests";
 
 export default async function AdminPartnersPage() {
@@ -25,10 +28,19 @@ export default async function AdminPartnersPage() {
       contactName: true,
       contactPhone: true,
       adminMemo: true,
+      businessRegistrationNumber: true,
+      bankName: true,
+      bankAccountHolder: true,
+      bankAccountNumber: true,
       active: true,
       _count: { select: { requests: true } },
+      verificationDocuments: {
+        orderBy: { createdAt: "desc" },
+        select: { id: true, type: true, filename: true, size: true, createdAt: true },
+      },
     },
   });
+  const storageReady = isStorageConfigured();
 
   return (
     <AppShell
@@ -70,15 +82,29 @@ export default async function AdminPartnersPage() {
                         </span>
                       </div>
                       {canEdit ? (
-                        <PartnerEditForm
-                          partnerId={partner.id}
-                          name={partner.name}
-                          serviceType={partner.serviceType}
-                          contactName={partner.contactName}
-                          contactPhone={partner.contactPhone}
-                          adminMemo={partner.adminMemo}
-                          assignedCount={partner._count.requests}
-                        />
+                        <>
+                          <PartnerEditForm
+                            partnerId={partner.id}
+                            name={partner.name}
+                            serviceType={partner.serviceType}
+                            contactName={partner.contactName}
+                            contactPhone={partner.contactPhone}
+                            adminMemo={partner.adminMemo}
+                            businessRegistrationNumber={partner.businessRegistrationNumber}
+                            bankName={partner.bankName}
+                            bankAccountHolder={partner.bankAccountHolder}
+                            bankAccountNumber={partner.bankAccountNumber}
+                            assignedCount={partner._count.requests}
+                          />
+                          <PartnerVerificationDocuments
+                            partnerId={partner.id}
+                            storageReady={storageReady}
+                            documents={partner.verificationDocuments.map((doc) => ({
+                              ...doc,
+                              createdAt: formatDate(doc.createdAt),
+                            }))}
+                          />
+                        </>
                       ) : (
                         <div>
                           <p className="font-semibold text-forest">{partner.name}</p>

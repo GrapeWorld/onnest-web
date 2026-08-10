@@ -19,7 +19,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const { name, serviceType, contactName, contactPhone, adminMemo } = parsed.data;
+  const {
+    name,
+    serviceType,
+    contactName,
+    contactPhone,
+    adminMemo,
+    businessRegistrationNumber,
+    bankName,
+    bankAccountHolder,
+    bankAccountNumber,
+  } = parsed.data;
   const partner = await prisma.partner.create({
     data: {
       name,
@@ -27,6 +37,10 @@ export async function POST(request: Request) {
       contactName: contactName || null,
       contactPhone: contactPhone || null,
       adminMemo: adminMemo || null,
+      businessRegistrationNumber: businessRegistrationNumber || null,
+      bankName: bankName || null,
+      bankAccountHolder: bankAccountHolder || null,
+      bankAccountNumber: bankAccountNumber || null,
       partnerCode: generatePartnerCode(),
     },
   });

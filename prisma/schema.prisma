@@ -371,8 +371,41 @@ model Partner {
   partnerCode  String   @unique
   memberships  PartnerMembership[]
   invitations  PartnerInvitation[]
+  // 아래 정산·서류 정보는 adminMemo와 같은 원칙 — 관리자가 업체 등록 시 함께
+  // 입력하는 관리자 전용 정보로, 파트너 포털에는 절대 노출하지 않는다
+  // (사업자등록번호·계좌정보는 companyDescription처럼 업체가 스스로 고치게
+  // 두면 안 되는 정산·정산 검증용 데이터다).
+  businessRegistrationNumber String?
+  bankName                   String?
+  bankAccountHolder          String?
+  bankAccountNumber          String?
+  verificationDocuments      PartnerVerificationDocument[]
 
   @@index([serviceType, active])
+}
+
+// 업체 등록 시 관리자가 받아두는 사업자등록증·통장사본 등 인증 서류.
+// Document 모델(프로젝트·서비스 신청 스코프)과는 접근 규칙이 완전히 달라
+// (이 서류는 관리자만 조회 가능, 파트너 포털에는 절대 노출 안 함) 재사용하지
+// 않고 별도 모델로 둔다. 파일 자체는 Document와 같은 원칙으로 Blob에
+// private로 저장하고, storageKey만 갖는다(공개 URL 없음).
+model PartnerVerificationDocument {
+  id         String   @id @default(cuid())
+  partnerId  String
+  partner    Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  // "BUSINESS_REGISTRATION"(사업자등록증) | "BANKBOOK"(통장사본)
+  type       String
+  filename   String
+  mimeType   String
+  size       Int
+  storageKey String
+  // 업로드한 관리자의 스냅샷(Document.uploadedById 등과 같은 원칙) — 실제
+  // relation을 걸지 않아 그 관리자 계정이 나중에 바뀌거나 삭제돼도 안전하다.
+  uploadedById   String?
+  uploadedByName String?
+  createdAt  DateTime @default(now())
+
+  @@index([partnerId, createdAt])
 }
 
 // 업체-직원 소속 관계. User.partnerId(호환용, 계속 동기화)와 달리 이력을

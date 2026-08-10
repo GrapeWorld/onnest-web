@@ -50,7 +50,16 @@ export async function PATCH(
     );
   }
 
-  const { contactName, contactPhone, adminMemo, ...rest } = parsed.data;
+  const {
+    contactName,
+    contactPhone,
+    adminMemo,
+    businessRegistrationNumber,
+    bankName,
+    bankAccountHolder,
+    bankAccountNumber,
+    ...rest
+  } = parsed.data;
   const partner = await prisma.partner.update({
     where: { id },
     data: {
@@ -58,6 +67,16 @@ export async function PATCH(
       ...(contactName !== undefined && { contactName: contactName || null }),
       ...(contactPhone !== undefined && { contactPhone: contactPhone || null }),
       ...(adminMemo !== undefined && { adminMemo: adminMemo || null }),
+      ...(businessRegistrationNumber !== undefined && {
+        businessRegistrationNumber: businessRegistrationNumber || null,
+      }),
+      ...(bankName !== undefined && { bankName: bankName || null }),
+      ...(bankAccountHolder !== undefined && {
+        bankAccountHolder: bankAccountHolder || null,
+      }),
+      ...(bankAccountNumber !== undefined && {
+        bankAccountNumber: bankAccountNumber || null,
+      }),
     },
   });
 

@@ -11,6 +11,10 @@ export function PartnerEditForm({
   contactName,
   contactPhone,
   adminMemo,
+  businessRegistrationNumber,
+  bankName,
+  bankAccountHolder,
+  bankAccountNumber,
   assignedCount,
 }: {
   partnerId: string;
@@ -19,6 +23,10 @@ export function PartnerEditForm({
   contactName: string | null;
   contactPhone: string | null;
   adminMemo: string | null;
+  businessRegistrationNumber: string | null;
+  bankName: string | null;
+  bankAccountHolder: string | null;
+  bankAccountNumber: string | null;
   assignedCount: number;
 }) {
   const router = useRouter();
@@ -30,6 +38,10 @@ export function PartnerEditForm({
   const [contactNameValue, setContactNameValue] = useState(contactName ?? "");
   const [contactPhoneValue, setContactPhoneValue] = useState(contactPhone ?? "");
   const [memoValue, setMemoValue] = useState(adminMemo ?? "");
+  const [bizNumberValue, setBizNumberValue] = useState(businessRegistrationNumber ?? "");
+  const [bankNameValue, setBankNameValue] = useState(bankName ?? "");
+  const [bankHolderValue, setBankHolderValue] = useState(bankAccountHolder ?? "");
+  const [bankAccountValue, setBankAccountValue] = useState(bankAccountNumber ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +53,10 @@ export function PartnerEditForm({
     setContactNameValue(contactName ?? "");
     setContactPhoneValue(contactPhone ?? "");
     setMemoValue(adminMemo ?? "");
+    setBizNumberValue(businessRegistrationNumber ?? "");
+    setBankNameValue(bankName ?? "");
+    setBankHolderValue(bankAccountHolder ?? "");
+    setBankAccountValue(bankAccountNumber ?? "");
   }
 
   async function handleSave() {
@@ -58,6 +74,10 @@ export function PartnerEditForm({
           contactName: contactNameValue,
           contactPhone: contactPhoneValue,
           adminMemo: memoValue,
+          businessRegistrationNumber: bizNumberValue,
+          bankName: bankNameValue,
+          bankAccountHolder: bankHolderValue,
+          bankAccountNumber: bankAccountValue,
         }),
       });
 
@@ -97,6 +117,9 @@ export function PartnerEditForm({
           {contactPhone && ` · ${contactPhone}`}
         </p>
         {adminMemo && <p className="mt-1 text-xs text-ink/50">{adminMemo}</p>}
+        <p className="mt-1 text-xs text-ink/40">
+          정산정보 {businessRegistrationNumber || bankAccountNumber ? "등록됨" : "미등록"}
+        </p>
       </div>
     );
   }
@@ -151,6 +174,41 @@ export function PartnerEditForm({
         placeholder="내부 메모 (선택)"
         className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
       />
+      <div className="mt-1 rounded-xl bg-cream/60 p-3">
+        <p className="mb-2 text-xs font-bold text-forest">
+          정산정보 (선택, 관리자만 볼 수 있습니다)
+        </p>
+        <div className="grid gap-2">
+          <input
+            value={bizNumberValue}
+            onChange={(event) => setBizNumberValue(event.target.value)}
+            disabled={saving}
+            placeholder="사업자등록번호"
+            className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+          />
+          <input
+            value={bankNameValue}
+            onChange={(event) => setBankNameValue(event.target.value)}
+            disabled={saving}
+            placeholder="은행명"
+            className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+          />
+          <input
+            value={bankHolderValue}
+            onChange={(event) => setBankHolderValue(event.target.value)}
+            disabled={saving}
+            placeholder="예금주"
+            className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+          />
+          <input
+            value={bankAccountValue}
+            onChange={(event) => setBankAccountValue(event.target.value)}
+            disabled={saving}
+            placeholder="계좌번호"
+            className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+          />
+        </div>
+      </div>
       {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
       <div className="flex gap-2">
         <button
