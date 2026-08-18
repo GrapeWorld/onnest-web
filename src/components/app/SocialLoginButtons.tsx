@@ -3,16 +3,27 @@
 import { useState } from "react";
 import { oauthProviders, oauthProviderLabels, type OAuthProvider } from "@/data/oauthProviders";
 
-/**
- * 각 provider의 대표색만 반영한 자리표시자 아이콘이다. 공식 브랜드 가이드의
- * 로고 에셋(SVG)은 이 샌드박스에서 외부 파일을 받아올 수 없어 넣지 못했다
- * — 실제 배포 전에 각 provider의 브랜드 리소스 킷에서 정식 로고로 교체해야 한다.
- */
 const providerStyle: Record<OAuthProvider, string> = {
   kakao: "bg-[#FEE500] text-[#191600] hover:brightness-95",
   naver: "bg-[#03C75A] text-white hover:brightness-95",
-  google: "border border-forest/15 bg-white text-ink hover:bg-cream",
+  google: "border border-forest/15 bg-white text-[#4285F4] hover:bg-cream",
 };
+
+function ProviderIcon({ provider }: { provider: OAuthProvider }) {
+  if (provider === "kakao") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-current">
+        <path d="M12 4.25c-5.1 0-9.25 3.18-9.25 7.1 0 2.52 1.73 4.74 4.34 6l-1.1 3.36a.55.55 0 0 0 .81.64l3.91-2.59c.42.05.85.08 1.29.08 5.1 0 9.25-3.18 9.25-7.1S17.1 4.25 12 4.25Z" />
+      </svg>
+    );
+  }
+
+  if (provider === "naver") {
+    return <span aria-hidden="true" className="text-lg font-black leading-none">N</span>;
+  }
+
+  return <span aria-hidden="true" className="text-lg font-bold leading-none">G</span>;
+}
 
 export function SocialLoginButtons({
   configuredProviders,
@@ -39,8 +50,14 @@ export function SocialLoginButtons({
   }
 
   return (
-    <div className="grid w-full min-w-0 gap-3">
-      <div className="grid min-w-0 gap-2">
+    <div className="grid w-full min-w-0 gap-4">
+      <div className="flex min-w-0 items-center gap-3 text-xs text-ink/45">
+        <span aria-hidden="true" className="h-px min-w-0 flex-1 bg-forest/10" />
+        <span>소셜 계정으로 로그인</span>
+        <span aria-hidden="true" className="h-px min-w-0 flex-1 bg-forest/10" />
+      </div>
+
+      <div className="flex min-w-0 flex-wrap items-start justify-center gap-5 sm:gap-7">
         {visibleProviders.map((provider) => {
           const href = `/api/auth/oauth/${provider}/start${
             returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""
@@ -51,22 +68,26 @@ export function SocialLoginButtons({
               href={href}
               onClick={(event) => handleClick(provider, event)}
               aria-disabled={pending !== null}
-              className={`box-border inline-flex min-h-11 w-full min-w-0 max-w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold shadow-soft transition ${providerStyle[provider]} ${
+              aria-label={`${oauthProviderLabels[provider]} 계정으로 로그인`}
+              title={`${oauthProviderLabels[provider]} 계정으로 로그인`}
+              className={`group inline-flex min-w-11 flex-col items-center gap-1.5 rounded-xl text-xs font-semibold text-ink/60 transition focus-visible:outline focus-visible:outline-4 focus-visible:outline-mint/80 ${
                 pending && pending !== provider ? "pointer-events-none opacity-50" : ""
               }`}
             >
-              {pending === provider
-                ? "이동 중..."
-                : `${oauthProviderLabels[provider]}로 시작하기`}
+              <span
+                className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-soft transition group-hover:-translate-y-0.5 group-hover:shadow-glow ${providerStyle[provider]}`}
+              >
+                <ProviderIcon provider={provider} />
+              </span>
+              <span aria-hidden="true">{oauthProviderLabels[provider]}</span>
             </a>
           );
         })}
       </div>
-      <div className="flex items-center gap-3 text-xs text-ink/40">
-        <span className="h-px flex-1 bg-forest/10" />
-        또는
-        <span className="h-px flex-1 bg-forest/10" />
-      </div>
+
+      <p aria-live="polite" className="min-h-5 text-center text-xs font-semibold text-forest/70">
+        {pending ? `${oauthProviderLabels[pending]} 로그인으로 이동 중...` : ""}
+      </p>
     </div>
   );
 }

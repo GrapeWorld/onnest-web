@@ -45,9 +45,14 @@ export default async function LoginPage({
             </p>
           )}
 
-          <SocialLoginButtons configuredProviders={configuredProviders} returnTo={params.returnTo} />
-
           <LoginForm returnTo={params.returnTo} />
+
+          <div className="mt-6">
+            <SocialLoginButtons
+              configuredProviders={configuredProviders}
+              returnTo={params.returnTo}
+            />
+          </div>
 
           <p className="mt-4 text-center text-sm text-ink/60">
             <Link
