@@ -11,6 +11,11 @@ export function findOwnedProject(projectId: string, userId: string) {
       stepStates: true,
       checks: true,
       events: { orderBy: { date: "asc" } },
+      // 이 프로젝트가 매물 후보에서 시작됐다면 참고용으로 함께 가져온다.
+      // 없으면 null이라 이 필드를 안 쓰는 다른 화면([step] 등)에서는 그냥 무시된다.
+      candidateProperty: {
+        select: { id: true, title: true, memo: true, advantages: true, concerns: true },
+      },
     },
   });
 }

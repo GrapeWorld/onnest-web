@@ -59,6 +59,8 @@ model User {
   inquiries         Inquiry[]          @relation("InquiryOwner")
   inquiryLinkTokens InquiryLinkToken[]
   partnerMemberships PartnerMembership[]
+  candidateProperties CandidateProperty[]
+  propertyPreference  PropertyPreference?
 }
 
 // Google/Kakao/Naver 계정 연결. provider+providerAccountId(이메일이 아니라
@@ -206,6 +208,9 @@ model Project {
   requests   ServiceRequest[]
   documents  Document[]
   handover   Handover?
+  // 이 프로젝트가 매물 후보에서 시작됐다면 그 원본(CandidateProperty)을
+  // 가리킨다. FK는 CandidateProperty.linkedProjectId에 있다.
+  candidateProperty CandidateProperty?
 
   @@index([userId, createdAt])
 }
@@ -285,6 +290,19 @@ model ServiceRequest {
   selectedQuote   ServiceRequestQuote?  @relation("ServiceRequestSelectedQuote", fields: [selectedQuoteId], references: [id], onDelete: SetNull)
   // 고객이 선택(또는 변경)을 완료한 시각. 선택 전에는 null.
   selectedAt      DateTime?
+  // 업체 배정 후 고객이 취소를 "요청"한 시각. status 자체는 바꾸지 않는다 —
+  // 배정 전 취소는 status를 곧바로 "취소"로 바꾸면 되지만, 배정 후에는
+  // 업체·관리자 확인이 필요해 이 필드로만 표시하고 실제 취소는 관리자·업체가
+  // 기존 상태 변경 경로로 확정한다. 관리자·업체가 어떤 상태로든 바꾸면(취소
+  // 확정이든, 계속 진행이든) 처리 완료로 보고 이 필드를 지운다.
+  cancelRequestedAt     DateTime?
+  cancelRequestReason   String?
+  // 관리자가 "업체 연결이 어렵다"고 고객에게 안내를 보낸 시각. status는 그대로
+  // 유지한다(여전히 배정을 계속 시도할 수 있으므로 "취소"로 바꾸지 않는다).
+  // noPartnerReason은 관리자 내부용 메모이며 고객에게는 절대 그대로 노출하지
+  // 않고, 고객 화면·이메일에는 항상 고정된 안전한 문구만 보여준다.
+  noPartnerReason       String?
+  noPartnerNoticeSentAt DateTime?
 
   @@index([status, createdAt])
   @@index([projectId, createdAt])
@@ -380,8 +398,41 @@ model Partner {
   bankAccountHolder          String?
   bankAccountNumber          String?
   verificationDocuments      PartnerVerificationDocument[]
+  // 관리자 검증 상태. "PENDING"|"APPROVED"|"REJECTED"|"SUSPENDED"
+  // (src/data/partnerVerification.ts). active와는 별개 축이다 — active는
+  // "배정 후보 풀에 노출할지"의 스위치이고 verificationStatus는 "서류·자격을
+  // 관리자가 확인했는지"의 게이트다. 신규 서비스 신청에 배정하려면 둘 다
+  // 만족해야 한다(active && verificationStatus == APPROVED).
+  verificationStatus String    @default("PENDING")
+  // REJECTED·SUSPENDED로 바꿀 때 남기는 사유. PENDING/APPROVED로 되돌리면
+  // 의미가 없어지므로 UI에서는 최신 변경 시점의 사유만 보여준다(이력은
+  // PartnerVerificationHistory에 전부 남는다).
+  verificationReason String?
+  verifiedAt         DateTime?
+  // 마지막으로 검증 상태를 바꾼 관리자의 스냅샷(adminMemo 등과 같은 원칙).
+  verifiedById       String?
+  verifiedByName     String?
+  verificationHistory PartnerVerificationHistory[]
 
   @@index([serviceType, active])
+  @@index([verificationStatus])
+}
+
+// Partner.verificationStatus 변경 이력. AdminRoleHistory·MemberStatusHistory와
+// 같은 append-only 감사 로그 원칙 — 수정·삭제 API를 만들지 않는다.
+model PartnerVerificationHistory {
+  id         String   @id @default(cuid())
+  partnerId  String
+  partner    Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  fromStatus String
+  toStatus   String
+  reason     String?
+  actorId    String?
+  actorEmail String?
+  actorName  String?
+  createdAt  DateTime @default(now())
+
+  @@index([partnerId, createdAt])
 }
 
 // 업체 등록 시 관리자가 받아두는 사업자등록증·통장사본 등 인증 서류.
@@ -676,4 +727,90 @@ model InquiryActivity {
   createdAt  DateTime @default(now())
 
   @@index([inquiryId, createdAt])
+}
+
+// 고객이 외부 부동산 사이트(네이버페이 부동산 등)에서 찾은 매물을 스스로
+// 정리해 저장하는 "관심 매물". ONNEST가 매물 정보를 직접 수집·중개하지
+// 않는다 — 서버는 sourceUrl을 절대 요청(fetch)하지 않고, 사용자가 입력한
+// 값만 그대로 저장한다. price/deposit/monthlyRent는 ServiceRequestQuote.amount와
+// 같은 원칙으로 원 단위 정수, area는 ㎡ 소수(전용면적 84.93㎡ 등)를 담는다.
+model CandidateProperty {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // 출처 확인·원본 재방문 용도로만 쓴다. http/https만 허용(src/lib/propertyUrl.ts).
+  sourceUrl String
+  // 사용자가 붙인 매물 이름 또는 별칭.
+  title     String
+  address   String?
+  // "매매" | "전세" | "월세" | "기타"
+  transactionType String?
+  price       Int?
+  deposit     Int?
+  monthlyRent Int?
+  // 전용면적(㎡).
+  area      Float?
+  roomCount Int?
+  availableDate DateTime?
+  memo       String?
+  advantages String?
+  concerns   String?
+  // "관심" | "방문 예정" | "방문 완료" | "보류" | "최종 후보"
+  // (src/data/candidateProperty.ts)
+  status     String    @default("관심")
+  // "최종 후보"로 표시(또는 실제 프로젝트로 연결)한 시각.
+  selectedAt DateTime?
+  // 이 매물을 기반으로 실제로 만든 ONNEST 프로젝트. 프로젝트가 삭제돼도 이
+  // 매물 기록 자체는 남겨야 하므로 SetNull(연결만 해제, 후보는 보존).
+  linkedProjectId String?  @unique
+  linkedProject   Project? @relation(fields: [linkedProjectId], references: [id], onDelete: SetNull)
+  // address를 네이버 지도(Geocoding)로 변환한 좌표 캐시. 매번 API를 다시
+  // 부르지 않도록 생성·주소 변경 시 한 번만 조회해 저장한다(src/lib/naverMap.ts).
+  // 지도 API가 설정되지 않았거나 실패해도 매물 저장 자체는 항상 성공해야
+  // 하므로, 이 값은 항상 null일 수 있는 부가 정보로 취급한다.
+  latitude  Float?
+  longitude Float?
+  checklist       PropertyVisitCheckItem[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([userId, status])
+}
+
+// 매물 방문 시 확인할 체크리스트 항목. ProjectCheckItem과 완전히 같은
+// 원칙 — 행이 없으면 미체크로 간주하므로 생성 시 미리 채우지 않는다.
+// label은 src/data/candidateProperty.ts의 propertyVisitChecklistItems 중
+// 하나여야 한다(임의 문자열 저장 방지, API에서 화이트리스트로 검증).
+model PropertyVisitCheckItem {
+  id                  String   @id @default(cuid())
+  candidatePropertyId String
+  candidateProperty   CandidateProperty @relation(fields: [candidatePropertyId], references: [id], onDelete: Cascade)
+  label               String
+  checked             Boolean  @default(false)
+  updatedAt           DateTime @updatedAt
+
+  @@unique([candidatePropertyId, label])
+}
+
+// 고객이 원하는 주거 조건. 프로젝트(확정된 계획)와는 생명주기가 달라
+// Project를 확장하지 않고 분리했다 — 사용자당 1개(userId @unique)만 두고
+// upsert로 관리한다. CandidateProperty와의 규칙 기반 비교 기준으로 쓰인다
+// (src/lib/propertyMatch.ts).
+model PropertyPreference {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  desiredRegion     String?
+  transactionType   String?
+  minBudget         Int?
+  maxBudget         Int?
+  minArea           Float?
+  minRooms          Int?
+  desiredMoveInDate DateTime?
+  mustHave          String?
+  niceToHave        String?
+  commuteMemo       String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }

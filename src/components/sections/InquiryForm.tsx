@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { inquiryTypes, spaceTypes } from "@/data/inquiries";
 
 const fieldClass =
-  "rounded-2xl border border-forest/15 px-4 py-3 font-normal outline-none focus:border-forest";
+  "box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal outline-none focus:border-forest";
 
 export function InquiryForm() {
   const router = useRouter();
@@ -65,8 +65,8 @@ export function InquiryForm() {
 
   return (
     <Card>
-      <form onSubmit={handleSubmit} className="grid gap-4" noValidate>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
+      <form onSubmit={handleSubmit} className="grid gap-4 min-w-0" noValidate>
+        <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
           이름
           <input
             required
@@ -76,7 +76,7 @@ export function InquiryForm() {
             placeholder="이름을 입력하세요"
           />
         </label>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
+        <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
           회사명/소속 <span className="font-normal text-ink/50">선택 입력</span>
           <input
             value={form.organization}
@@ -85,7 +85,7 @@ export function InquiryForm() {
             placeholder="개인 고객은 비워두셔도 됩니다"
           />
         </label>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
+        <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
           이메일
           <input
             type="email"
@@ -96,7 +96,7 @@ export function InquiryForm() {
             placeholder="이메일을 입력하세요"
           />
         </label>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
+        <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
           연락처
           <input
             type="tel"
@@ -107,7 +107,7 @@ export function InquiryForm() {
             placeholder="010-1234-5678"
           />
         </label>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
+        <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
           문의 유형
           <select
             value={form.type}
@@ -120,7 +120,7 @@ export function InquiryForm() {
           </select>
         </label>
         <div className="grid gap-4 md:grid-cols-2">
-          <label className="grid gap-2 text-sm font-semibold text-forest">
+          <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
             공간 유형 <span className="font-normal text-ink/50">선택 입력</span>
             <select
               value={form.spaceType}
@@ -133,7 +133,7 @@ export function InquiryForm() {
               ))}
             </select>
           </label>
-          <label className="grid gap-2 text-sm font-semibold text-forest">
+          <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
             지역 <span className="font-normal text-ink/50">선택 입력</span>
             <input
               value={form.region}
@@ -143,7 +143,7 @@ export function InquiryForm() {
             />
           </label>
         </div>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
+        <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
           문의 내용
           <textarea
             required

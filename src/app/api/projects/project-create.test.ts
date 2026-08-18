@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   projectCreate: vi.fn(),
   stepStateCreate: vi.fn(),
+  candidateUpdateMany: vi.fn(),
   transaction: vi.fn(),
 }));
 
@@ -14,6 +15,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     project: { create: mocks.projectCreate },
     projectStepState: { create: mocks.stepStateCreate },
+    candidateProperty: { updateMany: mocks.candidateUpdateMany },
     $transaction: mocks.transaction,
   },
 }));
@@ -55,10 +57,12 @@ describe("POST /api/projects — initial step state", () => {
     mocks.getCurrentUser.mockResolvedValue({ id: "user-1" });
     mocks.projectCreate.mockResolvedValue({ id: "project-1" });
     mocks.stepStateCreate.mockResolvedValue({});
+    mocks.candidateUpdateMany.mockResolvedValue({ count: 1 });
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         project: { create: mocks.projectCreate },
         projectStepState: { create: mocks.stepStateCreate },
+        candidateProperty: { updateMany: mocks.candidateUpdateMany },
       }),
     );
   });
@@ -101,5 +105,56 @@ describe("POST /api/projects — initial step state", () => {
     await call(baseInput({ projectStage: "contract_completed" }));
 
     expect(mocks.stepStateCreate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("POST /api/projects — 매물 후보 연결(sourceCandidatePropertyId)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getCurrentUser.mockResolvedValue({ id: "user-1" });
+    mocks.projectCreate.mockResolvedValue({ id: "project-1" });
+    mocks.stepStateCreate.mockResolvedValue({});
+    mocks.candidateUpdateMany.mockResolvedValue({ count: 1 });
+    mocks.transaction.mockImplementation(async (callback) =>
+      callback({
+        project: { create: mocks.projectCreate },
+        projectStepState: { create: mocks.stepStateCreate },
+        candidateProperty: { updateMany: mocks.candidateUpdateMany },
+      }),
+    );
+  });
+
+  it("does not touch candidateProperty when no sourceCandidatePropertyId is sent", async () => {
+    const response = await call(baseInput());
+
+    expect(response.status).toBe(201);
+    expect(mocks.candidateUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("links the candidate property, scoped to the current user and only if not already linked", async () => {
+    const response = await call(baseInput({ sourceCandidatePropertyId: "candidate-1" }));
+
+    expect(response.status).toBe(201);
+    expect(mocks.candidateUpdateMany).toHaveBeenCalledWith({
+      where: { id: "candidate-1", userId: "user-1", linkedProjectId: null },
+      data: { linkedProjectId: "project-1", status: "최종 후보", selectedAt: expect.any(Date) },
+    });
+  });
+
+  it("still creates the project even if the candidate link update matches nothing (e.g. another user's id)", async () => {
+    mocks.candidateUpdateMany.mockResolvedValue({ count: 0 });
+
+    const response = await call(baseInput({ sourceCandidatePropertyId: "someone-elses-candidate" }));
+    const data = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(data.id).toBe("project-1");
+  });
+
+  it("ignores a non-string sourceCandidatePropertyId instead of throwing", async () => {
+    const response = await call(baseInput({ sourceCandidatePropertyId: 12345 }));
+
+    expect(response.status).toBe(201);
+    expect(mocks.candidateUpdateMany).not.toHaveBeenCalled();
   });
 });

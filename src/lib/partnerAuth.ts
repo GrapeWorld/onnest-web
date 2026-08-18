@@ -20,10 +20,12 @@ export type ActiveMembership = {
 /**
  * 로그인한 사용자의 활성 파트너 멤버십을 조회한다. User.status가
  * ACTIVE가 아니거나(정지·탈퇴) Partner.active가 false거나(업체 비활성화)
- * PartnerMembership이 ACTIVE가 아니면(해제·정지) null을 반환한다 —
- * memberType/partnerId만으로는 이 세 가지 중 무엇도 걸러지지 않으므로,
- * 파트너 포털의 모든 권한 판단(아래 함수들 전부)이 이 함수 하나만 거치면
- * 자동으로 비활성 차단 혜택을 받는다.
+ * Partner.verificationStatus가 APPROVED가 아니거나(검토 대기·반려·이용
+ * 중지) PartnerMembership이 ACTIVE가 아니면(해제·정지) null을 반환한다 —
+ * memberType/partnerId만으로는 이 중 무엇도 걸러지지 않으므로, 파트너
+ * 포털의 모든 권한 판단(아래 함수들 전부)이 이 함수 하나만 거치면 자동으로
+ * 비활성·미검증 차단 혜택을 받는다. 검증되지 않은 업체가 고객 개인정보에
+ * 접근하는 것을 막는 핵심 게이트다.
  */
 export async function getActiveMembership(user: {
   id: string;
@@ -34,9 +36,15 @@ export async function getActiveMembership(user: {
   if (!isPartnerStaff(user) || user.status !== "ACTIVE") return null;
   const membership = await prisma.partnerMembership.findFirst({
     where: { partnerId: user.partnerId, userId: user.id, status: "ACTIVE" },
-    select: { id: true, partnerId: true, role: true, partner: { select: { active: true } } },
+    select: {
+      id: true,
+      partnerId: true,
+      role: true,
+      partner: { select: { active: true, verificationStatus: true } },
+    },
   });
   if (!membership || !membership.partner.active) return null;
+  if (membership.partner.verificationStatus !== "APPROVED") return null;
   return { id: membership.id, partnerId: membership.partnerId, role: membership.role as PartnerRole };
 }
 

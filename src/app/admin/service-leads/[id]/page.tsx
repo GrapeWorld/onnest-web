@@ -54,6 +54,10 @@ function activityBody(entry: ActivityRow) {
       return `${changes.title ?? "-"} · ${formatWon(Number(changes.amount ?? 0))}원 삭제`;
     case "QUOTE_SELECTED":
       return `고객이 "${changes.title ?? "-"}" (${formatWon(Number(changes.amount ?? 0))}원)을 선택했습니다.`;
+    case "CANCEL_REQUESTED":
+      return entry.note || "고객이 취소를 요청했습니다.";
+    case "NO_PARTNER_NOTICE":
+      return entry.note || "고객에게 연결 어려움을 안내했습니다.";
     default:
       return entry.action;
   }
@@ -220,7 +224,7 @@ export default async function AdminServiceLeadDetailPage({
                     className="flex items-center justify-between rounded-2xl bg-cream px-4 py-3 text-sm"
                   >
                     <div className="min-w-0">
-                      <p className="font-semibold text-forest">
+                      <p className="break-all font-semibold text-forest">
                         {file.category
                           ? `[${serviceRequestFileCategoryLabels[file.category as keyof typeof serviceRequestFileCategoryLabels] ?? file.category}] `
                           : ""}

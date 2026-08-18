@@ -67,7 +67,7 @@ describe("POST /api/partner/service-requests/[id]/files", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "OWNER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.isStorageConfigured.mockReturnValue(true);
@@ -111,7 +111,7 @@ describe("POST /api/partner/service-requests/[id]/files", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "VIEWER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
 
     const file = new File([pdfBytes], "quote.pdf", { type: "application/pdf" });
@@ -126,7 +126,7 @@ describe("POST /api/partner/service-requests/[id]/files", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "STAFF",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.requestFindUnique.mockResolvedValue({
       id: "request-1",

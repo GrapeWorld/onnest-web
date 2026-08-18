@@ -81,14 +81,14 @@ export function ProjectDeleteControl({
         </button>
       ) : (
         <div className="mt-5 grid gap-3">
-          <label className="grid gap-2 text-sm font-semibold text-forest">
+          <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
             확인을 위해 프로젝트 이름{" "}
             <span className="font-black">{projectName}</span> 을(를)
             입력해주세요.
             <input
               value={typed}
               onChange={(event) => setTyped(event.target.value)}
-              className="rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink outline-none focus:border-forest"
+              className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink outline-none focus:border-forest"
               placeholder={projectName}
               autoComplete="off"
             />

@@ -84,6 +84,28 @@ export async function loginViaSession(page: Page, email: string) {
   ]);
 }
 
+/** 페이지 전체에 의도하지 않은 가로 스크롤이 없는지 확인한다. */
+export async function expectNoHorizontalOverflow(page: Page, context = "") {
+  const overflow = await page.evaluate(() => {
+    const doc = document.documentElement;
+    return doc.scrollWidth - doc.clientWidth;
+  });
+  expect(overflow, `${context} 가로 오버플로 발생 (scrollWidth - clientWidth = ${overflow})`).toBeLessThanOrEqual(0);
+}
+
+/** 폼 컨트롤·버튼의 bounding box가 뷰포트 폭을 넘지 않는지 확인한다. */
+export async function expectControlsWithinViewport(page: Page) {
+  const viewport = page.viewportSize();
+  if (!viewport) return;
+  const controls = page.locator("main input, main select, main textarea, main button, main a.inline-flex");
+  const count = await controls.count();
+  for (let i = 0; i < count; i++) {
+    const box = await controls.nth(i).boundingBox();
+    if (!box) continue;
+    expect(box.x + box.width, "입력창/버튼이 뷰포트 오른쪽 경계를 벗어남").toBeLessThanOrEqual(viewport.width + 1);
+  }
+}
+
 export async function logout(page: Page) {
   // /my 본문에도 같은 이름의 버튼이 있어 헤더로 스코프를 좁힌다.
   await page.getByRole("banner").getByRole("button", { name: "로그아웃" }).click();
@@ -124,7 +146,10 @@ export async function requestMovingService(page: Page, projectId: string, region
   await page.getByRole("checkbox", { name: /파트너 연결 목적/ }).check();
   await page.getByRole("button", { name: /서비스 신청하기/ }).click();
 
-  await expect(page.getByText(/서비스 신청 1건이 접수되었습니다/)).toBeVisible();
+  // 전체 스위트를 끝까지 순서대로 돌리면 마지막 몇 개 테스트에서 dev
+  // 서버 응답이 느려지는 경우가 있어(장시간 순차 실행 특성) 기본
+  // 타임아웃보다 여유를 둔다.
+  await expect(page.getByText(/서비스 신청 1건이 접수되었습니다/)).toBeVisible({ timeout: 15_000 });
 }
 
 /** 관리자 서비스 리드 화면에서 프로젝트명으로 검색해 업체를 배정한다. */
@@ -177,6 +202,24 @@ export async function acceptAndQuoteAsPartner(
     .filter({ hasText: "다음 상태" })
     .filter({ hasText: "상태 저장" });
   await statusForm.getByRole("combobox").selectOption("견적 전달");
+  await clickAndWaitForApi(
+    page,
+    () => statusForm.getByRole("button", { name: "상태 저장" }).click(),
+    "/api/partner/service-requests/",
+    "PATCH",
+  );
+}
+
+/**
+ * 이미 업체 요청 상세 화면(/partner/requests/[id])에 있다고 가정하고, 다음
+ * 상태로 한 단계 진행한다. acceptAndQuoteAsPartner 이후 이어서 쓴다.
+ */
+export async function advancePartnerRequestStatus(page: Page, nextStatus: string) {
+  const statusForm = page
+    .locator("form")
+    .filter({ hasText: "다음 상태" })
+    .filter({ hasText: "상태 저장" });
+  await statusForm.getByRole("combobox").selectOption(nextStatus);
   await clickAndWaitForApi(
     page,
     () => statusForm.getByRole("button", { name: "상태 저장" }).click(),

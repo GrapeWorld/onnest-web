@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { Card } from "@/components/ui/Card";
 
 const inputClass =
-  "rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink focus:border-forest focus:outline-none";
+  "box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink focus:border-forest focus:outline-none";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -54,8 +54,8 @@ export default function ForgotPasswordPage() {
               {message}
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="grid gap-4" noValidate>
-              <label className="grid gap-2 text-sm font-semibold text-forest">
+            <form onSubmit={handleSubmit} className="grid w-full min-w-0 gap-4" noValidate>
+              <label className="grid min-w-0 gap-2 text-sm font-semibold text-forest">
                 이메일
                 <input
                   type="email"
@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-forest px-5 py-3 text-sm font-semibold text-white shadow-soft transition duration-300 hover:-translate-y-0.5 hover:bg-navy hover:shadow-glow focus-visible:outline focus-visible:outline-4 focus-visible:outline-mint/80 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                className="box-border mt-2 inline-flex min-h-11 w-full min-w-0 max-w-full items-center justify-center rounded-full bg-forest px-5 py-3 text-sm font-semibold text-white shadow-soft transition duration-300 hover:-translate-y-0.5 hover:bg-navy hover:shadow-glow focus-visible:outline focus-visible:outline-4 focus-visible:outline-mint/80 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
               >
                 {loading ? "전송 중..." : "재설정 링크 받기"}
               </button>

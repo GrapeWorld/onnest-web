@@ -68,6 +68,12 @@ export default async function globalSetup() {
         name: E2E_PARTNER_NAME,
         serviceType: E2E_PARTNER_SERVICE_TYPE,
         partnerCode: generatePartnerCode(),
+        // 신규 업체 기본값은 PENDING(검토 대기)이지만, 이 시드 업체는 기존
+        // E2E 스펙 전체가 "이미 배정 가능한 업체"로 전제하고 있어 APPROVED로
+        // 만든다. 검증 게이트 자체는 service-request-lifecycle.spec.ts가
+        // 별도로 PENDING 업체를 만들어 검증한다.
+        verificationStatus: "APPROVED",
+        verifiedAt: new Date(),
       },
     });
 

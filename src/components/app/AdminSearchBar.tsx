@@ -14,12 +14,12 @@ export function AdminSearchBar({ initialQuery }: { initialQuery: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3 md:grid-cols-[1fr_auto]">
+    <form onSubmit={handleSubmit} className="grid gap-3 md:grid-cols-[1fr_auto] min-w-0">
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="관리자로 지정할 회원의 이름, 이메일, 휴대폰 번호로 검색"
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest"
       />
       <button
         type="submit"

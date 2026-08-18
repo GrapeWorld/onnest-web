@@ -51,12 +51,12 @@ export function PartnerRequestFileUpload({ requestId }: { requestId: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-2">
+    <form onSubmit={handleSubmit} className="grid gap-2 min-w-0">
       <select
         value={category}
         onChange={(event) => setCategory(event.target.value as ServiceRequestFileCategory)}
         disabled={uploading}
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
       >
         {serviceRequestFileCategories.map((option) => (
           <option key={option} value={option}>
@@ -68,7 +68,7 @@ export function PartnerRequestFileUpload({ requestId }: { requestId: string }) {
         ref={fileInputRef}
         type="file"
         disabled={uploading}
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       <p className="text-xs text-ink/45">
         {allowedExtensionLabel} · 최대 {maxFileSizeLabel}

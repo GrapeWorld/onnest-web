@@ -42,8 +42,8 @@ export function PartnerInviteForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-2">
-      <label className="grid gap-1 text-sm font-semibold text-forest">
+    <form onSubmit={handleSubmit} className="grid gap-2 min-w-0">
+      <label className="grid gap-1 text-sm font-semibold text-forest min-w-0">
         이메일
         <input
           type="email"
@@ -52,16 +52,16 @@ export function PartnerInviteForm() {
           onChange={(event) => setEmail(event.target.value)}
           disabled={sending}
           placeholder="staff@company.com"
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm font-normal outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal outline-none focus:border-forest disabled:opacity-60"
         />
       </label>
-      <label className="grid gap-1 text-sm font-semibold text-forest">
+      <label className="grid gap-1 text-sm font-semibold text-forest min-w-0">
         역할
         <select
           value={role}
           onChange={(event) => setRole(event.target.value as PartnerRole)}
           disabled={sending}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm font-normal text-ink outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink outline-none focus:border-forest disabled:opacity-60"
         >
           {invitablePartnerRoles.map((option) => (
             <option key={option} value={option}>

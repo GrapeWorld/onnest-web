@@ -68,7 +68,7 @@ export function ProjectForm({
 
   return (
     <Card>
-      <form onSubmit={handleSubmit} className="grid gap-8" noValidate>
+      <form onSubmit={handleSubmit} className="grid gap-8 min-w-0" noValidate>
         <section>
           <h3 className="mb-4 text-lg font-bold text-forest">공간 정보</h3>
           <SpaceSelectFields

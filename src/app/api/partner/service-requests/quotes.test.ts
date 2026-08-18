@@ -69,7 +69,7 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "OWNER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.quoteCreate.mockResolvedValue({
       id: "quote-1",
@@ -144,7 +144,7 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "VIEWER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
 
     const response = await call({ title: "기본형", amount: 500000 });
@@ -157,7 +157,7 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "STAFF",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.findUnique.mockResolvedValue({
       id: "request-1",

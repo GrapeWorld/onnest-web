@@ -38,7 +38,7 @@ export function InquiryLinkRequestButton({ inquiryId }: { inquiryId: string }) {
         type="button"
         onClick={handleClick}
         disabled={state === "sending"}
-        className="rounded-full border border-forest/15 bg-white px-4 py-1.5 text-xs font-semibold text-forest hover:bg-cream disabled:opacity-60"
+        className="inline-flex items-center justify-center min-h-11 rounded-full border border-forest/15 bg-white px-4 py-1.5 text-xs font-semibold text-forest hover:bg-cream disabled:opacity-60"
       >
         {state === "sending" ? "요청 중..." : "연결하기"}
       </button>

@@ -50,13 +50,13 @@ export function InquiryUpdateForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-2">
+    <form onSubmit={handleSubmit} className="grid gap-2 min-w-0">
       <select
         value={statusValue}
         onChange={(event) => setStatusValue(event.target.value)}
         disabled={saving}
         aria-label="문의 상태 변경"
-        className="rounded-full border border-forest/15 bg-white px-4 py-2 text-sm font-semibold text-forest outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-full border border-forest/15 bg-white px-4 py-2 text-base font-semibold text-forest outline-none focus:border-forest disabled:opacity-60"
       >
         {inquiryStatuses.map((option) => (
           <option key={option}>{option}</option>
@@ -69,7 +69,7 @@ export function InquiryUpdateForm({
         disabled={saving}
         placeholder="다음 액션 (예: 내일 오전 전화 상담)"
         aria-label="다음 액션"
-        className="rounded-full border border-forest/15 bg-white px-4 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-full border border-forest/15 bg-white px-4 py-2 text-base outline-none focus:border-forest disabled:opacity-60"
       />
 
       {error && <p className="text-xs font-semibold text-red-600">{error}</p>}

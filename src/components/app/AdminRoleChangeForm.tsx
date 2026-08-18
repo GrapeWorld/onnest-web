@@ -59,12 +59,12 @@ export function AdminRoleChangeForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-2 sm:grid-cols-[160px_1fr_auto] sm:items-start">
+    <form onSubmit={handleSubmit} className="grid gap-2 sm:grid-cols-[160px_1fr_auto] sm:items-start min-w-0">
       <select
         value={toRole}
         onChange={(event) => setToRole(event.target.value)}
         disabled={saving}
-        className="rounded-2xl border border-forest/15 px-3 py-2 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-3 py-2 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
       >
         {options.map((option) => (
           <option key={option} value={option}>
@@ -78,7 +78,7 @@ export function AdminRoleChangeForm({
           onChange={(event) => setReason(event.target.value)}
           disabled={saving}
           placeholder="변경 사유 (필수)"
-          className="rounded-2xl border border-forest/15 px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-3 py-2 text-base outline-none focus:border-forest disabled:opacity-60"
         />
         {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
       </div>

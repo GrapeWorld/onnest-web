@@ -7,10 +7,17 @@ export function CTASection({
   // 로그인 여부를 넘기면(주로 홈) 버튼을 상황에 맞는 것 하나로 줄인다.
   // 넘기지 않으면(다른 상세 페이지) 기존 3개 액션을 그대로 보여준다.
   isLoggedIn,
+  // 로그인 상태와 무관하게 버튼 문구를 고정하고 싶을 때만 넘긴다(예: 서비스
+  // 소개 페이지의 "입주 준비 시작하기"). 안 넘기면 로그인/비로그인 기본 문구를 쓴다.
+  primaryLabel,
+  // 비로그인 사용자에게만 "기존 회원 로그인" 보조 링크를 추가로 보여준다.
+  showLoginLink = false,
 }: {
   title?: string;
   description?: string;
   isLoggedIn?: boolean;
+  primaryLabel?: string;
+  showLoginLink?: boolean;
 }) {
   return (
     <section className="relative isolate overflow-hidden bg-navy px-5 py-16 text-white md:py-24">
@@ -36,9 +43,23 @@ export function CTASection({
               <Button href="/contact" variant="ghost" className="shrink-0 border-white/15 bg-transparent text-white hover:bg-white hover:text-forest">제휴 문의하기</Button>
             </>
           ) : isLoggedIn ? (
-            <Button href="/my" variant="secondary" className="shrink-0">마이페이지로 이동</Button>
+            <Button href="/my" variant="secondary" className="shrink-0">
+              {primaryLabel ?? "마이페이지로 이동"}
+            </Button>
           ) : (
-            <Button href="/auth/signup" variant="secondary" className="shrink-0">지금 시작하기</Button>
+            <>
+              <Button href="/auth/signup" variant="secondary" className="shrink-0">
+                {primaryLabel ?? "지금 시작하기"}
+              </Button>
+              {showLoginLink && (
+                <a
+                  href="/auth/login"
+                  className="text-center text-sm font-semibold text-white/80 hover:text-white hover:underline focus-visible:outline focus-visible:outline-4 focus-visible:outline-mint/80"
+                >
+                  기존 회원 로그인
+                </a>
+              )}
+            </>
           )}
         </div>
       </div>

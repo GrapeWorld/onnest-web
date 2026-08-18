@@ -53,6 +53,8 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
       status: "신규",
       partnerId: "partner-1",
       partnerStaffId: null,
+      serviceType: "이사",
+      project: { id: "project-1", user: { email: "customer@example.com", name: "김고객" } },
     });
     mocks.update.mockResolvedValue({});
     mocks.activityCreate.mockResolvedValue({});
@@ -60,7 +62,7 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "OWNER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.transaction.mockImplementation(async (callback) =>
@@ -122,7 +124,7 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
     expect(response.status).toBe(200);
     expect(mocks.update).toHaveBeenCalledWith({
       where: { id: "request-1" },
-      data: { status: "확인 중" },
+      data: { status: "확인 중", cancelRequestedAt: null, cancelRequestReason: null },
     });
   });
 
@@ -132,6 +134,8 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
       status: "신규",
       partnerId: "other-partner",
       partnerStaffId: null,
+      serviceType: "이사",
+      project: { id: "project-1", user: { email: "customer@example.com", name: "김고객" } },
     });
 
     const response = await call({ status: "확인 중" });
@@ -146,7 +150,7 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "VIEWER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
 
     const response = await call({ status: "확인 중" });
@@ -159,13 +163,15 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "STAFF",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.findUnique.mockResolvedValue({
       id: "request-1",
       status: "신규",
       partnerId: "partner-1",
       partnerStaffId: "someone-else",
+      serviceType: "이사",
+      project: { id: "project-1", user: { email: "customer@example.com", name: "김고객" } },
     });
 
     const response = await call({ status: "확인 중" });
@@ -178,13 +184,15 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "STAFF",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.findUnique.mockResolvedValue({
       id: "request-1",
       status: "신규",
       partnerId: "partner-1",
       partnerStaffId: "staff-1",
+      serviceType: "이사",
+      project: { id: "project-1", user: { email: "customer@example.com", name: "김고객" } },
     });
 
     const response = await call({ status: "확인 중" });
@@ -218,6 +226,8 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
       status: "작업 예정",
       partnerId: "partner-1",
       partnerStaffId: null,
+      serviceType: "이사",
+      project: { id: "project-1", user: { email: "customer@example.com", name: "김고객" } },
     });
 
     const response = await call({ status: "확인 중" });
@@ -234,6 +244,8 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
       status: "작업 완료",
       partnerId: "partner-1",
       partnerStaffId: null,
+      serviceType: "이사",
+      project: { id: "project-1", user: { email: "customer@example.com", name: "김고객" } },
     });
 
     const response = await call({ status: "취소", reason: "요청 실수" });

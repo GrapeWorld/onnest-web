@@ -61,13 +61,13 @@ export function ServiceRequestUpdateForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-2">
+    <form onSubmit={handleSubmit} className="grid gap-2 min-w-0">
       <select
         value={statusValue}
         onChange={(event) => setStatusValue(event.target.value)}
         disabled={saving}
         aria-label="서비스 신청 상태 변경"
-        className="rounded-full border border-forest/15 bg-white px-4 py-2 text-sm font-semibold text-forest outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-full border border-forest/15 bg-white px-4 py-2 text-base font-semibold text-forest outline-none focus:border-forest disabled:opacity-60"
       >
         {serviceRequestStatuses.map((option) => (
           <option key={option}>{option}</option>
@@ -79,7 +79,7 @@ export function ServiceRequestUpdateForm({
         onChange={(event) => setPartnerValue(event.target.value)}
         disabled={saving || !privacyAgreed}
         aria-label="담당 업체 배정"
-        className="rounded-full border border-forest/15 bg-white px-4 py-2 text-sm font-semibold text-forest outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-full border border-forest/15 bg-white px-4 py-2 text-base font-semibold text-forest outline-none focus:border-forest disabled:opacity-60"
       >
         <option value={UNASSIGNED_PARTNER}>미배정</option>
         {partnerOptions.map((option) => (
@@ -94,14 +94,14 @@ export function ServiceRequestUpdateForm({
         </p>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex min-w-0 gap-2">
         <input
           value={ownerValue}
           onChange={(event) => setOwnerValue(event.target.value)}
           disabled={saving}
           placeholder="담당자"
           aria-label="담당자"
-          className="flex-1 rounded-full border border-forest/15 bg-white px-4 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full max-w-full min-w-0 flex-1 rounded-full border border-forest/15 bg-white px-4 py-2 text-base outline-none focus:border-forest disabled:opacity-60"
         />
         <button
           type="button"

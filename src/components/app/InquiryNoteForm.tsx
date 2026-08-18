@@ -39,14 +39,14 @@ export function InquiryNoteForm({ inquiryId }: { inquiryId: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-2">
+    <form onSubmit={handleSubmit} className="grid gap-2 min-w-0">
       <textarea
         value={body}
         onChange={(event) => setBody(event.target.value)}
         disabled={saving}
         rows={3}
         placeholder="이 문의에 대한 내부 메모를 남겨주세요. (문의자에게는 노출되지 않습니다)"
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
       <button

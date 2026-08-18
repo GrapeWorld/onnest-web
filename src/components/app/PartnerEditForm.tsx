@@ -131,14 +131,14 @@ export function PartnerEditForm({
         onChange={(event) => setNameValue(event.target.value)}
         disabled={saving}
         placeholder="업체명"
-        className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-xl border border-forest/15 bg-white px-3 py-2 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       <div>
         <select
           value={serviceTypeValue}
           onChange={(event) => setServiceTypeValue(event.target.value as ServiceType)}
           disabled={saving || serviceTypeLocked}
-          className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-xl border border-forest/15 bg-white px-3 py-2 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
         >
           {serviceTypes.map((type) => (
             <option key={type} value={type}>
@@ -157,14 +157,14 @@ export function PartnerEditForm({
         onChange={(event) => setContactNameValue(event.target.value)}
         disabled={saving}
         placeholder="담당자 (선택)"
-        className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-xl border border-forest/15 bg-white px-3 py-2 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       <input
         value={contactPhoneValue}
         onChange={(event) => setContactPhoneValue(event.target.value)}
         disabled={saving}
         placeholder="연락처 (선택)"
-        className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-xl border border-forest/15 bg-white px-3 py-2 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       <textarea
         value={memoValue}
@@ -172,7 +172,7 @@ export function PartnerEditForm({
         disabled={saving}
         rows={2}
         placeholder="내부 메모 (선택)"
-        className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-xl border border-forest/15 bg-white px-3 py-2 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       <div className="mt-1 rounded-xl bg-cream/60 p-3">
         <p className="mb-2 text-xs font-bold text-forest">
@@ -184,28 +184,28 @@ export function PartnerEditForm({
             onChange={(event) => setBizNumberValue(event.target.value)}
             disabled={saving}
             placeholder="사업자등록번호"
-            className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+            className="box-border w-full min-w-0 max-w-full rounded-xl border border-forest/15 bg-white px-3 py-2 text-base outline-none focus:border-forest disabled:opacity-60"
           />
           <input
             value={bankNameValue}
             onChange={(event) => setBankNameValue(event.target.value)}
             disabled={saving}
             placeholder="은행명"
-            className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+            className="box-border w-full min-w-0 max-w-full rounded-xl border border-forest/15 bg-white px-3 py-2 text-base outline-none focus:border-forest disabled:opacity-60"
           />
           <input
             value={bankHolderValue}
             onChange={(event) => setBankHolderValue(event.target.value)}
             disabled={saving}
             placeholder="예금주"
-            className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+            className="box-border w-full min-w-0 max-w-full rounded-xl border border-forest/15 bg-white px-3 py-2 text-base outline-none focus:border-forest disabled:opacity-60"
           />
           <input
             value={bankAccountValue}
             onChange={(event) => setBankAccountValue(event.target.value)}
             disabled={saving}
             placeholder="계좌번호"
-            className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+            className="box-border w-full min-w-0 max-w-full rounded-xl border border-forest/15 bg-white px-3 py-2 text-base outline-none focus:border-forest disabled:opacity-60"
           />
         </div>
       </div>
@@ -215,7 +215,7 @@ export function PartnerEditForm({
           type="button"
           onClick={handleSave}
           disabled={saving || !nameValue.trim()}
-          className="rounded-full bg-forest px-4 py-1.5 text-xs font-bold text-white hover:bg-forest/90 disabled:opacity-60"
+          className="inline-flex items-center justify-center min-h-11 rounded-full bg-forest px-4 py-1.5 text-xs font-bold text-white hover:bg-forest/90 disabled:opacity-60"
         >
           {saving ? "저장 중..." : "저장"}
         </button>
@@ -223,7 +223,7 @@ export function PartnerEditForm({
           type="button"
           onClick={() => setEditing(false)}
           disabled={saving}
-          className="rounded-full border border-forest/15 px-4 py-1.5 text-xs font-semibold text-forest/70 hover:bg-cream"
+          className="inline-flex items-center justify-center min-h-11 rounded-full border border-forest/15 px-4 py-1.5 text-xs font-semibold text-forest/70 hover:bg-cream"
         >
           취소
         </button>

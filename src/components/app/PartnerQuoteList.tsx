@@ -67,7 +67,7 @@ export function PartnerQuoteList({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-semibold text-forest">
+                  <p className="break-words font-semibold text-forest">
                     {quote.title} · {formatWon(quote.amount)}원
                     {selected && (
                       <span className="ml-2 rounded-full bg-forest px-2 py-0.5 text-xs font-bold text-white">

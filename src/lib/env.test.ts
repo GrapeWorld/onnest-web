@@ -69,6 +69,29 @@ describe("validateServerEnv", () => {
     expect(() => validateServerEnv()).not.toThrow();
   });
 
+  it("rejects NCP_MAP_CLIENT_ID without NCP_MAP_CLIENT_SECRET (and vice versa)", () => {
+    process.env.DATABASE_URL = "postgresql://user:pass@host:5432/db";
+    process.env.SESSION_SECRET = "a".repeat(32);
+    setNodeEnv("development");
+    delete process.env.RESEND_API_KEY;
+    delete process.env.RESEND_FROM;
+
+    process.env.NCP_MAP_CLIENT_ID = "map-id";
+    delete process.env.NCP_MAP_CLIENT_SECRET;
+    expect(() => validateServerEnv()).toThrow(/NCP_MAP_CLIENT_ID.*NCP_MAP_CLIENT_SECRET/);
+
+    delete process.env.NCP_MAP_CLIENT_ID;
+    process.env.NCP_MAP_CLIENT_SECRET = "map-secret";
+    expect(() => validateServerEnv()).toThrow(/NCP_MAP_CLIENT_ID.*NCP_MAP_CLIENT_SECRET/);
+
+    process.env.NCP_MAP_CLIENT_ID = "map-id";
+    expect(() => validateServerEnv()).not.toThrow();
+
+    delete process.env.NCP_MAP_CLIENT_ID;
+    delete process.env.NCP_MAP_CLIENT_SECRET;
+    expect(() => validateServerEnv()).not.toThrow();
+  });
+
   it("allows ADMIN_NOTIFICATION_EMAIL to be unset", () => {
     process.env.DATABASE_URL = "postgresql://user:pass@host:5432/db";
     process.env.SESSION_SECRET = "a".repeat(32);

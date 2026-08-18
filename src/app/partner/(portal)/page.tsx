@@ -154,7 +154,7 @@ export default async function PartnerPortalPage({
                     </span>
                   </div>
                   <h3 className="mt-4 text-xl font-black text-forest">{request.serviceType}</h3>
-                  <p className="mt-1 text-sm text-ink/60">{request.project.name}</p>
+                  <p className="mt-1 break-words text-sm text-ink/60">{request.project.name}</p>
                 </div>
 
                 <div className="flex min-w-64 flex-col gap-1 text-sm text-ink/65">

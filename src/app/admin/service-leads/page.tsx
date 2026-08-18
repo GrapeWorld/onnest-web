@@ -4,6 +4,7 @@ import { AppShell, MetricGrid } from "@/components/app/AppShell";
 import { Card } from "@/components/ui/Card";
 import { ServiceLeadFilterBar } from "@/components/app/ServiceLeadFilterBar";
 import { ServiceRequestUpdateForm } from "@/components/app/ServiceRequestUpdateForm";
+import { NoPartnerNoticeForm } from "@/components/app/NoPartnerNoticeForm";
 import { ViewerReadOnlyNotice } from "@/components/app/ViewerReadOnlyNotice";
 import {
   serviceRequestStatuses,
@@ -87,10 +88,11 @@ export default async function AdminServiceLeadsPage({
     ];
   }
 
-  const [totalCount, allStatusCounts, requests, activePartners, filterPartner] =
+  const [totalCount, allStatusCounts, cancelRequestedCount, requests, activePartners, filterPartner] =
     await Promise.all([
       prisma.serviceRequest.count({ where }),
       prisma.serviceRequest.groupBy({ by: ["status"], _count: { _all: true } }),
+      prisma.serviceRequest.count({ where: { cancelRequestedAt: { not: null } } }),
       prisma.serviceRequest.findMany({
         where,
         orderBy: { createdAt: "desc" },
@@ -109,7 +111,7 @@ export default async function AdminServiceLeadsPage({
         },
       }),
       prisma.partner.findMany({
-        where: { active: true },
+        where: { active: true, verificationStatus: "APPROVED" },
         orderBy: { name: "asc" },
         select: { id: true, name: true, serviceType: true },
       }),
@@ -118,12 +120,15 @@ export default async function AdminServiceLeadsPage({
         : Promise.resolve(null),
     ]);
 
-  const countByStatus = serviceRequestStatuses.map(
-    (statusOption): [string, string] => [
-      statusOption,
-      `${allStatusCounts.find((row) => row.status === statusOption)?._count._all ?? 0}건`,
-    ],
-  );
+  const countByStatus: [string, string][] = [
+    ["취소 요청", `${cancelRequestedCount}건`],
+    ...serviceRequestStatuses.map(
+      (statusOption): [string, string] => [
+        statusOption,
+        `${allStatusCounts.find((row) => row.status === statusOption)?._count._all ?? 0}건`,
+      ],
+    ),
+  ];
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const baseParams = { q, status, type, partnerAssigned, ownerAssigned, partnerId };
@@ -194,11 +199,33 @@ export default async function AdminServiceLeadsPage({
                       <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-sage ring-1 ring-forest/10">
                         {request.project.spaceType}
                       </span>
+                      {request.cancelRequestedAt && (
+                        <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
+                          취소 요청
+                        </span>
+                      )}
+                      {!request.partnerId &&
+                        request.status !== "취소" &&
+                        (() => {
+                          const daysUnassigned = Math.floor(
+                            (Date.now() - request.createdAt.getTime()) / 86_400_000,
+                          );
+                          return daysUnassigned >= 1 ? (
+                            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                              미배정 {daysUnassigned}일째
+                            </span>
+                          ) : null;
+                        })()}
+                      {request.noPartnerNoticeSentAt && (
+                        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                          연결 어려움 안내 완료
+                        </span>
+                      )}
                     </div>
                     <h3 className="mt-4 text-xl font-black text-forest">
                       {request.serviceType}
                     </h3>
-                    <p className="mt-1 text-sm text-ink/60">
+                    <p className="mt-1 break-words text-sm text-ink/60">
                       {request.project.name}
                     </p>
                     {request.message && (
@@ -231,6 +258,15 @@ export default async function AdminServiceLeadsPage({
                     <span>
                       접수: {receivedFormatter.format(request.createdAt)}
                     </span>
+                    {canEdit &&
+                      !request.partnerId &&
+                      request.status !== "취소" &&
+                      request.status !== "작업 완료" && (
+                        <NoPartnerNoticeForm
+                          requestId={request.id}
+                          alreadySentAt={request.noPartnerNoticeSentAt}
+                        />
+                      )}
                     <span>
                       개인정보 동의:{" "}
                       {request.privacyAgreedAt
@@ -272,6 +308,20 @@ export default async function AdminServiceLeadsPage({
                     </p>
                   </div>
                 </div>
+
+                {request.cancelRequestedAt && (
+                  <div className="mt-3 rounded-2xl bg-red-50 p-4 text-sm text-red-700">
+                    <p className="font-bold">
+                      고객이 {formatDate(request.cancelRequestedAt)}에 취소를 요청했습니다.
+                    </p>
+                    {request.cancelRequestReason && (
+                      <p className="mt-1">사유: {request.cancelRequestReason}</p>
+                    )}
+                    <p className="mt-1 text-red-700/80">
+                      상태를 변경하면(취소 확정 또는 계속 진행) 이 요청은 처리된 것으로 표시됩니다.
+                    </p>
+                  </div>
+                )}
               </Card>
             ))}
           </div>

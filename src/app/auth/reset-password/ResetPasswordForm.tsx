@@ -7,7 +7,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { Card } from "@/components/ui/Card";
 
 const inputClass =
-  "rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink focus:border-forest focus:outline-none";
+  "box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink focus:border-forest focus:outline-none";
 
 export function ResetPasswordForm({ token }: { token: string | null }) {
   const router = useRouter();
@@ -70,8 +70,8 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
               비밀번호가 재설정되었습니다. 로그인 화면으로 이동합니다.
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="grid gap-4" noValidate>
-              <label className="grid gap-2 text-sm font-semibold text-forest">
+            <form onSubmit={handleSubmit} className="grid w-full min-w-0 gap-4" noValidate>
+              <label className="grid min-w-0 gap-2 text-sm font-semibold text-forest">
                 새 비밀번호
                 <input
                   type="password"
@@ -83,7 +83,7 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
                   placeholder="8자 이상 입력해주세요"
                 />
               </label>
-              <label className="grid gap-2 text-sm font-semibold text-forest">
+              <label className="grid min-w-0 gap-2 text-sm font-semibold text-forest">
                 새 비밀번호 확인
                 <input
                   type="password"
@@ -101,7 +101,7 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-forest px-5 py-3 text-sm font-semibold text-white shadow-soft transition duration-300 hover:-translate-y-0.5 hover:bg-navy hover:shadow-glow focus-visible:outline focus-visible:outline-4 focus-visible:outline-mint/80 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                className="box-border mt-2 inline-flex min-h-11 w-full min-w-0 max-w-full items-center justify-center rounded-full bg-forest px-5 py-3 text-sm font-semibold text-white shadow-soft transition duration-300 hover:-translate-y-0.5 hover:bg-navy hover:shadow-glow focus-visible:outline focus-visible:outline-4 focus-visible:outline-mint/80 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
               >
                 {loading ? "변경 중..." : "비밀번호 변경"}
               </button>

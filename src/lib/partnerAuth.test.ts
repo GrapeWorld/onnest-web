@@ -73,12 +73,26 @@ describe("getActiveMembership", () => {
     expect(result).toBeNull();
   });
 
+  it.each(["PENDING", "REJECTED", "SUSPENDED"])(
+    "returns null when the partner's verification status is %s (not yet APPROVED)",
+    async (verificationStatus) => {
+      mocks.membershipFindFirst.mockResolvedValue({
+        id: "membership-1",
+        partnerId: "partner-1",
+        role: "OWNER",
+        partner: { active: true, verificationStatus },
+      });
+      const result = await getActiveMembership(user);
+      expect(result).toBeNull();
+    },
+  );
+
   it("returns the membership when the account, partner, and membership are all active", async () => {
     mocks.membershipFindFirst.mockResolvedValue({
       id: "membership-1",
       partnerId: "partner-1",
       role: "MANAGER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     const result = await getActiveMembership(user);
     expect(result).toEqual({ id: "membership-1", partnerId: "partner-1", role: "MANAGER" });

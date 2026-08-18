@@ -82,7 +82,7 @@ export function HandoverShareControl({
 
       {shareUrl && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <code className="flex-1 overflow-x-auto rounded-2xl bg-cream px-4 py-3 text-xs text-ink/75">
+          <code className="block min-w-0 flex-1 break-all rounded-2xl bg-cream px-4 py-3 text-xs text-ink/75">
             {shareUrl}
           </code>
           <button

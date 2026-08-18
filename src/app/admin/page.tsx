@@ -138,10 +138,10 @@ export default async function AdminPage() {
                   key={inquiry.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-cream px-4 py-3 text-sm"
                 >
-                  <span className="font-semibold text-forest">
+                  <span className="min-w-0 break-words font-semibold text-forest">
                     {inquiry.name} · {inquiry.type}
                   </span>
-                  <span className="text-ink/55">
+                  <span className="shrink-0 text-ink/55">
                     {inquiry.status} · {formatDate(inquiry.createdAt)}
                   </span>
                 </li>
@@ -171,10 +171,10 @@ export default async function AdminPage() {
                   key={request.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-cream px-4 py-3 text-sm"
                 >
-                  <span className="font-semibold text-forest">
+                  <span className="min-w-0 break-words font-semibold text-forest">
                     {request.serviceType} · {request.region}
                   </span>
-                  <span className="text-ink/55">
+                  <span className="shrink-0 text-ink/55">
                     {request.status} · {formatDate(request.createdAt)}
                   </span>
                 </li>

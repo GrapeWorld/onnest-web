@@ -68,7 +68,7 @@ describe("GET /api/partner/service-requests/[id]/files/[fileId]", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "OWNER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.readProjectFile.mockResolvedValue(new ReadableStream());
   });
@@ -101,7 +101,7 @@ describe("GET /api/partner/service-requests/[id]/files/[fileId]", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "VIEWER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
 
     const response = await GET(getRequest(), context());
@@ -113,7 +113,7 @@ describe("GET /api/partner/service-requests/[id]/files/[fileId]", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "STAFF",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.documentFindFirst.mockResolvedValue({
       id: "file-1",
@@ -141,7 +141,7 @@ describe("GET /api/partner/service-requests/[id]/files/[fileId]", () => {
       id: "membership-2",
       partnerId: "other-partner",
       role: "OWNER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
 
     const response = await GET(getRequest(), context());
@@ -224,7 +224,7 @@ describe("DELETE /api/partner/service-requests/[id]/files/[fileId]", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "OWNER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.deleteProjectFile.mockResolvedValue(undefined);
     mocks.documentDelete.mockResolvedValue({});
@@ -261,7 +261,7 @@ describe("DELETE /api/partner/service-requests/[id]/files/[fileId]", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "VIEWER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
 
     const response = await DELETE(deleteRequest(), context());
@@ -274,7 +274,7 @@ describe("DELETE /api/partner/service-requests/[id]/files/[fileId]", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "STAFF",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.documentFindFirst.mockResolvedValue({
       id: "file-1",

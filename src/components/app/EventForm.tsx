@@ -17,7 +17,7 @@ const presets = [
 ];
 
 const fieldClass =
-  "rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink outline-none focus:border-forest";
+  "box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink outline-none focus:border-forest";
 
 export function EventForm({ projectId }: { projectId: string }) {
   const router = useRouter();
@@ -65,16 +65,16 @@ export function EventForm({ projectId }: { projectId: string }) {
             key={preset}
             type="button"
             onClick={() => setTitle(preset)}
-            className="rounded-full bg-cream px-3 py-1.5 text-xs font-semibold text-forest hover:bg-mint"
+            className="inline-flex items-center justify-center min-h-11 rounded-full bg-cream px-3 py-1.5 text-xs font-semibold text-forest hover:bg-mint"
           >
             {preset}
           </button>
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-5 grid gap-4" noValidate>
+      <form onSubmit={handleSubmit} className="mt-5 grid gap-4 min-w-0" noValidate>
         <div className="grid gap-4 md:grid-cols-2">
-          <label className="grid gap-2 text-sm font-semibold text-forest">
+          <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
             일정 이름
             <input
               required
@@ -85,7 +85,7 @@ export function EventForm({ projectId }: { projectId: string }) {
               placeholder="예: 전입신고"
             />
           </label>
-          <label className="grid gap-2 text-sm font-semibold text-forest">
+          <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
             날짜
             <input
               required
@@ -96,7 +96,7 @@ export function EventForm({ projectId }: { projectId: string }) {
             />
           </label>
         </div>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
+        <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
           메모 <span className="font-normal text-ink/50">선택 입력</span>
           <input
             value={memo}

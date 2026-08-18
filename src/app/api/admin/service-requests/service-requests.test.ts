@@ -84,7 +84,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
   });
 
   it("runs the update and quote cleanup inside a single Serializable transaction", async () => {
-    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, verificationStatus: "APPROVED", serviceType: "이사" });
 
     await call({ partnerId: "partner-1" });
 
@@ -105,7 +105,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
       partnerId: null,
       privacyAgreedAt: null,
     });
-    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, verificationStatus: "APPROVED", serviceType: "이사" });
 
     const response = await call({ partnerId: "partner-1" });
     const data = await response.json();
@@ -150,8 +150,26 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
+  it.each(["PENDING", "REJECTED", "SUSPENDED"])(
+    "rejects assigning a partner whose verification status is %s (not yet APPROVED)",
+    async (verificationStatus) => {
+      mocks.findUniquePartner.mockResolvedValue({
+        active: true,
+        verificationStatus,
+        serviceType: "이사",
+      });
+
+      const response = await call({ partnerId: "partner-1" });
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe("배정할 수 없는 업체입니다.");
+      expect(mocks.update).not.toHaveBeenCalled();
+    },
+  );
+
   it("rejects assigning a partner whose serviceType doesn't match the request", async () => {
-    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "입주청소" });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, verificationStatus: "APPROVED", serviceType: "입주청소" });
 
     const response = await call({ partnerId: "partner-1" });
 
@@ -160,7 +178,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
   });
 
   it("allows assigning a matching active partner", async () => {
-    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, verificationStatus: "APPROVED", serviceType: "이사" });
 
     const response = await call({ partnerId: "partner-1" });
 
@@ -178,7 +196,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
   });
 
   it("auto-switches status to 신규 (that partner's queue start) when a new partner is assigned", async () => {
-    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, verificationStatus: "APPROVED", serviceType: "이사" });
 
     await call({ partnerId: "partner-1" });
 
@@ -203,7 +221,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
       partnerId: null,
       privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
     });
-    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, verificationStatus: "APPROVED", serviceType: "이사" });
 
     await call({ partnerId: "partner-1" });
 
@@ -227,7 +245,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
       partnerId: "old-partner",
       privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
     });
-    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, verificationStatus: "APPROVED", serviceType: "이사" });
 
     await call({ partnerId: "partner-1" });
 
@@ -252,7 +270,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
       partnerId: "partner-1",
       privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
     });
-    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, verificationStatus: "APPROVED", serviceType: "이사" });
 
     await call({ partnerId: "partner-1", status: "확인 중" });
 
@@ -288,7 +306,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
   });
 
   it("clears existing quotes and the selection when reassigned to a different partner", async () => {
-    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, verificationStatus: "APPROVED", serviceType: "이사" });
 
     await call({ partnerId: "partner-1" });
 
@@ -321,7 +339,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
       partnerId: "partner-1",
       privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
     });
-    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, verificationStatus: "APPROVED", serviceType: "이사" });
 
     await call({ partnerId: "partner-1", status: "확인 중" });
 
@@ -342,7 +360,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
   });
 
   it("notifies the newly-assigned partner's active staff", async () => {
-    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, verificationStatus: "APPROVED", serviceType: "이사" });
 
     await call({ partnerId: "partner-1" });
 
@@ -356,7 +374,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
   });
 
   it("still returns 200 when the notification fails", async () => {
-    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, verificationStatus: "APPROVED", serviceType: "이사" });
     mocks.notifyPartnerStaff.mockRejectedValue(new Error("resend down"));
 
     const response = await call({ partnerId: "partner-1" });
@@ -423,7 +441,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
       partnerId: "old-partner",
       privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
     });
-    mocks.findUniquePartner.mockResolvedValue({ active: true, serviceType: "이사" });
+    mocks.findUniquePartner.mockResolvedValue({ active: true, verificationStatus: "APPROVED", serviceType: "이사" });
     mocks.update.mockResolvedValue({
       id: "request-1",
       status: "신규",

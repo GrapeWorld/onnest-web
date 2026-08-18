@@ -19,7 +19,7 @@ export type EventRow = {
 };
 
 const fieldClass =
-  "rounded-2xl border border-forest/15 px-3 py-2 text-sm text-ink outline-none focus:border-forest";
+  "box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-3 py-2 text-base text-ink outline-none focus:border-forest";
 
 export function EventList({
   projectId,
@@ -210,7 +210,7 @@ function EventEditCard({
   return (
     <Card className="grid gap-3 p-5">
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-1 text-sm font-semibold text-forest">
+        <label className="grid gap-1 text-sm font-semibold text-forest min-w-0">
           일정 이름
           <input
             value={title}
@@ -220,7 +220,7 @@ function EventEditCard({
             className={`${fieldClass} disabled:opacity-60`}
           />
         </label>
-        <label className="grid gap-1 text-sm font-semibold text-forest">
+        <label className="grid gap-1 text-sm font-semibold text-forest min-w-0">
           날짜
           <input
             type="date"
@@ -231,7 +231,7 @@ function EventEditCard({
           />
         </label>
       </div>
-      <label className="grid gap-1 text-sm font-semibold text-forest">
+      <label className="grid gap-1 text-sm font-semibold text-forest min-w-0">
         메모 <span className="font-normal text-ink/50">선택 입력</span>
         <input
           value={memo}

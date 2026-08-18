@@ -43,19 +43,19 @@ export function PartnerForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3 md:grid-cols-[1fr_160px_1fr_1fr_auto]">
+    <form onSubmit={handleSubmit} className="grid gap-3 md:grid-cols-[1fr_160px_1fr_1fr_auto] min-w-0">
       <input
         value={name}
         onChange={(event) => setName(event.target.value)}
         disabled={saving}
         placeholder="업체명"
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       <select
         value={serviceType}
         onChange={(event) => setServiceType(event.target.value as ServiceType)}
         disabled={saving}
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
       >
         {serviceTypes.map((type) => (
           <option key={type} value={type}>
@@ -68,14 +68,14 @@ export function PartnerForm() {
         onChange={(event) => setContactName(event.target.value)}
         disabled={saving}
         placeholder="담당자 (선택)"
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       <input
         value={contactPhone}
         onChange={(event) => setContactPhone(event.target.value)}
         disabled={saving}
         placeholder="연락처 (선택)"
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       <button
         type="submit"

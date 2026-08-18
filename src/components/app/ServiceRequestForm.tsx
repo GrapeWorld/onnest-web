@@ -4,10 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
-import { serviceTypes, serviceDescriptions } from "@/data/serviceRequests";
+import {
+  serviceTypes,
+  serviceDescriptions,
+  serviceRequestProcessingNotice,
+  serviceRequestScopeNotice,
+} from "@/data/serviceRequests";
 
 const fieldClass =
-  "rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink outline-none focus:border-forest";
+  "box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink outline-none focus:border-forest";
 
 export function ServiceRequestForm({
   projectId,
@@ -82,7 +87,7 @@ export function ServiceRequestForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-5" noValidate>
+    <form onSubmit={handleSubmit} className="grid gap-5 min-w-0" noValidate>
       <Card>
         <h2 className="text-xl font-black text-forest">필요한 서비스 선택</h2>
         <p className="mt-2 text-sm text-ink/60">
@@ -122,7 +127,7 @@ export function ServiceRequestForm({
         <h2 className="text-xl font-black text-forest">신청 정보</h2>
         <div className="mt-5 grid gap-4">
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="grid gap-2 text-sm font-semibold text-forest">
+            <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
               희망일 <span className="font-normal text-ink/50">선택 입력</span>
               <input
                 type="date"
@@ -131,7 +136,7 @@ export function ServiceRequestForm({
                 className={fieldClass}
               />
             </label>
-            <label className="grid gap-2 text-sm font-semibold text-forest">
+            <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
               지역
               <input
                 required
@@ -145,7 +150,7 @@ export function ServiceRequestForm({
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="grid gap-2 text-sm font-semibold text-forest">
+            <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
               연락받을 이름
               <input
                 required
@@ -155,7 +160,7 @@ export function ServiceRequestForm({
                 className={fieldClass}
               />
             </label>
-            <label className="grid gap-2 text-sm font-semibold text-forest">
+            <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
               연락처
               <input
                 required
@@ -167,7 +172,7 @@ export function ServiceRequestForm({
             </label>
           </div>
 
-          <label className="grid gap-2 text-sm font-semibold text-forest">
+          <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
             요청 내용 <span className="font-normal text-ink/50">선택 입력</span>
             <textarea
               value={message}
@@ -197,10 +202,7 @@ export function ServiceRequestForm({
           <p className="text-base font-black">
             서비스 신청 {created}건이 접수되었습니다.
           </p>
-          <p className="mt-1 text-ink/70">
-            담당자가 확인한 뒤 입력하신 연락처로 안내드립니다. 아래 신청
-            내역에서 진행 상태를 확인할 수 있습니다.
-          </p>
+          <p className="mt-1 text-ink/70">{serviceRequestProcessingNotice}</p>
         </div>
       )}
 
@@ -240,8 +242,7 @@ export function ServiceRequestForm({
       </button>
 
       <p className="text-xs leading-6 text-ink/55">
-        온네스트는 각 서비스의 직접 제공자가 아니며, 견적·계약·A/S는 파트너
-        정책을 따릅니다.
+        {serviceRequestScopeNotice} 견적·계약·A/S는 파트너 정책을 따릅니다.
       </p>
     </form>
   );

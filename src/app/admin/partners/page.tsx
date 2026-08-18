@@ -5,12 +5,18 @@ import { PartnerForm } from "@/components/app/PartnerForm";
 import { PartnerActiveToggle } from "@/components/app/PartnerActiveToggle";
 import { PartnerEditForm } from "@/components/app/PartnerEditForm";
 import { PartnerVerificationDocuments } from "@/components/app/PartnerVerificationDocuments";
+import { PartnerVerificationChangeForm } from "@/components/app/PartnerVerificationChangeForm";
 import { ViewerReadOnlyNotice } from "@/components/app/ViewerReadOnlyNotice";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isStorageConfigured } from "@/lib/storage";
 import { formatDate } from "@/lib/dates";
 import { serviceTypes } from "@/data/serviceRequests";
+import {
+  partnerVerificationStatusLabels,
+  partnerVerificationStatusClassName,
+  type PartnerVerificationStatus,
+} from "@/data/partnerVerification";
 
 export default async function AdminPartnersPage() {
   // 조회는 super/viewer 모두 가능 — /admin/layout.tsx의 requireAdmin()이 이미
@@ -33,6 +39,8 @@ export default async function AdminPartnersPage() {
       bankAccountHolder: true,
       bankAccountNumber: true,
       active: true,
+      verificationStatus: true,
+      verificationReason: true,
       _count: { select: { requests: true } },
       verificationDocuments: {
         orderBy: { createdAt: "desc" },
@@ -80,7 +88,26 @@ export default async function AdminPartnersPage() {
                         >
                           {partner.active ? "활성" : "비활성"}
                         </span>
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-bold ${
+                            partnerVerificationStatusClassName[
+                              partner.verificationStatus as PartnerVerificationStatus
+                            ] ?? "bg-cream text-forest"
+                          }`}
+                        >
+                          검증: {partnerVerificationStatusLabels[
+                            partner.verificationStatus as PartnerVerificationStatus
+                          ] ?? partner.verificationStatus}
+                        </span>
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-ink/50 ring-1 ring-forest/10">
+                          서류 {partner.verificationDocuments.length}건
+                        </span>
                       </div>
+                      {partner.verificationReason && (
+                        <p className="mb-2 text-xs text-ink/50">
+                          검증 사유: {partner.verificationReason}
+                        </p>
+                      )}
                       {canEdit ? (
                         <>
                           <PartnerEditForm
@@ -104,6 +131,14 @@ export default async function AdminPartnersPage() {
                               createdAt: formatDate(doc.createdAt),
                             }))}
                           />
+                          <div className="mt-4 border-t border-forest/10 pt-4">
+                            <PartnerVerificationChangeForm
+                              partnerId={partner.id}
+                              currentStatus={
+                                partner.verificationStatus as PartnerVerificationStatus
+                              }
+                            />
+                          </div>
                         </>
                       ) : (
                         <div>

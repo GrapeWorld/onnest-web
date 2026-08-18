@@ -79,14 +79,14 @@ export function PartnerStatusChangeForm({
       {nextStatuses.length === 0 ? (
         <p className="text-sm text-ink/50">종료된 요청은 더 이상 상태를 변경할 수 없습니다.</p>
       ) : (
-        <form onSubmit={handleSubmit} className="grid gap-3">
-          <div className="grid gap-1">
-            <label className="text-sm font-semibold text-forest">다음 상태</label>
+        <form onSubmit={handleSubmit} className="grid gap-3 min-w-0">
+          <label className="grid min-w-0 gap-1 text-sm font-semibold text-forest">
+            다음 상태
             <select
               value={status ?? ""}
               onChange={(event) => setStatus(event.target.value as ServiceRequestStatus)}
               disabled={saving}
-              className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+              className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
             >
               {nextStatuses.map((option) => (
                 <option key={option} value={option}>
@@ -94,20 +94,20 @@ export function PartnerStatusChangeForm({
                 </option>
               ))}
             </select>
-          </div>
+          </label>
 
           {status === serviceRequestCancelledStatus && (
-            <div className="grid gap-1">
-              <label className="text-sm font-semibold text-forest">거절/취소 사유 (필수)</label>
+            <label className="grid min-w-0 gap-1 text-sm font-semibold text-forest">
+              거절/취소 사유 (필수)
               <textarea
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
                 disabled={saving}
                 rows={3}
                 placeholder="예: 요청 지역이 서비스 가능 범위 밖입니다."
-                className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+                className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
               />
-            </div>
+            </label>
           )}
 
           {error && <p className="text-sm font-semibold text-red-600">{error}</p>}

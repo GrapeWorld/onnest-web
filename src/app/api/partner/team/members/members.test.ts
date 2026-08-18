@@ -42,7 +42,7 @@ const ownerMembership = {
   userId: "owner-1",
   role: "OWNER",
   status: "ACTIVE",
-  partner: { active: true },
+  partner: { active: true, verificationStatus: "APPROVED" },
 };
 
 const targetStaffMembership = {
@@ -51,7 +51,7 @@ const targetStaffMembership = {
   userId: "staff-1",
   role: "STAFF",
   status: "ACTIVE",
-  partner: { active: true },
+  partner: { active: true, verificationStatus: "APPROVED" },
 };
 
 describe("PATCH /api/partner/team/members/[membershipId]", () => {

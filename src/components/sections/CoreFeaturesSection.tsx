@@ -1,9 +1,18 @@
+import type { LucideIcon } from "lucide-react";
 import { CalendarCheck, Link2, NotebookPen } from "lucide-react";
 import { Section } from "@/components/ui/Section";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { FeatureCard } from "@/components/ui/Card";
 
-const coreFeatures = [
+export type CoreFeatureItem = {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  href?: string;
+  linkLabel?: string;
+};
+
+const defaultFeatures: CoreFeatureItem[] = [
   {
     title: "준비 일정 관리",
     description: "계약, 이사, 입주까지 놓치기 쉬운 일정을 프로젝트 하나로 모아 관리합니다.",
@@ -21,17 +30,26 @@ const coreFeatures = [
   },
 ];
 
-export function CoreFeaturesSection() {
+export function CoreFeaturesSection({
+  title = "입주 준비에 꼭 필요한 것만 담았습니다.",
+  items = defaultFeatures,
+}: {
+  title?: string;
+  items?: CoreFeatureItem[];
+}) {
   return (
     <Section className="bg-white">
-      <SectionTitle
-        eyebrow="Features"
-        title="입주 준비에 꼭 필요한 것만 담았습니다."
-        align="center"
-      />
-      <div className="mt-10 grid gap-5 md:grid-cols-3">
-        {coreFeatures.map((feature) => (
-          <FeatureCard key={feature.title} {...feature} />
+      <SectionTitle eyebrow="Features" title={title} align="center" />
+      <div className="mt-10 grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((feature) => (
+          <FeatureCard
+            key={feature.title}
+            title={feature.title}
+            description={feature.description}
+            icon={feature.icon}
+            href={feature.href}
+            linkLabel={feature.linkLabel}
+          />
         ))}
       </div>
     </Section>

@@ -68,12 +68,12 @@ export function SocialAccountsPanel({
             return (
               <li
                 key={provider}
-                className="flex items-center justify-between rounded-2xl bg-cream px-4 py-3 text-sm"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-cream px-4 py-3 text-sm"
               >
-                <div>
+                <div className="min-w-0">
                   <p className="font-semibold text-forest">{oauthProviderLabels[provider]}</p>
                   {connection ? (
-                    <p className="mt-0.5 text-xs text-ink/55">
+                    <p className="mt-0.5 break-words text-xs text-ink/55">
                       {connection.providerEmail ?? "연결됨"}
                     </p>
                   ) : (
@@ -86,14 +86,14 @@ export function SocialAccountsPanel({
                     onClick={() => handleDisconnect(connection.id)}
                     disabled={disconnecting === connection.id || lastMethod}
                     title={lastMethod ? "마지막 남은 로그인 방법은 해제할 수 없습니다." : undefined}
-                    className="rounded-full border border-red-200 px-4 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-red-200 px-4 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {disconnecting === connection.id ? "해제 중..." : "연결 해제"}
                   </button>
                 ) : (
                   <a
                     href={`/api/auth/oauth/${provider}/start?mode=link&returnTo=${encodeURIComponent("/my")}`}
-                    className="rounded-full border border-forest/15 bg-white px-4 py-1.5 text-xs font-semibold text-forest hover:bg-cream"
+                    className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-forest/15 bg-white px-4 text-xs font-semibold text-forest hover:bg-cream"
                   >
                     연결하기
                   </a>

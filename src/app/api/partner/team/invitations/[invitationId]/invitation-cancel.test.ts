@@ -40,7 +40,7 @@ describe("DELETE /api/partner/team/invitations/[invitationId]", () => {
       id: "owner-membership",
       partnerId: "partner-1",
       role: "OWNER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.invitationUpdateMany.mockResolvedValue({ count: 1 });
   });
@@ -50,7 +50,7 @@ describe("DELETE /api/partner/team/invitations/[invitationId]", () => {
       id: "staff-membership",
       partnerId: "partner-1",
       role: "STAFF",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
 
     const response = await call();

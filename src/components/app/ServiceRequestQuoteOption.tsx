@@ -56,7 +56,7 @@ export function ServiceRequestQuoteOption({
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-semibold text-forest">
+          <p className="break-words font-semibold text-forest">
             {quote.title} · {formatWon(quote.amount)}원
           </p>
           {quote.description && (
@@ -73,7 +73,7 @@ export function ServiceRequestQuoteOption({
               type="button"
               onClick={handleSelect}
               disabled={selecting}
-              className="shrink-0 rounded-full border border-forest/20 px-3 py-1.5 text-xs font-bold text-forest hover:bg-cream disabled:opacity-50"
+              className="inline-flex items-center justify-center min-h-11 shrink-0 rounded-full border border-forest/20 px-3 py-1.5 text-xs font-bold text-forest hover:bg-cream disabled:opacity-50"
             >
               {selecting ? "선택 중..." : "이 견적 선택"}
             </button>

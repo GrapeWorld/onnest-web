@@ -61,14 +61,14 @@ export function MemberStatusChangeForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className="grid gap-3 min-w-0">
       <div className="grid gap-1">
         <label className="text-sm font-semibold text-forest">변경할 상태</label>
         <select
           value={toStatus}
           onChange={(event) => setToStatus(event.target.value as MemberStatus)}
           disabled={saving}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
         >
           {memberStatuses.map((status) => (
             <option key={status} value={status}>
@@ -85,7 +85,7 @@ export function MemberStatusChangeForm({
           disabled={saving}
           rows={3}
           placeholder="예: 결제 미납으로 인한 이용 정지"
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
         />
       </div>
       {error && <p className="text-sm font-semibold text-red-600">{error}</p>}

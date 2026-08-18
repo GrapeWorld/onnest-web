@@ -6,7 +6,7 @@ import Link from "next/link";
 import { sanitizeReturnTo } from "@/lib/oauth/returnTo";
 
 const inputClass =
-  "rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink focus:border-forest focus:outline-none";
+  "box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink focus:border-forest focus:outline-none";
 
 export function SignupForm({ returnTo }: { returnTo?: string } = {}) {
   const router = useRouter();
@@ -61,8 +61,8 @@ export function SignupForm({ returnTo }: { returnTo?: string } = {}) {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="grid gap-4" noValidate>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
+      <form onSubmit={handleSubmit} className="grid w-full min-w-0 gap-4" noValidate>
+        <label className="grid min-w-0 gap-2 text-sm font-semibold text-forest">
           이름
           <input
             type="text"
@@ -74,7 +74,7 @@ export function SignupForm({ returnTo }: { returnTo?: string } = {}) {
             placeholder="홍길동"
           />
         </label>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
+        <label className="grid min-w-0 gap-2 text-sm font-semibold text-forest">
           이메일
           <input
             type="email"
@@ -86,7 +86,7 @@ export function SignupForm({ returnTo }: { returnTo?: string } = {}) {
             placeholder="hello@onnesthome.com"
           />
         </label>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
+        <label className="grid min-w-0 gap-2 text-sm font-semibold text-forest">
           휴대폰 번호
           <input
             type="tel"
@@ -97,7 +97,7 @@ export function SignupForm({ returnTo }: { returnTo?: string } = {}) {
             placeholder="010-1234-5678"
           />
         </label>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
+        <label className="grid min-w-0 gap-2 text-sm font-semibold text-forest">
           비밀번호
           <input
             type="password"
@@ -109,7 +109,7 @@ export function SignupForm({ returnTo }: { returnTo?: string } = {}) {
             placeholder="8자 이상 입력해주세요"
           />
         </label>
-        <label className="grid gap-2 text-sm font-semibold text-forest">
+        <label className="grid min-w-0 gap-2 text-sm font-semibold text-forest">
           비밀번호 확인
           <input
             type="password"
@@ -121,14 +121,14 @@ export function SignupForm({ returnTo }: { returnTo?: string } = {}) {
             placeholder="비밀번호를 다시 입력해주세요"
           />
         </label>
-        <label className="flex items-start gap-3 text-sm text-ink/70">
+        <label className="flex min-w-0 items-start gap-3 text-sm text-ink/70">
           <input
             type="checkbox"
             checked={agreeTerms}
             onChange={(event) => setAgreeTerms(event.target.checked)}
-            className="mt-1 h-4 w-4 rounded border-forest/30 text-forest focus:ring-forest"
+            className="mt-1 h-4 w-4 shrink-0 rounded border-forest/30 text-forest focus:ring-forest"
           />
-          <span>
+          <span className="min-w-0">
             <Link href="/terms" className="font-semibold text-forest hover:underline">
               이용약관
             </Link>{" "}
@@ -143,7 +143,7 @@ export function SignupForm({ returnTo }: { returnTo?: string } = {}) {
         <button
           type="submit"
           disabled={loading}
-          className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-forest px-5 py-3 text-sm font-semibold text-white shadow-soft transition duration-300 hover:-translate-y-0.5 hover:bg-navy hover:shadow-glow focus-visible:outline focus-visible:outline-4 focus-visible:outline-mint/80 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+          className="box-border mt-2 inline-flex min-h-11 w-full min-w-0 max-w-full items-center justify-center rounded-full bg-forest px-5 py-3 text-sm font-semibold text-white shadow-soft transition duration-300 hover:-translate-y-0.5 hover:bg-navy hover:shadow-glow focus-visible:outline focus-visible:outline-4 focus-visible:outline-mint/80 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
         >
           {loading ? "가입하는 중..." : "회원가입"}
         </button>

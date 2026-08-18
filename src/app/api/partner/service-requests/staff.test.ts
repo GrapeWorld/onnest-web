@@ -59,7 +59,7 @@ describe("PATCH /api/partner/service-requests/[id]/staff", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "OWNER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.userFindUnique.mockResolvedValue({
       id: "staff-2",
@@ -93,7 +93,7 @@ describe("PATCH /api/partner/service-requests/[id]/staff", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "VIEWER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
 
     const response = await call({ partnerStaffId: "staff-2" });
@@ -106,7 +106,7 @@ describe("PATCH /api/partner/service-requests/[id]/staff", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "STAFF",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.requestFindUnique.mockResolvedValue({
       id: "request-1",
@@ -124,7 +124,7 @@ describe("PATCH /api/partner/service-requests/[id]/staff", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "STAFF",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.requestFindUnique.mockResolvedValue({
       id: "request-1",
@@ -142,7 +142,7 @@ describe("PATCH /api/partner/service-requests/[id]/staff", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "MANAGER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
 
     const response = await call({ partnerStaffId: "staff-2" });

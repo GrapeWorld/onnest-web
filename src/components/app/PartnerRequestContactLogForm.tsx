@@ -54,13 +54,13 @@ export function PartnerRequestContactLogForm({ requestId }: { requestId: string 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-2">
+    <form onSubmit={handleSubmit} className="grid gap-2 min-w-0">
       <div className="grid gap-2 sm:grid-cols-2">
         <select
           value={method}
           onChange={(event) => setMethod(event.target.value as ContactMethod)}
           disabled={saving}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
         >
           {contactMethods.map((option) => (
             <option key={option} value={option}>
@@ -73,7 +73,7 @@ export function PartnerRequestContactLogForm({ requestId }: { requestId: string 
           value={contactedAt}
           onChange={(event) => setContactedAt(event.target.value)}
           disabled={saving}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
         />
       </div>
       <textarea
@@ -82,14 +82,14 @@ export function PartnerRequestContactLogForm({ requestId }: { requestId: string 
         disabled={saving}
         rows={2}
         placeholder="연락 결과 (예: 통화 연결, 견적 안내 완료)"
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       <input
         value={followUp}
         onChange={(event) => setFollowUp(event.target.value)}
         disabled={saving}
         placeholder="후속 조치 (선택)"
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
       <button

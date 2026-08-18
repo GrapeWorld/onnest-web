@@ -58,7 +58,7 @@ export function HandoverForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-5">
+    <form onSubmit={handleSubmit} className="grid gap-5 min-w-0">
       <Card>
         <h2 className="text-xl font-black text-forest">생활 정보 요약</h2>
         <p className="mt-2 text-sm text-ink/60">
@@ -69,7 +69,7 @@ export function HandoverForm({
           value={summary}
           onChange={(event) => setSummary(event.target.value)}
           maxLength={2000}
-          className="mt-4 min-h-40 w-full rounded-2xl border border-forest/15 p-4 text-base outline-none focus:border-forest"
+          className="box-border min-w-0 max-w-full mt-4 min-h-40 w-full rounded-2xl border border-forest/15 p-4 text-base outline-none focus:border-forest"
           placeholder="예: 오전에 볕이 잘 들고, 겨울에는 북쪽 창에 결로가 생겨 환기가 필요합니다."
         />
         <p className="mt-2 text-right text-xs text-ink/45">
@@ -95,7 +95,7 @@ export function HandoverForm({
                   setNotes((prev) => ({ ...prev, [label]: event.target.value }))
                 }
                 maxLength={500}
-                className="rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink outline-none focus:border-forest"
+                className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink outline-none focus:border-forest"
                 placeholder={`${label}에 대해 알아두면 좋은 점`}
               />
             </label>

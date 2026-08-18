@@ -103,7 +103,7 @@ export function PartnerVerificationDocuments({
             value={type}
             onChange={(event) => setType(event.target.value as PartnerVerificationDocumentType)}
             disabled={uploading}
-            className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+            className="box-border w-full min-w-0 max-w-full rounded-xl border border-forest/15 bg-white px-3 py-2 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
           >
             {Object.entries(partnerVerificationDocumentTypeLabels).map(([value, label]) => (
               <option key={value} value={value}>
@@ -148,14 +148,14 @@ export function PartnerVerificationDocuments({
                     doc.type as PartnerVerificationDocumentType
                   ] ?? doc.type}
                 </p>
-                <p className="truncate text-xs text-ink/55">
+                <p className="break-all text-xs text-ink/55">
                   {doc.filename} · {formatFileSize(doc.size)} · {doc.createdAt}
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">
                 <a
                   href={`/api/admin/partners/${partnerId}/documents/${doc.id}`}
-                  className="rounded-full border border-forest/15 px-3 py-1 text-xs font-semibold text-forest hover:border-forest/40"
+                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-forest/15 px-3 text-xs font-semibold text-forest hover:border-forest/40"
                 >
                   내려받기
                 </a>
@@ -163,7 +163,7 @@ export function PartnerVerificationDocuments({
                   type="button"
                   onClick={() => handleDelete(doc.id)}
                   disabled={deletingId === doc.id}
-                  className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-red-200 px-3 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
                 >
                   {deletingId === doc.id ? "삭제 중..." : "삭제"}
                 </button>

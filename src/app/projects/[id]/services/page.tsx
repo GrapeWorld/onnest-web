@@ -5,6 +5,7 @@ import { ServiceRequestForm } from "@/components/app/ServiceRequestForm";
 import { ServiceRequestList } from "@/components/app/ServiceRequestList";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { customerVisibleActivityActions } from "@/data/serviceRequestActivity";
 
 export default async function ProjectServicesPage({
   params,
@@ -20,7 +21,16 @@ export default async function ProjectServicesPage({
     include: {
       requests: {
         orderBy: { createdAt: "desc" },
-        include: { quotes: { orderBy: { createdAt: "asc" } } },
+        include: {
+          quotes: { orderBy: { createdAt: "asc" } },
+          partner: { select: { name: true } },
+          activities: {
+            where: { action: { in: customerVisibleActivityActions } },
+            orderBy: { createdAt: "desc" },
+            take: 3,
+            select: { id: true, action: true, createdAt: true },
+          },
+        },
       },
     },
   });
@@ -54,7 +64,12 @@ export default async function ProjectServicesPage({
             {project.requests.length}건
           </span>
         </h2>
-        <ServiceRequestList requests={project.requests} />
+        <ServiceRequestList
+          requests={project.requests.map((request) => ({
+            ...request,
+            partnerName: request.partner?.name ?? null,
+          }))}
+        />
       </section>
     </AppShell>
   );

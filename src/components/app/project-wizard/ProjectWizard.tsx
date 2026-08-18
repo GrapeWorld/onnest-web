@@ -15,9 +15,12 @@ import { SpaceSelectFields } from "./SpaceSelectFields";
 import { TransactionConditionFields } from "./TransactionConditionFields";
 import { ScheduleFields } from "./ScheduleFields";
 import { SummaryCard } from "./SummaryCard";
-import { emptyProjectWizardValues, type ProjectWizardValues } from "./shared";
-
-const DRAFT_KEY = "onnest:new-project-draft";
+import {
+  emptyProjectWizardValues,
+  PROJECT_DRAFT_STORAGE_KEY,
+  SOURCE_CANDIDATE_STORAGE_KEY,
+  type ProjectWizardValues,
+} from "./shared";
 
 /**
  * localStorage는 컴포넌트 바깥의 진짜 외부 저장소라 useState의 lazy
@@ -28,7 +31,7 @@ const DRAFT_KEY = "onnest:new-project-draft";
 function loadDraft(): ProjectWizardValues {
   if (typeof window === "undefined") return emptyProjectWizardValues;
   try {
-    const raw = window.localStorage.getItem(DRAFT_KEY);
+    const raw = window.localStorage.getItem(PROJECT_DRAFT_STORAGE_KEY);
     if (!raw) return emptyProjectWizardValues;
     return JSON.parse(raw) as ProjectWizardValues;
   } catch {
@@ -59,7 +62,7 @@ export function ProjectWizard() {
   }
 
   function saveDraft() {
-    window.localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+    window.localStorage.setItem(PROJECT_DRAFT_STORAGE_KEY, JSON.stringify(values));
     setDraftSaved(true);
     setTimeout(() => setDraftSaved(false), 2000);
   }
@@ -112,10 +115,17 @@ export function ProjectWizard() {
 
     setLoading(true);
     try {
+      // 매물 후보에서 "이 매물로 프로젝트 만들기"로 들어온 경우에만 존재한다
+      // (ConvertToProjectButton). 있으면 함께 보내 생성 직후 그 후보와 연결한다
+      // — 서버가 소유권을 다시 확인하므로 위조된 id를 보내도 연결되지 않는다.
+      const sourceCandidatePropertyId = window.localStorage.getItem(SOURCE_CANDIDATE_STORAGE_KEY);
       const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.data),
+        body: JSON.stringify({
+          ...parsed.data,
+          ...(sourceCandidatePropertyId ? { sourceCandidatePropertyId } : {}),
+        }),
       });
       const data = await res.json();
 
@@ -124,7 +134,8 @@ export function ProjectWizard() {
         return;
       }
 
-      window.localStorage.removeItem(DRAFT_KEY);
+      window.localStorage.removeItem(PROJECT_DRAFT_STORAGE_KEY);
+      window.localStorage.removeItem(SOURCE_CANDIDATE_STORAGE_KEY);
       router.push(`/projects/${data.id}`);
       router.refresh();
     } catch {
@@ -138,7 +149,7 @@ export function ProjectWizard() {
     <div>
       <Stepper current={step} />
       <Card>
-        <form onSubmit={handleSubmit} className="grid gap-6" noValidate>
+        <form onSubmit={handleSubmit} className="grid gap-6 min-w-0" noValidate>
           {step === 1 && (
             <SpaceSelectFields
               values={values}

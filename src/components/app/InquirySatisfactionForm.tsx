@@ -35,7 +35,7 @@ export function InquirySatisfactionForm({ inquiryId }: { inquiryId: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className="grid gap-3 min-w-0">
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((value) => (
           <button
@@ -56,7 +56,7 @@ export function InquirySatisfactionForm({ inquiryId }: { inquiryId: string }) {
         disabled={saving}
         rows={2}
         placeholder="의견을 남겨주세요. (선택)"
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
       <button

@@ -23,9 +23,9 @@ function Row({
 }) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-forest/10 py-3 last:border-0">
-      <div>
+      <div className="min-w-0">
         <p className="text-xs font-bold uppercase tracking-wide text-sage">{label}</p>
-        <p className="mt-1 text-sm font-semibold text-forest">{value || "미입력"}</p>
+        <p className="mt-1 break-words text-sm font-semibold text-forest">{value || "미입력"}</p>
       </div>
       <button
         type="button"

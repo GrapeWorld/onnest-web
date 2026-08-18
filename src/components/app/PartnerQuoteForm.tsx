@@ -45,14 +45,14 @@ export function PartnerQuoteForm({ requestId }: { requestId: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-2">
+    <form onSubmit={handleSubmit} className="grid gap-2 min-w-0">
       <input
         type="text"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
         disabled={saving}
         placeholder="견적 이름 (예: 기본형)"
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       <input
         type="number"
@@ -62,7 +62,7 @@ export function PartnerQuoteForm({ requestId }: { requestId: string }) {
         onChange={(event) => setAmount(event.target.value)}
         disabled={saving}
         placeholder="금액 (원)"
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       <textarea
         value={description}
@@ -70,7 +70,7 @@ export function PartnerQuoteForm({ requestId }: { requestId: string }) {
         disabled={saving}
         rows={2}
         placeholder="포함 사항 등 설명 (선택)"
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
       <button

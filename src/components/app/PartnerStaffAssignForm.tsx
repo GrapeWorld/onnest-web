@@ -44,12 +44,12 @@ export function PartnerStaffAssignForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-2">
+    <form onSubmit={handleSubmit} className="grid gap-2 min-w-0">
       <select
         value={staffId}
         onChange={(event) => setStaffId(event.target.value)}
         disabled={saving}
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
       >
         <option value="">미배정</option>
         {staffOptions.map((option) => (

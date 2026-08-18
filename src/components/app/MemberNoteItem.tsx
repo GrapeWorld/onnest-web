@@ -51,8 +51,8 @@ export function MemberNoteItem({
 
   return (
     <div className="rounded-2xl bg-cream px-4 py-3">
-      <div className="flex items-center justify-between gap-2 text-xs text-ink/55">
-        <span>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-ink/55">
+        <span className="min-w-0 break-words">
           {authorEmail} · {timestamp}
         </span>
         {canEdit && !editing && (
@@ -62,7 +62,7 @@ export function MemberNoteItem({
               setDraft(body);
               setEditing(true);
             }}
-            className="font-semibold text-forest hover:underline"
+            className="shrink-0 font-semibold text-forest hover:underline"
           >
             수정
           </button>
@@ -76,7 +76,7 @@ export function MemberNoteItem({
             onChange={(event) => setDraft(event.target.value)}
             disabled={saving}
             rows={3}
-            className="rounded-xl border border-forest/15 bg-white px-3 py-2 text-sm outline-none focus:border-forest disabled:opacity-60"
+            className="box-border w-full min-w-0 max-w-full rounded-xl border border-forest/15 bg-white px-3 py-2 text-base outline-none focus:border-forest disabled:opacity-60"
           />
           {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
           <div className="flex gap-2">
@@ -84,7 +84,7 @@ export function MemberNoteItem({
               type="button"
               onClick={handleSave}
               disabled={saving || !draft.trim()}
-              className="rounded-full bg-forest px-4 py-1.5 text-xs font-bold text-white hover:bg-forest/90 disabled:opacity-60"
+              className="inline-flex items-center justify-center min-h-11 rounded-full bg-forest px-4 py-1.5 text-xs font-bold text-white hover:bg-forest/90 disabled:opacity-60"
             >
               {saving ? "저장 중..." : "저장"}
             </button>
@@ -92,7 +92,7 @@ export function MemberNoteItem({
               type="button"
               onClick={() => setEditing(false)}
               disabled={saving}
-              className="rounded-full border border-forest/15 px-4 py-1.5 text-xs font-semibold text-forest/70 hover:bg-white"
+              className="inline-flex items-center justify-center min-h-11 rounded-full border border-forest/15 px-4 py-1.5 text-xs font-semibold text-forest/70 hover:bg-white"
             >
               취소
             </button>

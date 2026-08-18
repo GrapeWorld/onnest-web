@@ -54,6 +54,14 @@ export function validateServerEnv() {
     }
   }
 
+  // 매물 후보 지도(NCP Maps)도 같은 원칙 — 하나만 있으면 설정 실수다. 둘 다
+  // 없으면 지도는 그냥 꺼진 것처럼 동작한다(src/lib/naverMap.ts).
+  const hasNcpMapId = Boolean(process.env.NCP_MAP_CLIENT_ID);
+  const hasNcpMapSecret = Boolean(process.env.NCP_MAP_CLIENT_SECRET);
+  if (hasNcpMapId !== hasNcpMapSecret) {
+    problems.push("NCP_MAP_CLIENT_ID와 NCP_MAP_CLIENT_SECRET은 함께 설정해야 합니다(매물 지도).");
+  }
+
   if (problems.length > 0) {
     throw new Error(
       `서버 환경변수 설정을 확인해주세요 (.env.example 참고):\n- ${problems.join("\n- ")}`,

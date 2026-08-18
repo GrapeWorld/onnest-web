@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ExternalLink } from "lucide-react";
 import { AppShell, MetricGrid } from "@/components/app/AppShell";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -9,6 +10,7 @@ import { DeleteAccountControl } from "@/components/app/DeleteAccountControl";
 import { SocialAccountsPanel } from "@/components/app/SocialAccountsPanel";
 import { projectSteps } from "@/data/projectSteps";
 import { oauthProviders, type OAuthProvider } from "@/data/oauthProviders";
+import { customerVisibleActivityActions } from "@/data/serviceRequestActivity";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/dates";
@@ -57,10 +59,20 @@ export default async function MyPage() {
     include: {
       project: { select: { name: true } },
       quotes: { orderBy: { createdAt: "asc" } },
+      partner: { select: { name: true } },
+      // 고객에게 공개해도 되는 활동만 가져온다 — 업체 내부 메모·연락기록·
+      // 담당자 배정은 여기서부터 아예 제외한다.
+      activities: {
+        where: { action: { in: customerVisibleActivityActions } },
+        orderBy: { createdAt: "desc" },
+        take: 3,
+        select: { id: true, action: true, createdAt: true },
+      },
     },
   });
 
   const inquiryCount = await prisma.inquiry.count({ where: { userId: user.id } });
+  const candidatePropertyCount = await prisma.candidateProperty.count({ where: { userId: user.id } });
 
   const activeProject = projects.find((project) => {
     const done = project.stepStates.filter((s) => s.status === "완료").length;
@@ -95,22 +107,22 @@ export default async function MyPage() {
       description="내 프로젝트, 구독, 리포트, 문의 이력을 확인하는 사용자 대시보드입니다."
     >
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-forest/10 bg-white p-5 shadow-card">
-        <div>
-          <p className="text-sm text-ink/55">{user.email}</p>
+        <div className="min-w-0">
+          <p className="break-all text-sm text-ink/55">{user.email}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <p className="text-lg font-bold text-forest">{user.name}님</p>
+            <p className="break-words text-lg font-bold text-forest">{user.name}님</p>
             <span className="rounded-full bg-cream px-3 py-1 text-xs font-bold text-forest">
-              무료 플랜
+              베타 이용 중
             </span>
           </div>
         </div>
-        <LogoutButton className="rounded-full border border-forest/15 bg-white px-4 py-2 text-sm font-semibold text-forest hover:border-forest/40 hover:shadow-card" />
+        <LogoutButton className="shrink-0 rounded-full border border-forest/15 bg-white px-4 py-2 text-sm font-semibold text-forest hover:border-forest/40 hover:shadow-card" />
       </div>
 
       <div className="mb-6 flex flex-col gap-3 rounded-[24px] bg-forest p-6 text-white shadow-card sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-bold text-mint">다음 할 일</p>
-          <h2 className="mt-1 text-xl font-black">{nextAction.title}</h2>
+          <h2 className="mt-1 break-words text-xl font-black">{nextAction.title}</h2>
           <p className="mt-2 text-sm leading-6 text-white/75">
             {nextAction.description}
           </p>
@@ -120,9 +132,45 @@ export default async function MyPage() {
         </Button>
       </div>
 
+      <div className="mb-6 flex flex-col gap-4 rounded-[24px] border border-forest/10 bg-white p-6 shadow-card sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-black text-forest">매물 후보</h2>
+            {candidatePropertyCount > 0 && (
+              <span className="rounded-full bg-cream px-3 py-1 text-xs font-bold text-forest">
+                저장한 매물 {candidatePropertyCount}건
+              </span>
+            )}
+          </div>
+          <p className="mt-2 text-sm text-ink/60">관심 있는 매물을 저장하고 조건을 비교해 보세요.</p>
+          <p className="mt-2 text-xs text-ink/45">
+            외부 사이트에서 매물을 확인한 뒤 링크를 저장해 주세요. ONNEST가 매물을 직접 수집·중개하지는 않습니다.
+          </p>
+          <a
+            href="https://fin.land.naver.com/home"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex min-w-0 items-center gap-1 text-sm font-semibold text-forest hover:underline"
+          >
+            네이버페이 부동산에서 매물 찾기
+            <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          </a>
+        </div>
+        <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+          <Button href="/my/candidate-properties/new" className="w-full sm:w-auto">
+            매물 후보 추가
+          </Button>
+          {candidatePropertyCount > 0 && (
+            <Link href="/my/candidate-properties" className="text-center text-sm font-semibold text-forest hover:underline">
+              저장한 매물 보기 →
+            </Link>
+          )}
+        </div>
+      </div>
+
       {user.memberType === "PARTNER" && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-forest/10 bg-white p-5 shadow-card">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-bold text-forest">업체 파트너 계정으로 등록되어 있습니다</p>
             <p className="mt-1 text-sm text-ink/60">
               업체로 받은 서비스 요청과 팀 관리는 파트너 포털에서 확인할 수 있습니다.
@@ -166,20 +214,20 @@ export default async function MyPage() {
             const progress = Math.round((done / projectSteps.length) * 100);
 
             return (
-              <Link key={project.id} href={`/projects/${project.id}`}>
+              <Link key={project.id} href={`/projects/${project.id}`} className="block min-w-0">
                 <Card className="h-full p-5">
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-cream px-3 py-1 text-xs font-bold text-forest">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="shrink-0 rounded-full bg-cream px-3 py-1 text-xs font-bold text-forest">
                       {project.spaceType}
                     </span>
-                    <span className="text-xs font-bold text-sage">
+                    <span className="shrink-0 text-xs font-bold text-sage">
                       {progress}%
                     </span>
                   </div>
-                  <h3 className="mt-4 text-lg font-black text-forest">
+                  <h3 className="mt-4 break-words text-lg font-black text-forest">
                     {project.name}
                   </h3>
-                  <p className="mt-2 text-sm text-ink/60">
+                  <p className="mt-2 break-words text-sm text-ink/60">
                     {project.address || "주소 미입력"}
                   </p>
                   <div className="mt-4 h-2 overflow-hidden rounded-full bg-forest/10">
@@ -212,6 +260,7 @@ export default async function MyPage() {
           requests={requests.map((request) => ({
             ...request,
             projectName: request.project.name,
+            partnerName: request.partner?.name ?? null,
           }))}
         />
       </section>

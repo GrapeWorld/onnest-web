@@ -73,13 +73,13 @@ export function InquiryFilterBar({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className="grid gap-3 min-w-0">
       <div className="grid gap-3 md:grid-cols-[1fr_auto]">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="이름, 이메일, 휴대폰, 소속, 문의 내용으로 검색"
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest"
         />
         <button
           type="submit"
@@ -92,7 +92,7 @@ export function InquiryFilterBar({
         <select
           value={initialStatus}
           onChange={(event) => pushParams({ status: event.target.value })}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest"
         >
           <option value="">상태 전체</option>
           {inquiryStatuses.map((status) => (
@@ -104,7 +104,7 @@ export function InquiryFilterBar({
         <select
           value={initialType}
           onChange={(event) => pushParams({ type: event.target.value })}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest"
         >
           <option value="">문의 유형 전체</option>
           {inquiryTypes.map((type) => (
@@ -116,7 +116,7 @@ export function InquiryFilterBar({
         <select
           value={initialAssignee}
           onChange={(event) => pushParams({ assignee: event.target.value })}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest"
         >
           <option value="">담당자 전체</option>
           <option value="unassigned">미배정</option>
@@ -128,22 +128,22 @@ export function InquiryFilterBar({
         </select>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-1 text-xs font-semibold text-ink/50">
+        <label className="grid gap-1 text-xs font-semibold text-ink/50 min-w-0">
           접수일(부터)
           <input
             type="date"
             value={from}
             onChange={(event) => setFrom(event.target.value)}
-            className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest"
+            className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest"
           />
         </label>
-        <label className="grid gap-1 text-xs font-semibold text-ink/50">
+        <label className="grid gap-1 text-xs font-semibold text-ink/50 min-w-0">
           접수일(까지)
           <input
             type="date"
             value={to}
             onChange={(event) => setTo(event.target.value)}
-            className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest"
+            className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest"
           />
         </label>
       </div>

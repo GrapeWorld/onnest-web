@@ -28,6 +28,14 @@ export default defineConfig({
       SESSION_SECRET: E2E_SESSION_SECRET,
       APP_URL: BASE_URL,
       PW_E2E: "1",
+      // next dev는 프로젝트 루트 .env를 그대로 읽으므로(dotenv는 이미 존재하는
+      // process.env 값을 덮어쓰지 않는다), 로컬 개발용으로 등록해 둔 실제 NCP
+      // Maps 키가 여기서도 그대로 켜져 버린다. E2E는 항상 "지도 미설정" 상태를
+      // 검증해야 하므로(실제 API 호출 없이 결정적으로 돌아야 함) 빈 문자열로
+      // 명시적으로 덮어써 끈다 — RESEND_API_KEY가 애초에 .env에 없어 이메일도
+      // 같은 방식으로 "미설정" 경로를 타는 것과 같은 원칙이다.
+      NCP_MAP_CLIENT_ID: "",
+      NCP_MAP_CLIENT_SECRET: "",
     },
   },
   projects: [

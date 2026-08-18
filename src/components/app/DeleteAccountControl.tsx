@@ -92,8 +92,8 @@ export function DeleteAccountControl({
           회원 탈퇴 진행
         </button>
       ) : hasPassword ? (
-        <form onSubmit={handleDelete} className="mt-5 grid gap-3" noValidate>
-          <label className="grid gap-2 text-sm font-semibold text-forest">
+        <form onSubmit={handleDelete} className="mt-5 grid gap-3 min-w-0" noValidate>
+          <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
             확인을 위해 비밀번호를 입력해주세요
             <input
               type="password"
@@ -101,7 +101,7 @@ export function DeleteAccountControl({
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
-              className="rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink outline-none focus:border-forest"
+              className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink outline-none focus:border-forest"
             />
           </label>
 
@@ -164,7 +164,7 @@ export function DeleteAccountControl({
               </div>
             </>
           ) : (
-            <form onSubmit={handleDelete} className="grid gap-3">
+            <form onSubmit={handleDelete} className="grid gap-3 min-w-0">
               <p className="text-sm font-semibold text-forest">
                 재인증이 완료됐습니다. 삭제를 진행할까요?
               </p>

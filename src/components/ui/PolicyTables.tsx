@@ -2,7 +2,7 @@ import { legalPrinciples } from "@/data/legalPrinciples";
 
 export function LegalPrincipleTable() {
   return (
-    <div className="overflow-hidden rounded-[24px] border border-forest/10 bg-white shadow-soft">
+    <div className="overflow-x-auto rounded-[24px] border border-forest/10 bg-white shadow-soft">
       <table className="w-full min-w-[720px] text-left text-sm">
         <thead className="bg-forest text-white">
           <tr>

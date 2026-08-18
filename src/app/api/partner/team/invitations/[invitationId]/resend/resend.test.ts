@@ -60,7 +60,7 @@ describe("POST /api/partner/team/invitations/[invitationId]/resend", () => {
       id: "owner-membership",
       partnerId: "partner-1",
       role: "OWNER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.invitationFindFirst.mockResolvedValue({ email: "staff@example.com", role: "STAFF" });
@@ -75,7 +75,7 @@ describe("POST /api/partner/team/invitations/[invitationId]/resend", () => {
       id: "staff-membership",
       partnerId: "partner-1",
       role: "STAFF",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
 
     const response = await call();

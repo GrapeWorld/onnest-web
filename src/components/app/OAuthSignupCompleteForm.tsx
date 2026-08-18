@@ -45,17 +45,17 @@ export function OAuthSignupCompleteForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4" noValidate>
-      <label className="grid gap-2 text-sm font-semibold text-forest">
+    <form onSubmit={handleSubmit} className="grid gap-4 min-w-0" noValidate>
+      <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
         이메일
         <input
           type="email"
           value={email}
           disabled
-          className="rounded-2xl border border-forest/15 bg-cream px-4 py-3 text-base font-normal text-ink/60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 bg-cream px-4 py-3 text-base font-normal text-ink/60"
         />
       </label>
-      <label className="grid gap-2 text-sm font-semibold text-forest">
+      <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
         이름
         <input
           type="text"
@@ -63,10 +63,10 @@ export function OAuthSignupCompleteForm({
           value={name}
           onChange={(event) => setName(event.target.value)}
           disabled={loading}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink focus:border-forest focus:outline-none disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink focus:border-forest focus:outline-none disabled:opacity-60"
         />
       </label>
-      <label className="grid gap-2 text-sm font-semibold text-forest">
+      <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
         휴대폰 번호 (선택)
         <input
           type="tel"
@@ -74,7 +74,7 @@ export function OAuthSignupCompleteForm({
           onChange={(event) => setPhone(event.target.value)}
           disabled={loading}
           placeholder="010-1234-5678"
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink focus:border-forest focus:outline-none disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal text-ink focus:border-forest focus:outline-none disabled:opacity-60"
         />
       </label>
       <label className="flex items-start gap-2 text-sm text-ink/70">

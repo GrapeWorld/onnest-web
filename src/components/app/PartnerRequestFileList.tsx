@@ -62,7 +62,7 @@ export function PartnerRequestFileList({
             className="flex items-center justify-between rounded-2xl bg-cream px-4 py-3 text-sm"
           >
             <div className="min-w-0">
-              <p className="font-semibold text-forest">
+              <p className="break-all font-semibold text-forest">
                 {file.category ? `[${serviceRequestFileCategoryLabels[file.category as keyof typeof serviceRequestFileCategoryLabels] ?? file.category}] ` : ""}
                 {file.filename}
               </p>

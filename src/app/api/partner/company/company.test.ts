@@ -43,7 +43,7 @@ describe("PATCH /api/partner/company", () => {
       userId: "owner-1",
       role: "OWNER",
       status: "ACTIVE",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.partnerUpdate.mockResolvedValue({
       id: "partner-1",
@@ -61,7 +61,7 @@ describe("PATCH /api/partner/company", () => {
       userId: "owner-1",
       role: "STAFF",
       status: "ACTIVE",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
 
     const response = await call({ name: "새 업체명" });

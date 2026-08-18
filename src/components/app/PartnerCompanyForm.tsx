@@ -57,37 +57,37 @@ export function PartnerCompanyForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
-      <label className="grid gap-1 text-sm font-semibold text-forest">
+    <form onSubmit={handleSubmit} className="grid gap-3 min-w-0">
+      <label className="grid gap-1 text-sm font-semibold text-forest min-w-0">
         업체명
         <input
           value={nameValue}
           onChange={(event) => setNameValue(event.target.value)}
           disabled={saving}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm font-normal outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal outline-none focus:border-forest disabled:opacity-60"
         />
       </label>
-      <label className="grid gap-1 text-sm font-semibold text-forest">
+      <label className="grid gap-1 text-sm font-semibold text-forest min-w-0">
         대표 담당자
         <input
           value={contactNameValue}
           onChange={(event) => setContactNameValue(event.target.value)}
           disabled={saving}
           placeholder="선택"
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm font-normal outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal outline-none focus:border-forest disabled:opacity-60"
         />
       </label>
-      <label className="grid gap-1 text-sm font-semibold text-forest">
+      <label className="grid gap-1 text-sm font-semibold text-forest min-w-0">
         대표 연락처
         <input
           value={contactPhoneValue}
           onChange={(event) => setContactPhoneValue(event.target.value)}
           disabled={saving}
           placeholder="선택"
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm font-normal outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal outline-none focus:border-forest disabled:opacity-60"
         />
       </label>
-      <label className="grid gap-1 text-sm font-semibold text-forest">
+      <label className="grid gap-1 text-sm font-semibold text-forest min-w-0">
         업체 소개
         <textarea
           value={memoValue}
@@ -95,7 +95,7 @@ export function PartnerCompanyForm({
           disabled={saving}
           rows={3}
           placeholder="선택"
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm font-normal outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base font-normal outline-none focus:border-forest disabled:opacity-60"
         />
       </label>
       {error && <p role="alert" className="text-sm font-semibold text-red-600">{error}</p>}

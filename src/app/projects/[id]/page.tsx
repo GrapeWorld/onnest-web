@@ -88,6 +88,31 @@ export default async function ProjectPage({
         )}
       </div>
 
+      {project.candidateProperty && (
+        <div className="mt-6 rounded-[24px] border border-sage/30 bg-sage/5 p-6">
+          <p className="text-sm font-bold text-forest">
+            이 프로젝트는 매물 후보 &quot;{project.candidateProperty.title}&quot;에서 시작되었습니다.
+          </p>
+          {(project.candidateProperty.memo ||
+            project.candidateProperty.advantages ||
+            project.candidateProperty.concerns) && (
+            <div className="mt-3 grid gap-2 text-sm text-ink/65">
+              {project.candidateProperty.memo && <p>메모: {project.candidateProperty.memo}</p>}
+              {project.candidateProperty.advantages && <p>장점: {project.candidateProperty.advantages}</p>}
+              {project.candidateProperty.concerns && <p>걱정되는 점: {project.candidateProperty.concerns}</p>}
+            </div>
+          )}
+          <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold">
+            <Link href={`/my/candidate-properties/${project.candidateProperty.id}`} className="text-forest hover:underline">
+              저장된 매물 정보 보기 →
+            </Link>
+            <Link href={`/projects/${project.id}/services`} className="text-forest hover:underline">
+              필요한 서비스 신청하러 가기 →
+            </Link>
+          </div>
+        </div>
+      )}
+
       <section className="mt-8">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-black text-forest">다가오는 일정</h2>

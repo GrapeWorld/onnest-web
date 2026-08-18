@@ -25,6 +25,7 @@ export const rateLimits = {
   signup: { windowSeconds: 3600, max: 5 },
   inquiry: { windowSeconds: 3600, max: 5 },
   serviceRequest: { windowSeconds: 3600, max: 10 },
+  serviceRequestCancel: { windowSeconds: 3600, max: 20 },
   forgotPassword: { windowSeconds: 3600, max: 5 },
   resetPassword: { windowSeconds: 3600, max: 10 },
   findId: { windowSeconds: 3600, max: 5 },
@@ -44,6 +45,10 @@ export const rateLimits = {
   // 쓰기라 따로 셀 이유가 없다. 파일 업로드·삭제도 마찬가지.
   partnerRequestQuote: { windowSeconds: 3600, max: 60 },
   partnerRequestFile: { windowSeconds: 3600, max: 60 },
+  // 매물 후보 등록·수정·삭제·체크리스트·희망조건 저장이 버킷을 공유한다 —
+  // 개인 메모성 쓰기라 종류별로 나눌 이유가 없다. 여러 매물을 연달아
+  // 저장하는 정상 사용을 막지 않을 만큼 넉넉하게 잡는다.
+  candidateProperty: { windowSeconds: 3600, max: 60 },
 } satisfies Record<string, RateLimitRule>;
 
 export type RateLimitResult =

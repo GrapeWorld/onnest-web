@@ -55,7 +55,7 @@ describe("POST /api/partner/service-requests/[id]/notes", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "OWNER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
   });
@@ -90,7 +90,7 @@ describe("POST /api/partner/service-requests/[id]/notes", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "VIEWER",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
 
     const response = await call({ body: "메모" });
@@ -103,7 +103,7 @@ describe("POST /api/partner/service-requests/[id]/notes", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "STAFF",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.requestFindUnique.mockResolvedValue({
       id: "request-1",
@@ -121,7 +121,7 @@ describe("POST /api/partner/service-requests/[id]/notes", () => {
       id: "membership-1",
       partnerId: "partner-1",
       role: "STAFF",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.requestFindUnique.mockResolvedValue({
       id: "request-1",

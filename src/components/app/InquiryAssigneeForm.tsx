@@ -66,14 +66,14 @@ export function InquiryAssigneeForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className="grid gap-3 min-w-0">
       <div className="grid gap-1">
         <label className="text-sm font-semibold text-forest">상태</label>
         <select
           value={statusValue}
           onChange={(event) => setStatusValue(event.target.value)}
           disabled={saving}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
         >
           {inquiryStatuses.map((option) => (
             <option key={option}>{option}</option>
@@ -83,12 +83,12 @@ export function InquiryAssigneeForm({
 
       <div className="grid gap-1">
         <label className="text-sm font-semibold text-forest">담당자</label>
-        <div className="flex gap-2">
+        <div className="flex min-w-0 gap-2">
           <select
             value={assigneeValue}
             onChange={(event) => setAssigneeValue(event.target.value)}
             disabled={saving}
-            className="flex-1 rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+            className="box-border w-full max-w-full min-w-0 flex-1 rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
           >
             <option value="">미배정</option>
             {admins.map((option) => (
@@ -115,7 +115,7 @@ export function InquiryAssigneeForm({
           onChange={(event) => setNextActionValue(event.target.value)}
           disabled={saving}
           placeholder="예: 내일 오전 전화 상담"
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
         />
       </div>
 

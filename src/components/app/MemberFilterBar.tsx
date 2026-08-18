@@ -53,18 +53,18 @@ export function MemberFilterBar({
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid gap-3 md:grid-cols-[1fr_180px_180px_auto_auto]"
+      className="grid gap-3 md:grid-cols-[1fr_180px_180px_auto_auto] min-w-0"
     >
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="이름, 이메일, 휴대폰 번호로 검색"
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest"
       />
       <select
         value={initialType}
         onChange={handleTypeChange}
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest"
       >
         <option value="">구분 전체</option>
         {memberClassifications.map((classification) => (
@@ -76,7 +76,7 @@ export function MemberFilterBar({
       <select
         value={initialStatus}
         onChange={handleStatusChange}
-        className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest"
       >
         <option value="">상태 전체</option>
         {memberStatuses.map((status) => (

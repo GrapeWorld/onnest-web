@@ -63,10 +63,10 @@ export function PartnerMemberRow({
     <div className="rounded-2xl bg-cream px-4 py-3 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-semibold text-forest">
+          <p className="break-words font-semibold text-forest">
             {name} {isSelf && <span className="text-xs text-ink/45">(나)</span>}
           </p>
-          <p className="mt-0.5 text-xs text-ink/50">{email}</p>
+          <p className="mt-0.5 break-words text-xs text-ink/50">{email}</p>
           <p className="mt-0.5 text-xs text-ink/45">
             최근 로그인: {lastLoginAt ? new Date(lastLoginAt).toLocaleString("ko-KR") : "기록 없음"}
           </p>
@@ -83,7 +83,7 @@ export function PartnerMemberRow({
           value={role}
           onChange={(event) => patch({ role: event.target.value as PartnerRole })}
           disabled={pending}
-          className="rounded-full border border-forest/15 bg-white px-3 py-1.5 text-xs font-semibold text-forest outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-full border border-forest/15 bg-white px-3 py-1.5 text-base font-semibold text-forest outline-none focus:border-forest disabled:opacity-60"
         >
           {partnerRoles.map((option) => (
             <option key={option} value={option}>
@@ -97,7 +97,7 @@ export function PartnerMemberRow({
             type="button"
             onClick={() => patch({ status: "SUSPENDED" })}
             disabled={pending}
-            className="rounded-full border border-forest/15 bg-white px-3 py-1.5 text-xs font-semibold text-forest hover:bg-cream disabled:opacity-60"
+            className="inline-flex items-center justify-center min-h-11 rounded-full border border-forest/15 bg-white px-3 py-1.5 text-xs font-semibold text-forest hover:bg-cream disabled:opacity-60"
           >
             정지
           </button>
@@ -107,7 +107,7 @@ export function PartnerMemberRow({
             type="button"
             onClick={() => patch({ status: "ACTIVE" })}
             disabled={pending}
-            className="rounded-full border border-forest/15 bg-white px-3 py-1.5 text-xs font-semibold text-forest hover:bg-cream disabled:opacity-60"
+            className="inline-flex items-center justify-center min-h-11 rounded-full border border-forest/15 bg-white px-3 py-1.5 text-xs font-semibold text-forest hover:bg-cream disabled:opacity-60"
           >
             재활성화
           </button>
@@ -119,7 +119,7 @@ export function PartnerMemberRow({
               if (window.confirm(`${name}님을 팀에서 해제할까요?`)) patch({ status: "REVOKED" });
             }}
             disabled={pending}
-            className="rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+            className="inline-flex items-center justify-center min-h-11 rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
           >
             해제
           </button>

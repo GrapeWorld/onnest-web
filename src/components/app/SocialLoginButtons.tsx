@@ -39,8 +39,8 @@ export function SocialLoginButtons({
   }
 
   return (
-    <div className="grid gap-3">
-      <div className="grid gap-2">
+    <div className="grid w-full min-w-0 gap-3">
+      <div className="grid min-w-0 gap-2">
         {visibleProviders.map((provider) => {
           const href = `/api/auth/oauth/${provider}/start${
             returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""
@@ -51,7 +51,7 @@ export function SocialLoginButtons({
               href={href}
               onClick={(event) => handleClick(provider, event)}
               aria-disabled={pending !== null}
-              className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold shadow-soft transition ${providerStyle[provider]} ${
+              className={`box-border inline-flex min-h-11 w-full min-w-0 max-w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold shadow-soft transition ${providerStyle[provider]} ${
                 pending && pending !== provider ? "pointer-events-none opacity-50" : ""
               }`}
             >

@@ -60,13 +60,13 @@ export function ServiceLeadFilterBar({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className="grid gap-3 min-w-0">
       <div className="grid gap-3 md:grid-cols-[1fr_auto]">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="이름, 연락처, 지역, 프로젝트명으로 검색"
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest"
         />
         <button
           type="submit"
@@ -79,7 +79,7 @@ export function ServiceLeadFilterBar({
         <select
           value={initialStatus}
           onChange={(event) => pushParams({ status: event.target.value })}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest"
         >
           <option value="">상태 전체</option>
           {serviceRequestStatuses.map((status) => (
@@ -91,7 +91,7 @@ export function ServiceLeadFilterBar({
         <select
           value={initialType}
           onChange={(event) => pushParams({ type: event.target.value })}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest"
         >
           <option value="">서비스 유형 전체</option>
           {serviceTypes.map((type) => (
@@ -103,7 +103,7 @@ export function ServiceLeadFilterBar({
         <select
           value={initialPartnerAssigned}
           onChange={(event) => pushParams({ partnerAssigned: event.target.value })}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest"
         >
           <option value="">파트너 배정 전체</option>
           <option value="assigned">배정됨</option>
@@ -112,7 +112,7 @@ export function ServiceLeadFilterBar({
         <select
           value={initialOwnerAssigned}
           onChange={(event) => pushParams({ ownerAssigned: event.target.value })}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest"
         >
           <option value="">담당자 배정 전체</option>
           <option value="assigned">배정됨</option>

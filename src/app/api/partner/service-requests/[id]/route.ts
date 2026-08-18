@@ -5,6 +5,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { getActiveMembership, evaluateServiceRequestWriteAccess } from "@/lib/partnerAuth";
 import { isValidStatusTransition } from "@/lib/serviceRequestStatus";
 import { checkRateLimit, formatRetryAfter } from "@/lib/rateLimit";
+import { escapeHtml, notifyServiceRequestCustomer } from "@/lib/email";
+import { getAppUrl } from "@/lib/appUrl";
+import { getCustomerNotificationCopy } from "@/lib/serviceRequestNotifications";
 import {
   serviceRequestStatuses,
   serviceRequestCancelledStatus,
@@ -59,13 +62,25 @@ export async function PATCH(
 
   let result: {
     error: "notfound" | "forbidden" | "same" | "invalid-transition" | null;
+    success?: {
+      serviceType: string;
+      projectId: string;
+      customer: { email: string; name: string } | null;
+    };
   };
   try {
     result = await prisma.$transaction(
       async (tx) => {
         const existing = await tx.serviceRequest.findUnique({
           where: { id },
-          select: { id: true, status: true, partnerId: true, partnerStaffId: true },
+          select: {
+            id: true,
+            status: true,
+            partnerId: true,
+            partnerStaffId: true,
+            serviceType: true,
+            project: { select: { id: true, user: { select: { email: true, name: true } } } },
+          },
         });
         if (!existing) return { error: "notfound" as const };
         // VIEWER는 조회만 가능(권한 없음), STAFF가 담당하지 않은 건은
@@ -81,7 +96,12 @@ export async function PATCH(
           return { error: "invalid-transition" as const };
         }
 
-        await tx.serviceRequest.update({ where: { id }, data: { status } });
+        await tx.serviceRequest.update({
+          where: { id },
+          // 업체가 상태를 바꾸면 고객이 남긴 취소 요청은 처리된 것으로 보고
+          // 지운다(관리자 라우트와 같은 원칙).
+          data: { status, cancelRequestedAt: null, cancelRequestReason: null },
+        });
         await tx.serviceRequestActivity.create({
           data: {
             serviceRequestId: id,
@@ -98,7 +118,14 @@ export async function PATCH(
             partnerId: user.partnerId,
           },
         });
-        return { error: null };
+        return {
+          error: null,
+          success: {
+            serviceType: existing.serviceType,
+            projectId: existing.project.id,
+            customer: existing.project.user,
+          },
+        };
       },
       { isolationLevel: "Serializable" },
     );
@@ -129,6 +156,30 @@ export async function PATCH(
       { error: "이 상태로는 변경할 수 없습니다." },
       { status: 400 },
     );
+  }
+
+  const notifyCopy = getCustomerNotificationCopy(status);
+  if (result.success?.customer && notifyCopy) {
+    try {
+      const servicesUrl = new URL(
+        `/projects/${result.success.projectId}/services`,
+        getAppUrl(),
+      ).toString();
+      const { customer, serviceType } = result.success;
+      await notifyServiceRequestCustomer({
+        to: customer.email,
+        subject: `[ONNEST] ${escapeHtml(serviceType)} ${notifyCopy.subject}`,
+        html: `
+          <p>안녕하세요, ${escapeHtml(customer.name)}님.</p>
+          <p>${escapeHtml(serviceType)} 서비스 신청 상태가 변경되었습니다: ${escapeHtml(notifyCopy.body)}</p>
+          ${status === serviceRequestCancelledStatus && reason ? `<p>취소 사유: ${escapeHtml(reason)}</p>` : ""}
+          <p>로그인 후 신청 내역에서 자세한 내용을 확인해주세요.</p>
+          <p><a href="${servicesUrl}">${servicesUrl}</a></p>
+        `,
+      });
+    } catch (error) {
+      console.error("[email] service request status customer notification failed", error);
+    }
   }
 
   return NextResponse.json({ id, status });

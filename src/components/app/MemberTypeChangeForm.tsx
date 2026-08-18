@@ -72,14 +72,14 @@ export function MemberTypeChangeForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className="grid gap-3 min-w-0">
       <div className="grid gap-1">
         <label className="text-sm font-semibold text-forest">회원 구분</label>
         <select
           value={type}
           onChange={(event) => setType(event.target.value as MemberType)}
           disabled={saving}
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
         >
           {memberTypes.map((option) => (
             <option key={option} value={option}>
@@ -96,7 +96,7 @@ export function MemberTypeChangeForm({
             value={partnerId}
             onChange={(event) => setPartnerId(event.target.value)}
             disabled={saving}
-            className="rounded-2xl border border-forest/15 px-4 py-3 text-sm text-forest outline-none focus:border-forest disabled:opacity-60"
+            className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
           >
             <option value="">업체를 선택해주세요</option>
             {partners.map((partner) => {
@@ -120,7 +120,7 @@ export function MemberTypeChangeForm({
           disabled={saving}
           rows={3}
           placeholder="예: 이사업체와의 제휴 계약으로 업체 계정 전환"
-          className="rounded-2xl border border-forest/15 px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+          className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
         />
       </div>
       {error && <p className="text-sm font-semibold text-red-600">{error}</p>}

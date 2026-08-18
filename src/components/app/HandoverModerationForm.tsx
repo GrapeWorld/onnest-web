@@ -61,13 +61,13 @@ export function HandoverModerationForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-2">
+    <form onSubmit={handleSubmit} className="grid gap-2 min-w-0">
       <select
         value={toStatus}
         onChange={(event) => setToStatus(event.target.value as ModerationStatus)}
         disabled={saving}
         aria-label="검수 상태 변경"
-        className="rounded-full border border-forest/15 bg-white px-4 py-2 text-sm font-semibold text-forest outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-full border border-forest/15 bg-white px-4 py-2 text-base font-semibold text-forest outline-none focus:border-forest disabled:opacity-60"
       >
         {moderationStatuses.map((status) => (
           <option key={status} value={status}>
@@ -81,7 +81,7 @@ export function HandoverModerationForm({
         disabled={saving}
         rows={2}
         placeholder="처리 사유 (필수, 수정 요청이면 작성자에게 그대로 표시됩니다)"
-        className="rounded-2xl border border-forest/15 bg-white px-4 py-3 text-sm outline-none focus:border-forest disabled:opacity-60"
+        className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 bg-white px-4 py-3 text-base outline-none focus:border-forest disabled:opacity-60"
       />
       {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
       <button

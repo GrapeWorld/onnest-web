@@ -61,7 +61,7 @@ describe("POST /api/partner/team/invitations", () => {
       userId: "owner-1",
       role: "OWNER",
       status: "ACTIVE",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.partnerFindUniqueOrThrow.mockResolvedValue({ name: "테스트업체" });
@@ -76,7 +76,7 @@ describe("POST /api/partner/team/invitations", () => {
       userId: "owner-1",
       role: "STAFF",
       status: "ACTIVE",
-      partner: { active: true },
+      partner: { active: true, verificationStatus: "APPROVED" },
     });
 
     const response = await call({ email: "new@example.com", role: "STAFF" });
@@ -117,7 +117,7 @@ describe("POST /api/partner/team/invitations", () => {
         userId: "owner-1",
         role: "OWNER",
         status: "ACTIVE",
-        partner: { active: true },
+        partner: { active: true, verificationStatus: "APPROVED" },
       })
       .mockResolvedValueOnce({ id: "existing-membership" });
 
@@ -137,7 +137,7 @@ describe("POST /api/partner/team/invitations", () => {
         userId: "owner-1",
         role: "OWNER",
         status: "ACTIVE",
-        partner: { active: true },
+        partner: { active: true, verificationStatus: "APPROVED" },
       })
       .mockResolvedValueOnce(null);
 

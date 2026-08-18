@@ -4,6 +4,7 @@ import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { serviceRequestPatchSchema } from "@/lib/serviceRequestSchema";
 import { escapeHtml, notifyPartnerStaff } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
+import { isPartnerAssignable } from "@/data/partnerVerification";
 
 /** 관리자 전용 상태·담당자·업체 배정 변경 */
 export async function PATCH(
@@ -62,9 +63,13 @@ export async function PATCH(
           }
           const partner = await tx.partner.findUnique({
             where: { id: parsed.data.partnerId },
-            select: { active: true, serviceType: true },
+            select: { active: true, serviceType: true, verificationStatus: true },
           });
-          if (!partner || !partner.active || partner.serviceType !== existing.serviceType) {
+          if (
+            !partner ||
+            !isPartnerAssignable(partner) ||
+            partner.serviceType !== existing.serviceType
+          ) {
             return { error: "invalid-partner" as const };
           }
         }
@@ -73,9 +78,19 @@ export async function PATCH(
           selectedQuoteId?: null;
           selectedAt?: null;
           partnerStaffId?: null;
+          cancelRequestedAt?: null;
+          cancelRequestReason?: null;
         } = {
           ...parsed.data,
         };
+
+        // 관리자가 상태를 바꾸면(취소 확정이든, 계속 진행이든) 고객이 남긴
+        // 취소 요청은 처리된 것으로 보고 지운다 — 그대로 두면 확인이
+        // 끝난 뒤에도 "취소 요청 중"으로 계속 보인다.
+        if (parsed.data.status !== undefined && existing.status !== parsed.data.status) {
+          data.cancelRequestedAt = null;
+          data.cancelRequestReason = null;
+        }
 
         // 이전에 배정되지 않았던(또는 다른) 업체가 새로 배정되면 상태를
         // 그 업체 큐의 시작점인 "신규"로 되돌린다 — 다른 업체를 다시

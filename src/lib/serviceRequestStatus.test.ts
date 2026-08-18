@@ -25,7 +25,7 @@ describe("isValidStatusTransition", () => {
   });
 
   it("allows cancelling from any non-terminal status", () => {
-    for (const status of ["신규", "확인 중", "상담 완료", "견적 전달", "작업 예정"] as const) {
+    for (const status of ["신규", "확인 중", "상담 완료", "견적 전달", "작업 예정", "작업 중"] as const) {
       expect(isValidStatusTransition(status, "취소")).toBe(true);
     }
   });
@@ -50,13 +50,18 @@ describe("getValidNextStatuses", () => {
       "상담 완료",
       "견적 전달",
       "작업 예정",
+      "작업 중",
       "작업 완료",
       "취소",
     ]);
   });
 
-  it("returns only 취소 for 작업 예정 (last non-terminal step)", () => {
-    expect(getValidNextStatuses("작업 예정")).toEqual(["작업 완료", "취소"]);
+  it("returns 작업 중, 작업 완료, and 취소 for 작업 예정", () => {
+    expect(getValidNextStatuses("작업 예정")).toEqual(["작업 중", "작업 완료", "취소"]);
+  });
+
+  it("returns only 취소 for 작업 중 (last non-terminal step)", () => {
+    expect(getValidNextStatuses("작업 중")).toEqual(["작업 완료", "취소"]);
   });
 
   it("returns an empty list for terminal statuses", () => {

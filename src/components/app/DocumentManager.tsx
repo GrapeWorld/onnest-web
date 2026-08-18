@@ -164,7 +164,7 @@ export function DocumentManager({
                 className="flex flex-col gap-3 rounded-2xl bg-cream px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-forest">
+                  <p className="break-all font-semibold text-forest">
                     {doc.filename}
                   </p>
                   <p className="mt-1 text-xs text-ink/55">
