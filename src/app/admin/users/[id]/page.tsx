@@ -6,6 +6,7 @@ import { MemberStatusChangeForm } from "@/components/app/MemberStatusChangeForm"
 import { MemberNoteForm } from "@/components/app/MemberNoteForm";
 import { MemberNoteItem } from "@/components/app/MemberNoteItem";
 import { MemberTypeChangeForm } from "@/components/app/MemberTypeChangeForm";
+import { PaymentTierChangeForm } from "@/components/app/PaymentTierChangeForm";
 import { ViewerReadOnlyNotice } from "@/components/app/ViewerReadOnlyNotice";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -16,6 +17,11 @@ import {
   type MemberStatus,
 } from "@/data/memberStatus";
 import { adminRoleLabels, type AdminRole } from "@/data/adminRole";
+import {
+  paymentTierLabels,
+  paymentTierClassName,
+  type PaymentTier,
+} from "@/data/paymentTier";
 import {
   memberClassificationLabels,
   memberClassificationClassName,
@@ -49,6 +55,7 @@ export default async function AdminUserDetailPage({
       status: true,
       adminRole: true,
       memberType: true,
+      paymentTier: true,
       partnerId: true,
       partner: {
         select: { id: true, name: true, serviceType: true, active: true },
@@ -73,7 +80,7 @@ export default async function AdminUserDetailPage({
 
   if (!user) notFound();
 
-  const [statusHistory, notes, memberTypeHistory, partners] = await Promise.all([
+  const [statusHistory, notes, memberTypeHistory, paymentTierHistory, partners] = await Promise.all([
     prisma.memberStatusHistory.findMany({
       where: { userId: id },
       orderBy: { createdAt: "desc" },
@@ -111,6 +118,18 @@ export default async function AdminUserDetailPage({
         createdAt: true,
       },
     }),
+    prisma.paymentTierHistory.findMany({
+      where: { userId: id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        fromTier: true,
+        toTier: true,
+        reason: true,
+        adminEmail: true,
+        createdAt: true,
+      },
+    }),
     prisma.partner.findMany({
       orderBy: [{ active: "desc" }, { name: "asc" }],
       select: { id: true, name: true, serviceType: true, active: true },
@@ -118,6 +137,7 @@ export default async function AdminUserDetailPage({
   ]);
 
   const status = user.status as MemberStatus;
+  const paymentTier = user.paymentTier as PaymentTier;
   const classification = getMemberClassification(user);
   const partnerNameById = new Map(partners.map((partner) => [partner.id, partner.name]));
 
@@ -179,6 +199,16 @@ export default async function AdminUserDetailPage({
                       )}
                     </span>
                   )}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-ink/50">결제 등급</dt>
+                <dd>
+                  <span
+                    className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${paymentTierClassName[paymentTier] ?? "bg-cream text-forest"}`}
+                  >
+                    {paymentTierLabels[paymentTier] ?? user.paymentTier}
+                  </span>
                 </dd>
               </div>
               <div>
@@ -304,6 +334,34 @@ export default async function AdminUserDetailPage({
             )}
           </Card>
 
+          <Card>
+            <h2 className="text-xl font-black text-forest">결제 등급 변경 이력</h2>
+            {paymentTierHistory.length === 0 ? (
+              <p className="mt-3 text-sm text-ink/55">
+                아직 결제 등급을 변경한 기록이 없습니다.
+              </p>
+            ) : (
+              <ul className="mt-4 grid gap-3">
+                {paymentTierHistory.map((entry) => (
+                  <li
+                    key={entry.id}
+                    className="rounded-2xl bg-cream px-4 py-3 text-sm"
+                  >
+                    <p className="font-semibold text-forest">
+                      {paymentTierLabels[entry.fromTier as PaymentTier] ?? entry.fromTier}
+                      {" → "}
+                      {paymentTierLabels[entry.toTier as PaymentTier] ?? entry.toTier}
+                    </p>
+                    <p className="mt-1 text-ink/70">{entry.reason}</p>
+                    <p className="mt-1 text-xs text-ink/50">
+                      {entry.adminEmail} · {dateTimeFormatter.format(entry.createdAt)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
           <Card className="border border-dashed border-forest/20 bg-transparent">
             <p className="text-sm text-ink/50">
               본인인증 여부, 가입 경로, 회원별 문의 내역은 아직 시스템에 연결된
@@ -337,6 +395,19 @@ export default async function AdminUserDetailPage({
               ) : (
                 <ViewerReadOnlyNotice>
                   조회전용 관리자는 회원 구분을 변경할 수 없습니다.
+                </ViewerReadOnlyNotice>
+              )}
+            </div>
+          </Card>
+
+          <Card>
+            <h2 className="text-xl font-black text-forest">결제 등급 변경</h2>
+            <div className="mt-4">
+              {canEdit ? (
+                <PaymentTierChangeForm userId={user.id} currentTier={paymentTier} />
+              ) : (
+                <ViewerReadOnlyNotice>
+                  조회전용 관리자는 결제 등급을 변경할 수 없습니다.
                 </ViewerReadOnlyNotice>
               )}
             </div>

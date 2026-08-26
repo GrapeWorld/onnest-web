@@ -39,6 +39,11 @@ model User {
   // 다리일 뿐, 이 관계 자체가 파트너 포털 권한을 주지 않는다.
   partnerId     String?
   partner       Partner?  @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  // 결제 등급. "FREE" | "BASIC" | "PREMIUM" | "PROJECT_PASS" (src/data/paymentTier.ts).
+  // 아직 실제 결제 연동은 없다 — 관리자가 상담·수기 결제 확인 후 표시만
+  // 해두는 값이라 memberType처럼 로그인·권한에는 영향을 주지 않는다.
+  paymentTier   String    @default("FREE")
+  paymentTierHistory PaymentTierHistory[]
   createdAt    DateTime  @default(now())
   projects     Project[]
   resetTokens  PasswordResetToken[]
@@ -133,6 +138,22 @@ model MemberStatusHistory {
   // Inquiry.owner/ServiceRequest.owner와 같은 원칙으로 처리 관리자를 FK가
   // 아니라 처리 시점의 id/이메일 문자열로 남긴다(관리자 역할 테이블이
   // 아직 없다).
+  adminId    String
+  adminEmail String
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// 관리자의 결제 등급 변경 이력. MemberStatusHistory와 같은 원칙으로 이
+// 액션 자체가 자기 감사 로그를 겸한다.
+model PaymentTierHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fromTier   String
+  toTier     String
+  reason     String
   adminId    String
   adminEmail String
   createdAt  DateTime @default(now())
