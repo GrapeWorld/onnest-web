@@ -38,7 +38,7 @@ export function Footer() {
         </nav>
       </div>
       <div className="border-t border-white/10 px-5 py-5 text-center text-xs text-white/50">
-        © 2026 주식회사 온네스트. All rights reserved.
+        © 2026 온네스트. All rights reserved.
       </div>
     </footer>
   );
