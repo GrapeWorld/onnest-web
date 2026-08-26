@@ -2,11 +2,13 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AppShell, MetricGrid } from "@/components/app/AppShell";
 import { ProjectStepGrid } from "@/components/app/ProjectSteps";
+import { PropertySuggestionCustomerSection } from "@/components/app/PropertySuggestionCustomerSection";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { projectSteps } from "@/data/projectSteps";
 import { getCurrentUser } from "@/lib/auth";
 import { findOwnedProject, toStepStatusMap } from "@/lib/projects";
+import { listProjectPropertySuggestions } from "@/lib/propertySuggestions";
 import { formatDate, formatDDay, daysUntil } from "@/lib/dates";
 
 export default async function ProjectPage({
@@ -20,6 +22,8 @@ export default async function ProjectPage({
   const { id } = await params;
   const project = await findOwnedProject(id, user.id);
   if (!project) notFound();
+
+  const { items: suggestions, newCount: newSuggestionCount } = await listProjectPropertySuggestions(id, user.id);
 
   const statusBySlug = toStepStatusMap(project.stepStates);
   const done = projectSteps.filter(
@@ -112,6 +116,17 @@ export default async function ProjectPage({
           </div>
         </div>
       )}
+
+      <section className="mt-8">
+        <PropertySuggestionCustomerSection
+          items={suggestions.map((s) => ({
+            ...s,
+            availableDate: s.availableDate ? s.availableDate.toISOString() : null,
+            createdAt: s.createdAt.toISOString(),
+          }))}
+          newCount={newSuggestionCount}
+        />
+      </section>
 
       <section className="mt-8">
         <div className="mb-4 flex items-center justify-between">

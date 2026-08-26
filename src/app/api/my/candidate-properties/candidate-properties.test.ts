@@ -3,15 +3,29 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   findMany: vi.fn(),
+  findFirst: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
   checkRateLimit: vi.fn(),
   geocodeAddress: vi.fn(),
+  suggestionFindFirst: vi.fn(),
+  suggestionUpdate: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ getCurrentUser: mocks.getCurrentUser }));
 vi.mock("@/lib/prisma", () => ({
-  prisma: { candidateProperty: { findMany: mocks.findMany, create: mocks.create, update: mocks.update } },
+  prisma: {
+    candidateProperty: {
+      findMany: mocks.findMany,
+      findFirst: mocks.findFirst,
+      create: mocks.create,
+      update: mocks.update,
+    },
+    projectPropertySuggestion: {
+      findFirst: mocks.suggestionFindFirst,
+      update: mocks.suggestionUpdate,
+    },
+  },
 }));
 vi.mock("@/lib/rateLimit", () => ({
   checkRateLimit: mocks.checkRateLimit,
@@ -63,9 +77,12 @@ describe("POST /api/my/candidate-properties", () => {
     vi.clearAllMocks();
     mocks.getCurrentUser.mockResolvedValue({ id: "user-1" });
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
+    mocks.findFirst.mockResolvedValue(null);
     mocks.create.mockResolvedValue({ id: "candidate-1" });
     mocks.geocodeAddress.mockResolvedValue(null);
     mocks.update.mockResolvedValue({});
+    mocks.suggestionFindFirst.mockResolvedValue(null);
+    mocks.suggestionUpdate.mockResolvedValue({});
   });
 
   it("requires login", async () => {
@@ -150,5 +167,45 @@ describe("POST /api/my/candidate-properties", () => {
     mocks.geocodeAddress.mockRejectedValue(new Error("map api down"));
     const response = await POST(postRequest({ ...validPayload, address: "서울특별시 강남구" }));
     expect(response.status).toBe(201);
+  });
+
+  it("blocks a duplicate sourceUrl already saved by the same user", async () => {
+    mocks.findFirst.mockResolvedValue({ id: "existing-candidate" });
+    const response = await POST(postRequest(validPayload));
+    const data = await response.json();
+    expect(response.status).toBe(409);
+    expect(data.existingCandidatePropertyId).toBe("existing-candidate");
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it("scopes the duplicate check to the current user's own rows", async () => {
+    await POST(postRequest(validPayload));
+    expect(mocks.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "user-1", sourceUrl: validPayload.sourceUrl } }),
+    );
+  });
+
+  it("rejects when suggestionId does not belong to the current user's project", async () => {
+    mocks.suggestionFindFirst.mockResolvedValue(null);
+    const response = await POST(postRequest({ ...validPayload, suggestionId: "suggestion-1" }));
+    expect(response.status).toBe(404);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the shared suggestion was already saved before", async () => {
+    mocks.suggestionFindFirst.mockResolvedValue({ id: "suggestion-1", savedCandidatePropertyId: "candidate-old" });
+    const response = await POST(postRequest({ ...validPayload, suggestionId: "suggestion-1" }));
+    expect(response.status).toBe(409);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it("links a valid suggestion to the newly created candidate property", async () => {
+    mocks.suggestionFindFirst.mockResolvedValue({ id: "suggestion-1", savedCandidatePropertyId: null });
+    const response = await POST(postRequest({ ...validPayload, suggestionId: "suggestion-1" }));
+    expect(response.status).toBe(201);
+    expect(mocks.suggestionUpdate).toHaveBeenCalledWith({
+      where: { id: "suggestion-1" },
+      data: expect.objectContaining({ customerStatus: "SAVED", savedCandidatePropertyId: "candidate-1" }),
+    });
   });
 });

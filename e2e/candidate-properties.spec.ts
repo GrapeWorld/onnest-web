@@ -7,6 +7,18 @@ import { E2E_CUSTOMER } from "./fixtures";
 
 const NAVER_LISTING_URL = "https://fin.land.naver.com/complexes/12345";
 
+/**
+ * 같은 고객이 같은 sourceUrl로 매물 후보를 두 번 등록하면 이제 서버가
+ * 중복으로 막는다(관심 매물 공유 기능 도입 시 추가) — 이 파일의 여러
+ * 테스트가 E2E_CUSTOMER로 매물을 만들고 지우지 않은 채 끝나므로, 매번 새
+ * URL을 써서 테스트 간 충돌을 피한다.
+ */
+let uniqueUrlCounter = 0;
+function uniqueNaverListingUrl() {
+  uniqueUrlCounter += 1;
+  return `https://fin.land.naver.com/complexes/${Date.now()}-${uniqueUrlCounter}`;
+}
+
 test("고객이 매물 후보를 등록·조회·수정·삭제할 수 있다", async ({ page }) => {
   const title = `E2E매물-${Date.now()}`;
 
@@ -56,7 +68,7 @@ test("지도 API가 미설정이어도 실제 주소를 넣은 매물이 정상 
 
   await login(page, E2E_CUSTOMER.email, E2E_CUSTOMER.password);
   await page.goto("/my/candidate-properties/new");
-  await page.getByRole("textbox", { name: "원본 매물 URL" }).fill(NAVER_LISTING_URL);
+  await page.getByRole("textbox", { name: "원본 매물 URL" }).fill(uniqueNaverListingUrl());
   await page.getByRole("textbox", { name: "매물 이름 또는 별칭" }).fill(title);
   await page.getByRole("textbox", { name: "주소", exact: false }).fill("서울특별시 강남구 테헤란로 123");
   await page.getByRole("button", { name: "매물 후보 저장" }).click();
@@ -90,9 +102,10 @@ test("원본 매물 URL 검증 — javascript: 스킴은 거부되고 저장되�
 });
 
 test("외부 매물 링크는 새 탭·보안 속성으로 열린다", async ({ page }) => {
+  const listingUrl = uniqueNaverListingUrl();
   await login(page, E2E_CUSTOMER.email, E2E_CUSTOMER.password);
   await page.goto("/my/candidate-properties/new");
-  await page.getByRole("textbox", { name: "원본 매물 URL" }).fill(NAVER_LISTING_URL);
+  await page.getByRole("textbox", { name: "원본 매물 URL" }).fill(listingUrl);
   await page.getByRole("textbox", { name: "매물 이름 또는 별칭" }).fill(`E2E보안속성-${Date.now()}`);
   await page.getByRole("button", { name: "매물 후보 저장" }).click();
   await page.waitForURL(/\/my\/candidate-properties\/[a-z0-9]+$/);
@@ -101,7 +114,7 @@ test("외부 매물 링크는 새 탭·보안 속성으로 열린다", async ({ 
   await expect(originalLink).toHaveAttribute("target", "_blank");
   await expect(originalLink).toHaveAttribute("rel", /noopener/);
   await expect(originalLink).toHaveAttribute("rel", /noreferrer/);
-  await expect(originalLink).toHaveAttribute("href", NAVER_LISTING_URL);
+  await expect(originalLink).toHaveAttribute("href", listingUrl);
 
   // 마이페이지의 "네이버페이 부동산에서 매물 찾기" 링크도 같은 속성이어야 한다.
   await page.goto("/my");
@@ -126,7 +139,7 @@ test("희망 조건을 저장하면 저장한 매물과의 일치·불일치가 
 
   const title = `E2E조건비교-${Date.now()}`;
   await page.goto("/my/candidate-properties/new");
-  await page.getByRole("textbox", { name: "원본 매물 URL" }).fill(NAVER_LISTING_URL);
+  await page.getByRole("textbox", { name: "원본 매물 URL" }).fill(uniqueNaverListingUrl());
   await page.getByRole("textbox", { name: "매물 이름 또는 별칭" }).fill(title);
   await page.getByRole("textbox", { name: "주소", exact: false }).fill("서울특별시 강남구 역삼동 100");
   await page.getByRole("spinbutton", { name: "보증금(원)", exact: false }).fill("200000000");
@@ -193,7 +206,7 @@ test("최종 후보를 선택하면 프로젝트 생성 위저드로 연결되�
 
   await login(page, E2E_CUSTOMER.email, E2E_CUSTOMER.password);
   await page.goto("/my/candidate-properties/new");
-  await page.getByRole("textbox", { name: "원본 매물 URL" }).fill(NAVER_LISTING_URL);
+  await page.getByRole("textbox", { name: "원본 매물 URL" }).fill(uniqueNaverListingUrl());
   await page.getByRole("textbox", { name: "매물 이름 또는 별칭" }).fill(title);
   await page.getByRole("textbox", { name: "주소", exact: false }).fill("서울특별시 마포구 합정동 1");
   await page.getByRole("spinbutton", { name: "보증금(원)", exact: false }).fill("250000000");
@@ -230,7 +243,7 @@ test("여러 매물을 선택해 비교할 수 있다", async ({ page }) => {
   await login(page, E2E_CUSTOMER.email, E2E_CUSTOMER.password);
   for (const title of [titleA, titleB]) {
     await page.goto("/my/candidate-properties/new");
-    await page.getByRole("textbox", { name: "원본 매물 URL" }).fill(NAVER_LISTING_URL);
+    await page.getByRole("textbox", { name: "원본 매물 URL" }).fill(uniqueNaverListingUrl());
     await page.getByRole("textbox", { name: "매물 이름 또는 별칭" }).fill(title);
     await page.getByRole("button", { name: "매물 후보 저장" }).click();
     await page.waitForURL(/\/my\/candidate-properties\/[a-z0-9]+$/);
@@ -249,7 +262,7 @@ test("여러 매물을 선택해 비교할 수 있다", async ({ page }) => {
 test("방문 체크리스트 항목을 켜고 끌 수 있다", async ({ page }) => {
   await login(page, E2E_CUSTOMER.email, E2E_CUSTOMER.password);
   await page.goto("/my/candidate-properties/new");
-  await page.getByRole("textbox", { name: "원본 매물 URL" }).fill(NAVER_LISTING_URL);
+  await page.getByRole("textbox", { name: "원본 매물 URL" }).fill(uniqueNaverListingUrl());
   await page.getByRole("textbox", { name: "매물 이름 또는 별칭" }).fill(`E2E체크리스트-${Date.now()}`);
   await page.getByRole("button", { name: "매물 후보 저장" }).click();
   await page.waitForURL(/\/my\/candidate-properties\/[a-z0-9]+$/);

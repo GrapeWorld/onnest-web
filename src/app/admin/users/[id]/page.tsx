@@ -219,7 +219,12 @@ export default async function AdminUserDetailPage({
                     key={project.id}
                     className="rounded-2xl bg-cream px-4 py-3 text-sm"
                   >
-                    <p className="font-semibold text-forest">{project.name}</p>
+                    <Link
+                      href={`/admin/projects/${project.id}`}
+                      className="font-semibold text-forest hover:underline"
+                    >
+                      {project.name} →
+                    </Link>
                     <p className="mt-1 text-ink/60">
                       {project.spaceType}
                       {project.projectStage && ` · ${project.projectStage}`}

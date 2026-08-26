@@ -37,6 +37,9 @@ export const candidatePropertySchema = z.object({
   advantages: z.string().trim().max(2000).optional().or(z.literal("")),
   concerns: z.string().trim().max(2000).optional().or(z.literal("")),
   status: z.enum(candidatePropertyStatuses).optional(),
+  // 관리자가 공유한 매물(ProjectPropertySuggestion)에서 이 폼을 미리 채워
+  // 들어왔다면 그 id. 저장 성공 시 해당 공유 건을 SAVED로 연결하는 데만 쓴다.
+  suggestionId: z.string().trim().min(1).optional(),
 });
 
 export type CandidatePropertyInput = z.infer<typeof candidatePropertySchema>;

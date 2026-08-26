@@ -61,6 +61,9 @@ model User {
   partnerMemberships PartnerMembership[]
   candidateProperties CandidateProperty[]
   propertyPreference  PropertyPreference?
+  // 이 관리자가 고객 프로젝트에 직접 공유한 매물. 이름이 겹치지 않도록
+  // 명시적 relation 이름을 쓴다(다른 User↔ProjectPropertySuggestion 관계는 없다).
+  sharedPropertySuggestions ProjectPropertySuggestion[] @relation("PropertySuggestionSharedBy")
 }
 
 // Google/Kakao/Naver 계정 연결. provider+providerAccountId(이메일이 아니라
@@ -211,6 +214,8 @@ model Project {
   // 이 프로젝트가 매물 후보에서 시작됐다면 그 원본(CandidateProperty)을
   // 가리킨다. FK는 CandidateProperty.linkedProjectId에 있다.
   candidateProperty CandidateProperty?
+  // 관리자가 이 프로젝트에 맞춰 직접 골라 공유한 외부 매물 목록.
+  propertySuggestions ProjectPropertySuggestion[]
 
   @@index([userId, createdAt])
 }
@@ -771,6 +776,9 @@ model CandidateProperty {
   latitude  Float?
   longitude Float?
   checklist       PropertyVisitCheckItem[]
+  // 이 후보가 관리자의 매물 공유(ProjectPropertySuggestion)를 저장해 만들어졌다면
+  // 그 원본을 가리킨다. FK는 ProjectPropertySuggestion.savedCandidatePropertyId에 있다.
+  suggestionOrigin ProjectPropertySuggestion?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -813,4 +821,68 @@ model PropertyPreference {
   commuteMemo       String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+}
+
+/**
+ * 관리자가 고객 프로젝트의 목표 지역·희망 조건을 보고 직접 골라 공유하는
+ * 외부 매물. 고객이 직접 등록하는 CandidateProperty와는 출처·검토 상태가
+ * 달라 별도 모델로 둔다 — 고객이 저장/거절해도 이 공유 이력 자체는 운영
+ * 기록으로 남아야 하고(CandidateProperty를 삭제해도 이 행은 남는다),
+ * adminMemo처럼 고객에게 절대 노출되면 안 되는 필드가 있어 Partner.adminMemo
+ * 분리 원칙과 같은 이유로 고객 소유 테이블에 섞지 않는다.
+ */
+model ProjectPropertySuggestion {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // 출처 확인·원본 재방문 용도로만 쓴다. http/https만 허용(src/lib/propertyUrl.ts).
+  // 서버는 이 URL을 절대 요청(fetch)하지 않는다 — CandidateProperty와 같은 원칙.
+  sourceUrl String
+  title     String
+  address   String?
+  // "매매" | "전세" | "월세" | "기타" — CandidateProperty와 같은 값 집합을 그대로 쓴다
+  // (고객이 저장할 때 값 변환 없이 그대로 넘어가야 하므로).
+  transactionType String?
+  price       Int?
+  deposit     Int?
+  monthlyRent Int?
+  area        Float?
+  roomCount   Int?
+  availableDate DateTime?
+
+  // 고객에게 그대로 노출되는 공유 사유·추가 확인 사항.
+  sharedReason String?
+  cautionNote  String?
+  // 관리자 전용 내부 메모. 고객 대상 API 응답에는 절대 포함하지 않는다.
+  adminMemo    String?
+
+  // "NEW" | "VIEWED" | "INTERESTED" | "SAVED" | "ON_HOLD" | "NOT_INTERESTED" | "EXPIRED"
+  // (src/data/propertySuggestion.ts)
+  customerStatus String    @default("NEW")
+  customerMemo   String?
+  viewedAt       DateTime?
+  respondedAt    DateTime?
+
+  // 고객이 "내 매물 후보에 저장"을 완료하면 생긴 CandidateProperty를 가리킨다.
+  // 후보를 지워도 이 공유 이력은 남아야 하므로 SetNull.
+  savedCandidatePropertyId String?            @unique
+  savedCandidateProperty   CandidateProperty? @relation(fields: [savedCandidatePropertyId], references: [id], onDelete: SetNull)
+
+  // 공유한 관리자. 계정이 나중에 바뀌어도 당시 이름·이메일을 그대로 보여주기
+  // 위해 표시용 스냅샷을 별도로 남긴다(ServiceRequestPartnerSnapshot과 같은 원칙).
+  sharedById    String
+  sharedBy      User   @relation("PropertySuggestionSharedBy", fields: [sharedById], references: [id])
+  sharedByName  String
+  sharedByEmail String
+
+  // 관리자가 공유를 철회한 시각. null이면 활성 공유 — 실제 삭제 대신 이
+  // 값으로 운영 이력을 보존한다(고객이 관심 없음으로 응답해도 마찬가지).
+  withdrawnAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId, createdAt])
+  @@index([projectId, withdrawnAt])
 }

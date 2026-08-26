@@ -68,10 +68,13 @@ export function CandidatePropertyForm({
   mode,
   candidateId,
   initialValues = emptyCandidatePropertyValues,
+  suggestionId,
 }: {
   mode: "create" | "edit";
   candidateId?: string;
   initialValues?: CandidatePropertyFormValues;
+  /** 관리자가 공유한 매물(ProjectPropertySuggestion)에서 이 폼을 열었다면 그 id. 저장 성공 시 공유 건을 SAVED로 연결하는 데만 쓴다. */
+  suggestionId?: string;
 }) {
   const router = useRouter();
   const [values, setValues] = useState<CandidatePropertyFormValues>(initialValues);
@@ -111,6 +114,7 @@ export function CandidatePropertyForm({
       advantages: values.advantages,
       concerns: values.concerns,
       status: values.status,
+      suggestionId: mode === "create" ? suggestionId : undefined,
     });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "입력값을 확인해주세요.");

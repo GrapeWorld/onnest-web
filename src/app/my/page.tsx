@@ -17,6 +17,7 @@ import { formatDate } from "@/lib/dates";
 import { getSession } from "@/lib/session";
 import { isProviderConfigured } from "@/lib/oauth/providers";
 import { isDeleteApproved } from "@/lib/oauth/deleteApproval";
+import { listAllCustomerPropertySuggestions } from "@/lib/propertySuggestions";
 
 export default async function MyPage() {
   const user = await getCurrentUser();
@@ -73,6 +74,7 @@ export default async function MyPage() {
 
   const inquiryCount = await prisma.inquiry.count({ where: { userId: user.id } });
   const candidatePropertyCount = await prisma.candidateProperty.count({ where: { userId: user.id } });
+  const { items: sharedSuggestions, newCount: newSuggestionCount } = await listAllCustomerPropertySuggestions(user.id);
 
   const activeProject = projects.find((project) => {
     const done = project.stepStates.filter((s) => s.status === "완료").length;
@@ -141,6 +143,11 @@ export default async function MyPage() {
                 저장한 매물 {candidatePropertyCount}건
               </span>
             )}
+            {newSuggestionCount > 0 && (
+              <span className="rounded-full bg-mint px-3 py-1 text-xs font-bold text-forest">
+                새로 공유된 매물 {newSuggestionCount}건
+              </span>
+            )}
           </div>
           <p className="mt-2 text-sm text-ink/60">관심 있는 매물을 저장하고 조건을 비교해 보세요.</p>
           <p className="mt-2 text-xs text-ink/45">
@@ -155,6 +162,20 @@ export default async function MyPage() {
             네이버페이 부동산에서 매물 찾기
             <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           </a>
+          {sharedSuggestions.length > 0 && (
+            <div className="mt-4 grid min-w-0 gap-2 border-t border-forest/10 pt-4">
+              <p className="text-xs font-bold text-ink/45">프로젝트 맞춤 매물</p>
+              {sharedSuggestions.slice(0, 3).map((suggestion) => (
+                <Link
+                  key={suggestion.id}
+                  href={`/projects/${suggestion.project.id}`}
+                  className="min-w-0 truncate text-sm font-semibold text-forest hover:underline"
+                >
+                  {suggestion.project.name} · {suggestion.title} →
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
         <div className="flex shrink-0 flex-col gap-2 sm:items-end">
           <Button href="/my/candidate-properties/new" className="w-full sm:w-auto">
