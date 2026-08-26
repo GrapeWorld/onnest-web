@@ -845,6 +845,42 @@ model PropertyPreference {
 }
 
 /**
+ * 관리자가 고객 데이터를 Excel로 내보낸 시도의 감사 이력. 실제로 내보낸
+ * 개인정보 내용은 여기 복제하지 않는다 — "누가/언제/어떤 범위를/어떤
+ * 사유로/몇 건" 만 남긴다. actorId·customerId·projectId는 대상 계정이
+ * 나중에 삭제돼도 감사 기록 자체는 남아야 하므로 의도적으로 FK 관계를
+ * 걸지 않는다(다른 History 모델과의 차이 — 여기는 대상이 사라져도 보존이
+ * 우선이다).
+ */
+model AdminDataExportHistory {
+  id         String   @id @default(cuid())
+  actorId    String
+  actorName  String
+  actorEmail String
+  // "CUSTOMER" | "PROJECT" | "ALL_CUSTOMERS"(예약 — 이번 릴리스에서는
+  // API가 발급하지 않는다. 전체 고객 일괄 내보내기는 비동기 처리 구조가
+  // 필요해 별도 작업으로 남겨둔다).
+  exportType String
+  customerId String?
+  projectId  String?
+  dateFrom   DateTime?
+  dateTo     DateTime?
+  // 실제로 포함된 시트 키를 쉼표로 이어붙인 문자열(예: "PROJECT,SCHEDULE,QUOTE").
+  includedSections String
+  reason           String
+  rowCount         Int?
+  fileSize         Int?
+  // "SUCCESS" | "FAILED"
+  status            String
+  failureReasonCode String?
+  createdAt         DateTime  @default(now())
+  completedAt       DateTime?
+
+  @@index([actorId, createdAt])
+  @@index([customerId, createdAt])
+}
+
+/**
  * 관리자가 고객 프로젝트의 목표 지역·희망 조건을 보고 직접 골라 공유하는
  * 외부 매물. 고객이 직접 등록하는 CandidateProperty와는 출처·검토 상태가
  * 달라 별도 모델로 둔다 — 고객이 저장/거절해도 이 공유 이력 자체는 운영

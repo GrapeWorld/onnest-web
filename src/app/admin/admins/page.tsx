@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { AppShell } from "@/components/app/AppShell";
 import { Card } from "@/components/ui/Card";
@@ -78,7 +79,9 @@ export default async function AdminAdminsPage({
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-forest">{admin.name}</p>
+                      <Link href={`/admin/admins/${admin.id}`} className="font-semibold text-forest hover:underline">
+                        {admin.name} →
+                      </Link>
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-bold ${adminRoleClassName[admin.adminRole as AdminRole]}`}
                       >
@@ -103,6 +106,7 @@ export default async function AdminAdminsPage({
                     <AdminRoleChangeForm
                       userId={admin.id}
                       currentRole={admin.adminRole as AdminRole}
+                      targetName={admin.name}
                     />
                   </div>
                 )}
@@ -138,7 +142,7 @@ export default async function AdminAdminsPage({
                     {candidate.phone && ` · ${maskPhone(candidate.phone)}`}
                   </p>
                   <div className="mt-4 border-t border-forest/10 pt-4">
-                    <AdminRoleChangeForm userId={candidate.id} currentRole={null} />
+                    <AdminRoleChangeForm userId={candidate.id} currentRole={null} targetName={candidate.name} />
                   </div>
                 </Card>
               ))

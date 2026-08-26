@@ -49,6 +49,9 @@ export const rateLimits = {
   // 개인 메모성 쓰기라 종류별로 나눌 이유가 없다. 여러 매물을 연달아
   // 저장하는 정상 사용을 막지 않을 만큼 넉넉하게 잡는다.
   candidateProperty: { windowSeconds: 3600, max: 60 },
+  // 최고관리자 전용 Excel 내보내기. 개인정보가 포함된 파일을 반복 생성하는
+  // 남용을 막는다 — 정상적인 상담·민원 대응 업무량보다 넉넉하게 잡는다.
+  adminExport: { windowSeconds: 3600, max: 30 },
 } satisfies Record<string, RateLimitRule>;
 
 export type RateLimitResult =

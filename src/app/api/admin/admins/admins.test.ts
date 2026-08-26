@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   userUpdate: vi.fn(),
   historyCreate: vi.fn(),
   transaction: vi.fn(),
+  sendEmail: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -19,6 +20,10 @@ vi.mock("@/lib/prisma", () => ({
     adminRoleHistory: { create: mocks.historyCreate },
     $transaction: mocks.transaction,
   },
+}));
+vi.mock("@/lib/email", () => ({
+  sendEmail: mocks.sendEmail,
+  escapeHtml: (value: string) => value,
 }));
 
 import { PATCH } from "@/app/api/admin/admins/[id]/route";
@@ -43,10 +48,16 @@ describe("PATCH /api/admin/admins/[id]", () => {
       email: "super@onnesthome.com",
       adminRole: "super",
     });
-    mocks.findUnique.mockResolvedValue({ id: "target-1", adminRole: null });
+    mocks.findUnique.mockResolvedValue({
+      id: "target-1",
+      adminRole: null,
+      email: "target@onnesthome.com",
+      name: "타겟회원",
+    });
     mocks.count.mockResolvedValue(1);
     mocks.userUpdate.mockResolvedValue({});
     mocks.historyCreate.mockResolvedValue({});
+    mocks.sendEmail.mockResolvedValue({ sent: true });
     // 실제 라우트는 인터랙티브 트랜잭션(콜백)을 쓴다 — tx가 곧 prisma mock과
     // 같은 함수들을 쓰도록 흉내낸다.
     mocks.transaction.mockImplementation(async (callback) =>
@@ -137,6 +148,24 @@ describe("PATCH /api/admin/admins/[id]", () => {
 
     expect(response.status).toBe(200);
     expect(mocks.transaction).toHaveBeenCalledTimes(1);
+  });
+
+  it("notifies the target admin by email after a successful role change", async () => {
+    await call({ toRole: "viewer", reason: "CS 지원" });
+
+    expect(mocks.sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "target@onnesthome.com", subject: expect.stringContaining("관리자 권한") }),
+    );
+  });
+
+  it("keeps the role change even when the notification email fails", async () => {
+    mocks.sendEmail.mockRejectedValue(new Error("email down"));
+
+    const response = await call({ toRole: "viewer", reason: "CS 지원" });
+
+    expect(response.status).toBe(200);
+    expect(mocks.userUpdate).toHaveBeenCalled();
+    expect(mocks.historyCreate).toHaveBeenCalled();
   });
 
   it("revokes an admin's access (toRole: null)", async () => {

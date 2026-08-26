@@ -5,7 +5,7 @@ import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/dates";
 
-const SUPER_ONLY_HREFS = ["/admin/admins"];
+const SUPER_ONLY_HREFS = ["/admin/admins", "/admin/exports"];
 
 const sections = [
   {
@@ -38,6 +38,11 @@ const sections = [
     href: "/admin/partners",
     title: "제휴업체 관리",
     description: "이사·청소 등 서비스 신청을 넘길 외주 업체를 등록·관리합니다.",
+  },
+  {
+    href: "/admin/exports",
+    title: "데이터 내보내기",
+    description: "고객·프로젝트 이용 내역을 Excel로 내려받습니다. (최고관리자 전용)",
   },
 ];
 

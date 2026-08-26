@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
-import { adminRoles } from "@/data/adminRole";
+import { adminRoles, adminRoleLabels, type AdminRole } from "@/data/adminRole";
+import { sendEmail, escapeHtml } from "@/lib/email";
 
 const updateSchema = z.object({
   toRole: z.union([z.enum(adminRoles), z.null()]),
@@ -45,13 +46,14 @@ export async function PATCH(
   // 격리에서는 이런 충돌이 감지되면 한쪽이 자동으로 실패한다.
   let result: {
     error: "notfound" | "same" | "lastsuper" | null;
+    target?: { email: string; name: string };
   };
   try {
     result = await prisma.$transaction(
       async (tx) => {
         const target = await tx.user.findUnique({
           where: { id },
-          select: { id: true, adminRole: true },
+          select: { id: true, adminRole: true, email: true, name: true },
         });
         if (!target) return { error: "notfound" as const };
         if (target.adminRole === toRole) return { error: "same" as const };
@@ -79,7 +81,7 @@ export async function PATCH(
             actorEmail: admin.email,
           },
         });
-        return { error: null };
+        return { error: null, target: { email: target.email, name: target.name } };
       },
       { isolationLevel: "Serializable" },
     );
@@ -107,6 +109,27 @@ export async function PATCH(
       { error: "마지막 남은 최고관리자는 권한을 낮추거나 회수할 수 없습니다." },
       { status: 400 },
     );
+  }
+
+  // 알림 발송 실패가 이미 반영된 권한 변경을 막지 않는다 — sendEmail이
+  // 이미 실패를 삼키지만, 이 라우트에는 감사 로그 성격의 알림이라 한 번 더
+  // 명시적으로 감싸 어떤 경우에도 응답에 영향을 주지 않게 한다.
+  if (result.target) {
+    const roleLabel = toRole ? adminRoleLabels[toRole as AdminRole] : "일반 회원(권한 회수)";
+    try {
+      await sendEmail({
+        to: result.target.email,
+        subject: "[ONNEST] 관리자 권한이 변경되었습니다.",
+        html: `
+          <p>${escapeHtml(result.target.name)}님, 안녕하세요.</p>
+          <p>ONNEST 계정의 관리자 권한이 <strong>${escapeHtml(roleLabel)}</strong>(으)로 변경되었습니다.</p>
+          <p>변경 사유: ${escapeHtml(reason)}</p>
+          <p>본인이 요청하지 않은 변경이라면 즉시 운영팀에 문의해주세요.</p>
+        `,
+      });
+    } catch (error) {
+      console.error("[admin-role] notification email failed", error);
+    }
   }
 
   return NextResponse.json({ id, adminRole: toRole });
