@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   activityCreate: vi.fn(),
   notificationUpsert: vi.fn(),
+  notificationCreateMany: vi.fn(),
+  userFindMany: vi.fn(),
   transaction: vi.fn(),
   membershipFindFirst: vi.fn(),
   checkRateLimit: vi.fn(),
@@ -18,8 +20,9 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     serviceRequest: { findUnique: mocks.findUnique, update: mocks.update },
     serviceRequestActivity: { create: mocks.activityCreate },
-    notification: { upsert: mocks.notificationUpsert },
+    notification: { upsert: mocks.notificationUpsert, createMany: mocks.notificationCreateMany },
     partnerMembership: { findFirst: mocks.membershipFindFirst },
+    user: { findMany: mocks.userFindMany },
     $transaction: mocks.transaction,
   },
 }));
@@ -62,6 +65,8 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
     mocks.update.mockResolvedValue({});
     mocks.activityCreate.mockResolvedValue({});
     mocks.notificationUpsert.mockResolvedValue({});
+    mocks.notificationCreateMany.mockResolvedValue({ count: 0 });
+    mocks.userFindMany.mockResolvedValue([{ id: "admin-1" }]);
     mocks.membershipFindFirst.mockResolvedValue({
       id: "membership-1",
       partnerId: "partner-1",
@@ -73,7 +78,8 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
       callback({
         serviceRequest: { findUnique: mocks.findUnique, update: mocks.update },
         serviceRequestActivity: { create: mocks.activityCreate },
-        notification: { upsert: mocks.notificationUpsert },
+        notification: { upsert: mocks.notificationUpsert, createMany: mocks.notificationCreateMany },
+        user: { findMany: mocks.userFindMany },
       }),
     );
   });

@@ -6,6 +6,8 @@ import { isQuoteMutableStatus } from "@/lib/serviceRequestQuotes";
 import { escapeHtml, notifyPartnerStaff } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
 import { formatWon } from "@/lib/currency";
+import { createNotifications } from "@/lib/notifications";
+import { getReadablePartnerRequestRecipients } from "@/lib/serviceRequestNotifications";
 
 const selectQuoteSchema = z.object({
   quoteId: z.string().min(1, "선택할 견적을 확인해주세요."),
@@ -41,7 +43,7 @@ export async function PATCH(
     result = await prisma.$transaction(async (tx) => {
       const existing = await tx.serviceRequest.findFirst({
         where: { id, project: { userId: user.id } },
-        select: { id: true, status: true, selectedQuoteId: true, partnerId: true },
+        select: { id: true, status: true, selectedQuoteId: true, partnerId: true, partnerStaffId: true },
       });
       if (!existing) return { error: "notfound" as const };
       if (!isQuoteMutableStatus(existing.status)) return { error: "locked" as const };
@@ -74,6 +76,26 @@ export async function PATCH(
           partnerId: existing.partnerId,
         },
       });
+
+      if (existing.partnerId) {
+        const recipients = await getReadablePartnerRequestRecipients(
+          tx,
+          existing.partnerId,
+          existing.partnerStaffId,
+        );
+        await createNotifications(
+          tx,
+          recipients.map((recipientUserId) => ({
+            recipientUserId,
+            type: "PARTNER_QUOTE_SELECTED" as const,
+            title: "고객이 견적을 선택했습니다",
+            body: `${quote.title} (${formatWon(quote.amount)}원)을 선택했습니다.`,
+            internalPath: `/partner/requests/${id}`,
+            dedupeKey: `PARTNER_QUOTE_SELECTED:${quoteId}`,
+          })),
+        );
+      }
+
       return {
         error: null,
         success: { partnerId: existing.partnerId, title: quote.title, amount: quote.amount },

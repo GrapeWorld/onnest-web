@@ -1,6 +1,30 @@
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { ServiceRequestStatus } from "@/data/serviceRequests";
 import { serviceRequestCancelledStatus } from "@/data/serviceRequests";
 import type { NotificationType } from "@/data/notification";
+
+type Db = PrismaClient | Prisma.TransactionClient;
+
+/**
+ * 이 요청을 지금 조회할 수 있는 업체 구성원의 id 목록.
+ * evaluateServiceRequestReadAccess(partnerAuth.ts)와 같은 기준이다 —
+ * OWNER·MANAGER·VIEWER는 항상, STAFF는 자신이 담당으로 지정된 경우에만.
+ * 접근 권한이 없는 사람에게 알림 링크를 주지 않기 위해 알림 수신자 계산
+ * 자체를 이 기준에 맞춘다.
+ */
+export async function getReadablePartnerRequestRecipients(
+  db: Db,
+  partnerId: string,
+  partnerStaffId: string | null,
+) {
+  const members = await db.partnerMembership.findMany({
+    where: { partnerId, status: "ACTIVE" },
+    select: { userId: true, role: true },
+  });
+  return members
+    .filter((member) => member.role !== "STAFF" || member.userId === partnerStaffId)
+    .map((member) => member.userId);
+}
 
 /**
  * 모든 상태 변경마다 이메일을 보내면 고객이 피로해지므로, 실제로 "다시

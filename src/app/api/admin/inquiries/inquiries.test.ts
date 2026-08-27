@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   inquiryUpdate: vi.fn(),
   userFindUnique: vi.fn(),
   activityCreate: vi.fn(),
+  notificationCreate: vi.fn(),
   transaction: vi.fn(),
   notifyInquiryCustomer: vi.fn(),
   notifyInquiryAssignee: vi.fn(),
@@ -20,6 +21,7 @@ vi.mock("@/lib/prisma", () => ({
     inquiry: { findUnique: mocks.inquiryFindUnique, update: mocks.inquiryUpdate },
     user: { findUnique: mocks.userFindUnique },
     inquiryActivity: { create: mocks.activityCreate },
+    notification: { create: mocks.notificationCreate },
     $transaction: mocks.transaction,
   },
 }));
@@ -72,6 +74,7 @@ describe("PATCH /api/admin/inquiries/[id]", () => {
       status: "ACTIVE",
     });
     mocks.activityCreate.mockResolvedValue({});
+    mocks.notificationCreate.mockResolvedValue({});
     mocks.notifyInquiryCustomer.mockResolvedValue(undefined);
     mocks.notifyInquiryAssignee.mockResolvedValue(undefined);
     // 실제 라우트는 인터랙티브 트랜잭션(콜백)을 쓴다.
@@ -80,6 +83,7 @@ describe("PATCH /api/admin/inquiries/[id]", () => {
         inquiry: { findUnique: mocks.inquiryFindUnique, update: mocks.inquiryUpdate },
         user: { findUnique: mocks.userFindUnique },
         inquiryActivity: { create: mocks.activityCreate },
+        notification: { create: mocks.notificationCreate },
       }),
     );
   });

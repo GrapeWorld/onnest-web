@@ -6,6 +6,8 @@ import { checkRateLimit, formatRetryAfter } from "@/lib/rateLimit";
 import { escapeHtml, notifyAdmin, notifyPartnerStaff } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
 import { serviceRequestCancelledStatus } from "@/data/serviceRequests";
+import { createNotifications } from "@/lib/notifications";
+import { getReadablePartnerRequestRecipients } from "@/lib/serviceRequestNotifications";
 
 const cancelSchema = z.object({
   reason: z.string().trim().max(500).optional(),
@@ -66,6 +68,7 @@ export async function POST(
           id: true,
           status: true,
           partnerId: true,
+          partnerStaffId: true,
           serviceType: true,
           projectId: true,
           cancelRequestedAt: true,
@@ -128,6 +131,37 @@ export async function POST(
           partnerId: existing.partnerId,
         },
       });
+
+      const recipients = await getReadablePartnerRequestRecipients(
+        tx,
+        existing.partnerId,
+        existing.partnerStaffId,
+      );
+      await createNotifications(tx, [
+        ...recipients.map((recipientUserId) => ({
+          recipientUserId,
+          type: "PARTNER_CANCEL_REQUESTED" as const,
+          title: "고객이 취소를 요청했습니다",
+          body: "확인 후 처리해주세요.",
+          internalPath: `/partner/requests/${id}`,
+        })),
+      ]);
+      const admins = await tx.user.findMany({
+        where: { adminRole: { in: ["super", "viewer"] } },
+        select: { id: true },
+      });
+      await createNotifications(
+        tx,
+        admins.map((adminUser) => ({
+          recipientUserId: adminUser.id,
+          type: "ADMIN_CUSTOMER_CANCEL_REQUESTED" as const,
+          title: "고객이 취소를 요청했습니다",
+          body: `${existing.serviceType} 서비스 신청의 취소 요청을 확인해주세요.`,
+          internalPath: "/admin/service-leads",
+          dedupeKey: `ADMIN_CUSTOMER_CANCEL_REQUESTED:${id}`,
+        })),
+      );
+
       return {
         error: null,
         success: {

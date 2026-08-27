@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   activityCreate: vi.fn(),
   transaction: vi.fn(),
   userFindMany: vi.fn(),
+  membershipFindMany: vi.fn(),
+  notificationCreateMany: vi.fn(),
   notifyPartnerStaff: vi.fn(),
 }));
 
@@ -20,6 +22,8 @@ vi.mock("@/lib/prisma", () => ({
     serviceRequestQuote: { findFirst: mocks.quoteFindFirst },
     serviceRequestActivity: { create: mocks.activityCreate },
     user: { findMany: mocks.userFindMany },
+    partnerMembership: { findMany: mocks.membershipFindMany },
+    notification: { createMany: mocks.notificationCreateMany },
     $transaction: mocks.transaction,
   },
 }));
@@ -55,17 +59,22 @@ describe("PATCH /api/my/service-requests/[id]", () => {
       status: "신규",
       selectedQuoteId: null,
       partnerId: "partner-1",
+      partnerStaffId: null,
     });
     mocks.quoteFindFirst.mockResolvedValue({ id: "quote-1", title: "기본형", amount: 500000 });
     mocks.update.mockResolvedValue({});
     mocks.activityCreate.mockResolvedValue({});
     mocks.userFindMany.mockResolvedValue([{ email: "staff@partner.example.com" }]);
+    mocks.membershipFindMany.mockResolvedValue([{ userId: "owner-1", role: "OWNER" }]);
+    mocks.notificationCreateMany.mockResolvedValue({ count: 1 });
     mocks.notifyPartnerStaff.mockResolvedValue(undefined);
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         serviceRequest: { findFirst: mocks.findFirst, update: mocks.update },
         serviceRequestQuote: { findFirst: mocks.quoteFindFirst },
         serviceRequestActivity: { create: mocks.activityCreate },
+        partnerMembership: { findMany: mocks.membershipFindMany },
+        notification: { createMany: mocks.notificationCreateMany },
       }),
     );
   });

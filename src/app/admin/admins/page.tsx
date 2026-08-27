@@ -77,7 +77,7 @@ export default async function AdminAdminsPage({
             return (
               <Card key={admin.id}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <Link href={`/admin/admins/${admin.id}`} className="font-semibold text-forest hover:underline">
                         {admin.name} →
@@ -93,7 +93,7 @@ export default async function AdminAdminsPage({
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 text-sm text-ink/60">{admin.email}</p>
+                    <p className="mt-1 break-all text-sm text-ink/60">{admin.email}</p>
                     <p className="mt-1 text-xs text-ink/45">
                       {grant
                         ? `${dateTimeFormatter.format(grant.createdAt)} · ${grant.actorEmail}이(가) 지정`
@@ -137,7 +137,7 @@ export default async function AdminAdminsPage({
               candidates.map((candidate) => (
                 <Card key={candidate.id}>
                   <p className="font-semibold text-forest">{candidate.name}</p>
-                  <p className="mt-1 text-sm text-ink/60">
+                  <p className="mt-1 break-all text-sm text-ink/60">
                     {maskEmail(candidate.email)}
                     {candidate.phone && ` · ${maskPhone(candidate.phone)}`}
                   </p>

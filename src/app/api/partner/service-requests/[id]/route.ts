@@ -11,7 +11,7 @@ import {
   getCustomerNotificationCopy,
   getServiceRequestCustomerNotification,
 } from "@/lib/serviceRequestNotifications";
-import { createNotification } from "@/lib/notifications";
+import { createNotification, createNotifications } from "@/lib/notifications";
 import {
   serviceRequestStatuses,
   serviceRequestCancelledStatus,
@@ -138,6 +138,27 @@ export async function PATCH(
             internalPath: `/projects/${existing.project.id}/services`,
             dedupeKey: notification.dedupeKey,
           });
+        }
+
+        // 업체가 자발적으로(고객이 남긴 취소 요청을 처리하는 게 아니라)
+        // 요청을 취소로 돌리면 사실상 "거절"이다 — 관리자가 다른 업체를
+        // 다시 찾아야 할 수 있으니 알린다.
+        if (status === serviceRequestCancelledStatus && !existing.cancelRequestedAt) {
+          const admins = await tx.user.findMany({
+            where: { adminRole: { in: ["super", "viewer"] } },
+            select: { id: true },
+          });
+          await createNotifications(
+            tx,
+            admins.map((adminUser) => ({
+              recipientUserId: adminUser.id,
+              type: "ADMIN_PARTNER_REJECTED" as const,
+              title: "업체가 요청을 거절했습니다",
+              body: `${existing.serviceType} 서비스 신청을 업체가 거절했습니다. 재배정이 필요할 수 있습니다.`,
+              internalPath: "/admin/service-leads",
+              dedupeKey: `ADMIN_PARTNER_REJECTED:${id}:${existing.partnerId}`,
+            })),
+          );
         }
 
         return {

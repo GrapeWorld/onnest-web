@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getActiveMembership, evaluateStaffAssignmentAccess } from "@/lib/partnerAuth";
 import { checkRateLimit, formatRetryAfter } from "@/lib/rateLimit";
+import { createNotification } from "@/lib/notifications";
 
 const updateSchema = z.object({
   partnerStaffId: z.string().min(1).nullable(),
@@ -92,6 +93,17 @@ export async function PATCH(
             partnerId: user.partnerId,
           },
         });
+
+        if (partnerStaffId !== null) {
+          await createNotification(tx, {
+            recipientUserId: partnerStaffId,
+            type: "PARTNER_STAFF_ASSIGNED",
+            title: "새 요청의 담당자로 지정되었습니다",
+            body: "요청 내용을 확인해주세요.",
+            internalPath: `/partner/requests/${id}`,
+          });
+        }
+
         return { error: null };
       },
       { isolationLevel: "Serializable" },

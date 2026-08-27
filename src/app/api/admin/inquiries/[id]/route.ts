@@ -5,6 +5,7 @@ import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { inquiryStatuses } from "@/data/inquiries";
 import { escapeHtml, notifyInquiryAssignee, notifyInquiryCustomer } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
+import { createNotification } from "@/lib/notifications";
 
 const updateSchema = z.object({
   status: z.enum(inquiryStatuses).optional(),
@@ -148,6 +149,15 @@ export async function PATCH(
             actorName: admin.name,
           },
         });
+        if (assigneeId !== null && assigneeSnapshot) {
+          await createNotification(tx, {
+            recipientUserId: assigneeSnapshot.id,
+            type: "ADMIN_INQUIRY_ASSIGNED",
+            title: "문의 담당자로 지정되었습니다",
+            body: "새로 배정된 문의를 확인해주세요.",
+            internalPath: `/admin/inquiries/${id}`,
+          });
+        }
       }
       if (nextActionChanged) {
         await tx.inquiryActivity.create({

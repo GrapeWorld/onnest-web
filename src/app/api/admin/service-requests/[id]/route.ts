@@ -6,7 +6,10 @@ import { escapeHtml, notifyPartnerStaff } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
 import { isPartnerAssignable } from "@/data/partnerVerification";
 import { createNotification, createNotifications } from "@/lib/notifications";
-import { getServiceRequestCustomerNotification } from "@/lib/serviceRequestNotifications";
+import {
+  getServiceRequestCustomerNotification,
+  getReadablePartnerRequestRecipients,
+} from "@/lib/serviceRequestNotifications";
 import type { ServiceRequestStatus } from "@/data/serviceRequests";
 
 /** 관리자 전용 상태·담당자·업체 배정 변경 */
@@ -52,6 +55,7 @@ export async function PATCH(
             serviceType: true,
             status: true,
             partnerId: true,
+            partnerStaffId: true,
             privacyAgreedAt: true,
             cancelRequestedAt: true,
             projectId: true,
@@ -166,6 +170,30 @@ export async function PATCH(
 
         if (partnerChanged) {
           await tx.serviceRequestQuote.deleteMany({ where: { serviceRequestId: id } });
+
+          // 이전에 배정돼 있던 업체가 있었다면(재배정이든 배정 해제든) 더 이상
+          // 접근할 수 없게 됐다는 사실을 그 시점에 조회 가능했던 구성원들에게
+          // 알린다 — 접근 자체는 이미 evaluateServiceRequestReadAccess가
+          // partnerId 일치 여부로 막아주지만(알림 링크를 눌러도 그 화면에서
+          // 다시 막힌다), "왜 안 보이지"를 능동적으로 알려주는 게 목적이다.
+          if (existing.partnerId) {
+            const previousRecipients = await getReadablePartnerRequestRecipients(
+              tx,
+              existing.partnerId,
+              existing.partnerStaffId,
+            );
+            await createNotifications(
+              tx,
+              previousRecipients.map((recipientUserId) => ({
+                recipientUserId,
+                type: "PARTNER_SERVICE_REQUEST_UNASSIGNED" as const,
+                title: "다른 업체로 재배정되었습니다",
+                body: "담당하시던 요청이 다른 업체로 재배정되어 더 이상 접근할 수 없습니다.",
+                internalPath: "/partner",
+                dedupeKey: `PARTNER_SERVICE_REQUEST_UNASSIGNED:${id}:${existing.partnerId}`,
+              })),
+            );
+          }
         }
 
         if (isNewPartnerAssignment) {
@@ -183,18 +211,11 @@ export async function PATCH(
           // 배정 시점에는 아직 담당 STAFF가 지정되지 않아(evaluateServiceRequestReadAccess
           // 기준) STAFF는 상세를 조회할 수 없다 — 지금 열람 가능한 OWNER·MANAGER·
           // VIEWER에게만 알린다. STAFF는 개별 배정 이후 포털에서 확인하게 된다.
-          const recipients = await tx.partnerMembership.findMany({
-            where: {
-              partnerId: parsed.data.partnerId!,
-              status: "ACTIVE",
-              role: { in: ["OWNER", "MANAGER", "VIEWER"] },
-            },
-            select: { userId: true },
-          });
+          const recipients = await getReadablePartnerRequestRecipients(tx, parsed.data.partnerId!, null);
           await createNotifications(
             tx,
-            recipients.map((member) => ({
-              recipientUserId: member.userId,
+            recipients.map((recipientUserId) => ({
+              recipientUserId,
               type: "PARTNER_NEW_SERVICE_REQUEST" as const,
               title: "새로운 서비스 요청이 배정되었습니다",
               body: "요청 내용을 확인하고 필요한 경우 견적을 등록해 주세요.",

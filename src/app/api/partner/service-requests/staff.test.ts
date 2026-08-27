@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   requestUpdate: vi.fn(),
   userFindUnique: vi.fn(),
   activityCreate: vi.fn(),
+  notificationCreate: vi.fn(),
   transaction: vi.fn(),
   membershipFindFirst: vi.fn(),
   checkRateLimit: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock("@/lib/prisma", () => ({
     serviceRequest: { findUnique: mocks.requestFindUnique, update: mocks.requestUpdate },
     user: { findUnique: mocks.userFindUnique },
     serviceRequestActivity: { create: mocks.activityCreate },
+    notification: { create: mocks.notificationCreate },
     partnerMembership: { findFirst: mocks.membershipFindFirst },
     $transaction: mocks.transaction,
   },
@@ -70,12 +72,14 @@ describe("PATCH /api/partner/service-requests/[id]/staff", () => {
     });
     mocks.requestUpdate.mockResolvedValue({});
     mocks.activityCreate.mockResolvedValue({});
+    mocks.notificationCreate.mockResolvedValue({});
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         serviceRequest: { findUnique: mocks.requestFindUnique, update: mocks.requestUpdate },
         user: { findUnique: mocks.userFindUnique },
         serviceRequestActivity: { create: mocks.activityCreate },
+        notification: { create: mocks.notificationCreate },
       }),
     );
   });
