@@ -10,6 +10,10 @@ const mocks = vi.hoisted(() => ({
   userFindMany: vi.fn(),
   transaction: vi.fn(),
   membershipFindFirst: vi.fn(),
+  membershipFindMany: vi.fn(),
+  actionItemUpdateMany: vi.fn(),
+  actionItemUpsert: vi.fn(),
+  actionItemCreateMany: vi.fn(),
   checkRateLimit: vi.fn(),
 }));
 
@@ -21,8 +25,13 @@ vi.mock("@/lib/prisma", () => ({
     serviceRequest: { findUnique: mocks.findUnique, update: mocks.update },
     serviceRequestActivity: { create: mocks.activityCreate },
     notification: { upsert: mocks.notificationUpsert, createMany: mocks.notificationCreateMany },
-    partnerMembership: { findFirst: mocks.membershipFindFirst },
+    partnerMembership: { findFirst: mocks.membershipFindFirst, findMany: mocks.membershipFindMany },
     user: { findMany: mocks.userFindMany },
+    actionItem: {
+      updateMany: mocks.actionItemUpdateMany,
+      upsert: mocks.actionItemUpsert,
+      createMany: mocks.actionItemCreateMany,
+    },
     $transaction: mocks.transaction,
   },
 }));
@@ -67,6 +76,10 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
     mocks.notificationUpsert.mockResolvedValue({});
     mocks.notificationCreateMany.mockResolvedValue({ count: 0 });
     mocks.userFindMany.mockResolvedValue([{ id: "admin-1" }]);
+    mocks.membershipFindMany.mockResolvedValue([]);
+    mocks.actionItemUpdateMany.mockResolvedValue({ count: 0 });
+    mocks.actionItemUpsert.mockResolvedValue({});
+    mocks.actionItemCreateMany.mockResolvedValue({ count: 0 });
     mocks.membershipFindFirst.mockResolvedValue({
       id: "membership-1",
       partnerId: "partner-1",
@@ -79,7 +92,13 @@ describe("PATCH /api/partner/service-requests/[id]", () => {
         serviceRequest: { findUnique: mocks.findUnique, update: mocks.update },
         serviceRequestActivity: { create: mocks.activityCreate },
         notification: { upsert: mocks.notificationUpsert, createMany: mocks.notificationCreateMany },
+        partnerMembership: { findMany: mocks.membershipFindMany },
         user: { findMany: mocks.userFindMany },
+        actionItem: {
+          updateMany: mocks.actionItemUpdateMany,
+          upsert: mocks.actionItemUpsert,
+          createMany: mocks.actionItemCreateMany,
+        },
       }),
     );
   });

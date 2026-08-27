@@ -7,6 +7,7 @@ import { escapeHtml, notifyAdmin, notifyInquiryCustomer } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
 import { getCurrentUser } from "@/lib/auth";
 import { createNotifications } from "@/lib/notifications";
+import { createActionItems } from "@/lib/actionItems";
 
 const inquirySchema = z.object({
   name: z.string().trim().min(1, "이름을 입력해주세요.").max(50),
@@ -117,6 +118,21 @@ export async function POST(request: Request) {
             : `${data.name}님의 문의가 접수됐습니다.`,
         internalPath: "/admin/inquiries",
         dedupeKey: `ADMIN_NEW_INQUIRY:${created.id}`,
+      })),
+    );
+
+    const supers = admins.filter((adminUser) => adminUser.adminRole === "super");
+    await createActionItems(
+      tx,
+      supers.map((adminUser) => ({
+        assigneeUserId: adminUser.id,
+        type: "ADMIN_ANSWER_INQUIRY" as const,
+        title: "새 문의에 답변해주세요",
+        description: `${data.name}님의 문의에 답변해주세요.`,
+        internalPath: "/admin/inquiries",
+        relatedEntityType: "Inquiry",
+        relatedEntityId: created.id,
+        sourceKey: `ADMIN_ANSWER_INQUIRY:${created.id}`,
       })),
     );
 

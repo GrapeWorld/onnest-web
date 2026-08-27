@@ -70,6 +70,7 @@ model User {
   // 명시적 relation 이름을 쓴다(다른 User↔ProjectPropertySuggestion 관계는 없다).
   sharedPropertySuggestions ProjectPropertySuggestion[] @relation("PropertySuggestionSharedBy")
   notifications Notification[]
+  actionItems   ActionItem[]
 }
 
 // 서비스 내 알림함. Activity/History(무슨 일이 있었는지)와는 다른 축이다 —
@@ -99,6 +100,45 @@ model Notification {
   @@unique([recipientUserId, dedupeKey])
   @@index([recipientUserId, readAt, createdAt])
   @@index([recipientUserId, createdAt])
+}
+
+// 역할별 "내가 할 일" 업무함. Notification(소식을 읽었는지)과는 다른 축이다
+// — 실제로 처리해야 하는 업무의 상태를 담당한다. 완료는 항상 관련 업무
+// 자체가 실제로 처리됐을 때 시스템이 sourceKey로 찾아 닫는다(사용자가
+// 버튼으로 직접 "완료" 처리하는 경로는 P0에 없다 — 서버 상태를 우회해
+// 임의로 완료 처리하지 못하게 막는 원칙). Notification과 마찬가지로
+// assigneeUserId는 실제 FK라 계정 삭제 시 같이 지워진다.
+model ActionItem {
+  id                String    @id @default(cuid())
+  assigneeUserId    String
+  assignee          User      @relation(fields: [assigneeUserId], references: [id], onDelete: Cascade)
+  // "CUSTOMER" | "PARTNER" | "ADMIN" (src/data/actionItem.ts) — 한 사람이
+  // 여러 역할을 가질 수 있어, 어떤 역할의 할 일인지 구분해 둔다.
+  roleContext       String
+  // src/data/actionItem.ts의 actionItemTypes
+  type              String
+  title             String
+  description       String
+  // "NORMAL" | "IMPORTANT" | "URGENT"
+  priority          String    @default("NORMAL")
+  // "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
+  status            String    @default("PENDING")
+  internalPath      String
+  relatedEntityType String
+  relatedEntityId   String
+  // 같은 업무가 중복 생성되지 않게 막는 키. (assigneeUserId, sourceKey)가
+  // 유니크라 여러 수신자에게 팬아웃해도 각자 한 건만 유지된다. 업무가
+  // 실제로 처리되면 이 값으로 전체(모든 수신자)를 한 번에 닫는다.
+  sourceKey         String
+  dueAt             DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  cancelledAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([assigneeUserId, sourceKey])
+  @@index([assigneeUserId, status, createdAt])
 }
 
 // Google/Kakao/Naver 계정 연결. provider+providerAccountId(이메일이 아니라

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { propertySuggestionResponseSchema } from "@/lib/propertySuggestionSchema";
+import { resolveActionItemsBySourceKey } from "@/lib/actionItems";
 
 /**
  * 고객의 관심 응답(관심 있어요/조금 더 볼게요/이번에는 제외할게요) + 메모.
@@ -41,13 +42,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     );
   }
 
-  await prisma.projectPropertySuggestion.update({
-    where: { id },
-    data: {
-      customerStatus: parsed.data.customerStatus,
-      customerMemo: parsed.data.customerMemo || null,
-      respondedAt: new Date(),
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.projectPropertySuggestion.update({
+      where: { id },
+      data: {
+        customerStatus: parsed.data.customerStatus,
+        customerMemo: parsed.data.customerMemo || null,
+        respondedAt: new Date(),
+      },
+    });
+    await resolveActionItemsBySourceKey(tx, `CUSTOMER_REVIEW_PROPERTY:${id}`, "COMPLETED");
   });
 
   return NextResponse.json({ ok: true });

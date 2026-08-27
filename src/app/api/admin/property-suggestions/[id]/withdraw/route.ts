@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
+import { resolveActionItemsBySourceKey } from "@/lib/actionItems";
 
 /**
  * 공유 철회. 실제 삭제 대신 withdrawnAt만 기록해 운영 이력을 보존한다 —
@@ -26,9 +27,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "이미 철회된 공유입니다." }, { status: 409 });
   }
 
-  await prisma.projectPropertySuggestion.update({
-    where: { id },
-    data: { withdrawnAt: new Date() },
+  await prisma.$transaction(async (tx) => {
+    await tx.projectPropertySuggestion.update({
+      where: { id },
+      data: { withdrawnAt: new Date() },
+    });
+    await resolveActionItemsBySourceKey(tx, `CUSTOMER_REVIEW_PROPERTY:${id}`, "CANCELLED");
   });
 
   return NextResponse.json({ ok: true });

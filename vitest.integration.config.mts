@@ -18,6 +18,7 @@ export default defineConfig({
       "src/lib/partnerInvitation.test.ts",
       "src/lib/adminExport.integration.test.ts",
       "src/lib/notifications.integration.test.ts",
+      "src/lib/actionItems.integration.test.ts",
     ],
     globalSetup: "./vitest.global-setup.ts",
     env: {

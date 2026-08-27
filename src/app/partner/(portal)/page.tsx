@@ -6,6 +6,8 @@ import { PartnerRequestFilterBar } from "@/components/app/PartnerRequestFilterBa
 import { requirePartnerMembership } from "@/lib/partnerAuth";
 import { prisma } from "@/lib/prisma";
 import { serviceRequestStatuses, serviceStatusClassName } from "@/data/serviceRequests";
+import { getOpenActionItemSummary } from "@/lib/actionItemQueries";
+import { TaskSummaryCard } from "@/components/app/TaskSummaryCard";
 
 const PAGE_SIZE = 20;
 const partnerNav: [string, string][] = [
@@ -103,6 +105,7 @@ export default async function PartnerPortalPage({
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const baseParams = { q, status, staff };
+  const taskSummary = await getOpenActionItemSummary(user.id, "PARTNER");
 
   return (
     <AppShell
@@ -110,6 +113,14 @@ export default async function PartnerPortalPage({
       description="우리 업체에 배정된 서비스 요청을 확인하고 처리합니다."
       navItems={partnerNav}
     >
+      <div className="mb-6">
+        <TaskSummaryCard
+          count={taskSummary.count}
+          items={taskSummary.items}
+          emptyMessage="지금 처리할 업무가 없습니다."
+        />
+      </div>
+
       <MetricGrid items={countByStatus} />
 
       <Card className="mb-6 mt-6">

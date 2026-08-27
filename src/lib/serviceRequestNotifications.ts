@@ -27,6 +27,26 @@ export async function getReadablePartnerRequestRecipients(
 }
 
 /**
+ * 이 요청에 실제로 쓰기 동작(상태 변경·견적 등록 등)을 할 수 있는 업체
+ * 구성원의 id 목록. evaluateServiceRequestWriteAccess와 같은 기준이다 —
+ * 조회만 가능한 VIEWER는 제외한다. "할 일"은 실제로 처리할 수 있는
+ * 사람에게만 준다(할 수 없는 사람에게 처리하라고 알리지 않는다).
+ */
+export async function getWritablePartnerRequestRecipients(
+  db: Db,
+  partnerId: string,
+  partnerStaffId: string | null,
+) {
+  const members = await db.partnerMembership.findMany({
+    where: { partnerId, status: "ACTIVE", role: { not: "VIEWER" } },
+    select: { userId: true, role: true },
+  });
+  return members
+    .filter((member) => member.role !== "STAFF" || member.userId === partnerStaffId)
+    .map((member) => member.userId);
+}
+
+/**
  * 모든 상태 변경마다 이메일을 보내면 고객이 피로해지므로, 실제로 "다시
  * 서비스를 열어보지 않아도 알아야 할" 전환점만 고른다 — 수락(고객이 접수
  * 확인 후 기다리던 응답), 취소(고객이 다른 선택지를 찾아야 함), 작업 완료

@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/Card";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/dates";
+import { getOpenActionItemSummary } from "@/lib/actionItemQueries";
+import { TaskSummaryCard } from "@/components/app/TaskSummaryCard";
 
 const SUPER_ONLY_HREFS = ["/admin/admins", "/admin/exports"];
 
@@ -61,6 +63,7 @@ export default async function AdminPage() {
     newRequests,
     recentInquiries,
     recentRequests,
+    taskSummary,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.project.count(),
@@ -89,6 +92,9 @@ export default async function AdminPage() {
         createdAt: true,
       },
     }),
+    isSuper && currentAdmin
+      ? getOpenActionItemSummary(currentAdmin.id, "ADMIN")
+      : Promise.resolve({ count: 0, items: [] }),
   ]);
 
   return (
@@ -104,6 +110,16 @@ export default async function AdminPage() {
           ["처리 대기", `${newInquiries + newRequests}건`],
         ]}
       />
+
+      {isSuper && (
+        <div className="mt-6">
+          <TaskSummaryCard
+            count={taskSummary.count}
+            items={taskSummary.items}
+            emptyMessage="지금 처리할 업무가 없습니다."
+          />
+        </div>
+      )}
 
       <section className="mt-8">
         <h2 className="mb-4 text-xl font-black text-forest">운영 화면</h2>

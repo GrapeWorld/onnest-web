@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   inquiryFindUnique: vi.fn(),
   messageCreate: vi.fn(),
   notificationCreate: vi.fn(),
+  actionItemUpdateMany: vi.fn(),
   transaction: vi.fn(),
   notifyInquiryCustomer: vi.fn(),
 }));
@@ -18,6 +19,7 @@ vi.mock("@/lib/prisma", () => ({
     inquiry: { findUnique: mocks.inquiryFindUnique },
     inquiryMessage: { create: mocks.messageCreate },
     notification: { upsert: mocks.notificationCreate },
+    actionItem: { updateMany: mocks.actionItemUpdateMany },
     $transaction: mocks.transaction,
   },
 }));
@@ -57,11 +59,13 @@ describe("POST /api/admin/inquiries/[id]/messages", () => {
     });
     mocks.messageCreate.mockResolvedValue({ id: "message-1" });
     mocks.notificationCreate.mockResolvedValue({});
+    mocks.actionItemUpdateMany.mockResolvedValue({ count: 0 });
     mocks.notifyInquiryCustomer.mockResolvedValue(undefined);
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         inquiryMessage: { create: mocks.messageCreate },
         notification: { upsert: mocks.notificationCreate },
+    actionItem: { updateMany: mocks.actionItemUpdateMany },
       }),
     );
   });

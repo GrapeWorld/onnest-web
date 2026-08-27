@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   activityCreate: vi.fn(),
   userFindMany: vi.fn(),
   notificationCreateMany: vi.fn(),
+  actionItemCreateMany: vi.fn(),
   transaction: vi.fn(),
   notifyAdmin: vi.fn(),
   notifyInquiryCustomer: vi.fn(),
@@ -26,6 +27,7 @@ vi.mock("@/lib/prisma", () => ({
     inquiryActivity: { create: mocks.activityCreate },
     user: { findMany: mocks.userFindMany },
     notification: { createMany: mocks.notificationCreateMany },
+    actionItem: { createMany: mocks.actionItemCreateMany },
     $transaction: mocks.transaction,
   },
 }));
@@ -83,10 +85,12 @@ describe("POST /api/inquiries", () => {
         inquiryActivity: { create: mocks.activityCreate },
         user: { findMany: mocks.userFindMany },
         notification: { createMany: mocks.notificationCreateMany },
+    actionItem: { createMany: mocks.actionItemCreateMany },
       }),
     );
     mocks.notifyAdmin.mockResolvedValue(undefined);
     mocks.notifyInquiryCustomer.mockResolvedValue(undefined);
+    mocks.actionItemCreateMany.mockResolvedValue({ count: 0 });
   });
 
   it("creates the inquiry, its CREATED activity, and notifies the admin", async () => {

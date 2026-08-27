@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   suggestionFindMany: vi.fn(),
   suggestionFindFirst: vi.fn(),
   suggestionCreate: vi.fn(),
+  actionItemCreate: vi.fn(),
+  transaction: vi.fn(),
   notifyServiceRequestCustomer: vi.fn(),
 }));
 
@@ -22,6 +24,8 @@ vi.mock("@/lib/prisma", () => ({
       findFirst: mocks.suggestionFindFirst,
       create: mocks.suggestionCreate,
     },
+    actionItem: { upsert: mocks.actionItemCreate },
+    $transaction: mocks.transaction,
   },
 }));
 vi.mock("@/lib/email", () => ({
@@ -79,6 +83,13 @@ describe("POST /api/admin/projects/[projectId]/property-suggestions", () => {
     });
     mocks.suggestionFindFirst.mockResolvedValue(null);
     mocks.suggestionCreate.mockResolvedValue({ id: "suggestion-1" });
+    mocks.actionItemCreate.mockResolvedValue({});
+    mocks.transaction.mockImplementation(async (callback) =>
+      callback({
+        projectPropertySuggestion: { create: mocks.suggestionCreate },
+        actionItem: { upsert: mocks.actionItemCreate },
+      }),
+    );
   });
 
   it("rejects a viewer-only admin (read-only) with 403", async () => {

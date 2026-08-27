@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   findFirst: vi.fn(),
   updateMany: vi.fn(),
   update: vi.fn(),
+  actionItemUpdateMany: vi.fn(),
+  transaction: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ getCurrentUser: mocks.getCurrentUser }));
@@ -17,6 +19,8 @@ vi.mock("@/lib/prisma", () => ({
       updateMany: mocks.updateMany,
       update: mocks.update,
     },
+    actionItem: { updateMany: mocks.actionItemUpdateMany },
+    $transaction: mocks.transaction,
   },
 }));
 
@@ -126,6 +130,13 @@ describe("PATCH /api/my/property-suggestions/[id]/response", () => {
     mocks.getCurrentUser.mockResolvedValue({ id: "user-1" });
     mocks.findFirst.mockResolvedValue({ id: "suggestion-1", withdrawnAt: null, savedCandidatePropertyId: null });
     mocks.update.mockResolvedValue({});
+    mocks.actionItemUpdateMany.mockResolvedValue({ count: 0 });
+    mocks.transaction.mockImplementation(async (callback) =>
+      callback({
+        projectPropertySuggestion: { update: mocks.update },
+        actionItem: { updateMany: mocks.actionItemUpdateMany },
+      }),
+    );
   });
 
   it("requires login", async () => {

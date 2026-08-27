@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   userFindMany: vi.fn(),
   membershipFindMany: vi.fn(),
   notificationCreateMany: vi.fn(),
+  actionItemUpdateMany: vi.fn(),
   notifyPartnerStaff: vi.fn(),
 }));
 
@@ -24,6 +25,7 @@ vi.mock("@/lib/prisma", () => ({
     user: { findMany: mocks.userFindMany },
     partnerMembership: { findMany: mocks.membershipFindMany },
     notification: { createMany: mocks.notificationCreateMany },
+    actionItem: { updateMany: mocks.actionItemUpdateMany },
     $transaction: mocks.transaction,
   },
 }));
@@ -67,6 +69,7 @@ describe("PATCH /api/my/service-requests/[id]", () => {
     mocks.userFindMany.mockResolvedValue([{ email: "staff@partner.example.com" }]);
     mocks.membershipFindMany.mockResolvedValue([{ userId: "owner-1", role: "OWNER" }]);
     mocks.notificationCreateMany.mockResolvedValue({ count: 1 });
+    mocks.actionItemUpdateMany.mockResolvedValue({ count: 0 });
     mocks.notifyPartnerStaff.mockResolvedValue(undefined);
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
@@ -75,6 +78,7 @@ describe("PATCH /api/my/service-requests/[id]", () => {
         serviceRequestActivity: { create: mocks.activityCreate },
         partnerMembership: { findMany: mocks.membershipFindMany },
         notification: { createMany: mocks.notificationCreateMany },
+    actionItem: { updateMany: mocks.actionItemUpdateMany },
       }),
     );
   });

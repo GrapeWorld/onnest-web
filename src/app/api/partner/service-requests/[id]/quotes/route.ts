@@ -8,6 +8,7 @@ import { isQuoteMutableStatus } from "@/lib/serviceRequestQuotes";
 import { escapeHtml, notifyServiceRequestCustomer } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
 import { createNotification } from "@/lib/notifications";
+import { createActionItem, resolveActionItemsBySourceKey } from "@/lib/actionItems";
 
 const quoteCreateSchema = z.object({
   title: z.string().trim().min(1, "견적 이름을 입력해주세요.").max(100),
@@ -108,6 +109,17 @@ export async function POST(
         body: `${quote.title} 견적을 확인하고 선택해주세요.`,
         internalPath: `/projects/${existing.project.id}/services`,
         dedupeKey: `SERVICE_REQUEST_QUOTE_RECEIVED:${quote.id}`,
+      });
+      await resolveActionItemsBySourceKey(tx, `PARTNER_REGISTER_QUOTE:${id}`, "COMPLETED");
+      await createActionItem(tx, {
+        assigneeUserId: existing.project.user.id,
+        type: "CUSTOMER_SELECT_QUOTE",
+        title: "받은 견적을 선택해주세요",
+        description: "도착한 견적을 비교하고 선택해주세요.",
+        internalPath: `/projects/${existing.project.id}/services`,
+        relatedEntityType: "ServiceRequest",
+        relatedEntityId: id,
+        sourceKey: `CUSTOMER_SELECT_QUOTE:${id}`,
       });
       return {
         error: null,

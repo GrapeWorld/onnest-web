@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   quoteCreate: vi.fn(),
   activityCreate: vi.fn(),
   notificationUpsert: vi.fn(),
+  actionItemUpdateMany: vi.fn(),
+  actionItemUpsert: vi.fn(),
   transaction: vi.fn(),
   notifyServiceRequestCustomer: vi.fn(),
   membershipFindFirst: vi.fn(),
@@ -21,6 +23,7 @@ vi.mock("@/lib/prisma", () => ({
     serviceRequestQuote: { create: mocks.quoteCreate },
     serviceRequestActivity: { create: mocks.activityCreate },
     notification: { upsert: mocks.notificationUpsert },
+    actionItem: { updateMany: mocks.actionItemUpdateMany, upsert: mocks.actionItemUpsert },
     partnerMembership: { findFirst: mocks.membershipFindFirst },
     $transaction: mocks.transaction,
   },
@@ -82,6 +85,8 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
     });
     mocks.activityCreate.mockResolvedValue({});
     mocks.notificationUpsert.mockResolvedValue({});
+    mocks.actionItemUpdateMany.mockResolvedValue({ count: 0 });
+    mocks.actionItemUpsert.mockResolvedValue({});
     mocks.notifyServiceRequestCustomer.mockResolvedValue(undefined);
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.transaction.mockImplementation(async (callback) =>
@@ -90,6 +95,7 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
         serviceRequestQuote: { create: mocks.quoteCreate },
         serviceRequestActivity: { create: mocks.activityCreate },
         notification: { upsert: mocks.notificationUpsert },
+    actionItem: { updateMany: mocks.actionItemUpdateMany, upsert: mocks.actionItemUpsert },
       }),
     );
   });

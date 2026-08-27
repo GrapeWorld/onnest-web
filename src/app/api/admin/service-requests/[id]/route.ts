@@ -9,7 +9,10 @@ import { createNotification, createNotifications } from "@/lib/notifications";
 import {
   getServiceRequestCustomerNotification,
   getReadablePartnerRequestRecipients,
+  getWritablePartnerRequestRecipients,
 } from "@/lib/serviceRequestNotifications";
+import { createActionItems, resolveActionItemsBySourceKey } from "@/lib/actionItems";
+import { getServiceRequestActionItemPlan } from "@/lib/serviceRequestActionItems";
 import type { ServiceRequestStatus } from "@/data/serviceRequests";
 
 /** 관리자 전용 상태·담당자·업체 배정 변경 */
@@ -130,7 +133,7 @@ export async function PATCH(
         const updated = await tx.serviceRequest.update({
           where: { id },
           data,
-          select: { id: true, status: true, owner: true, partnerId: true },
+          select: { id: true, status: true, owner: true, partnerId: true, partnerStaffId: true },
         });
 
         // 관리자 라우트는 상태 머신 검증을 거치지 않지만(예외), 변경 자체는
@@ -165,6 +168,36 @@ export async function PATCH(
               internalPath: `/projects/${existing.projectId}/services`,
               dedupeKey: notification.dedupeKey,
             });
+          }
+
+          const plan = getServiceRequestActionItemPlan({
+            requestId: id,
+            toStatus: updated.status as ServiceRequestStatus,
+            hadPendingCancelRequest: Boolean(existing.cancelRequestedAt),
+            isNewPartnerAssignment,
+          });
+          for (const resolution of plan.resolutions) {
+            await resolveActionItemsBySourceKey(tx, resolution.sourceKey, resolution.outcome);
+          }
+          if (plan.createForPartner && updated.partnerId) {
+            const writableRecipients = await getWritablePartnerRequestRecipients(
+              tx,
+              updated.partnerId,
+              updated.partnerStaffId,
+            );
+            await createActionItems(
+              tx,
+              writableRecipients.map((assigneeUserId) => ({
+                assigneeUserId,
+                type: plan.createForPartner!.type,
+                title: plan.createForPartner!.title,
+                description: plan.createForPartner!.description,
+                internalPath: `/partner/requests/${id}`,
+                relatedEntityType: "ServiceRequest",
+                relatedEntityId: id,
+                sourceKey: plan.createForPartner!.sourceKey,
+              })),
+            );
           }
         }
 

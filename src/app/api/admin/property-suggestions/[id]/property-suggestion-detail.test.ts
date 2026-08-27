@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(),
   findFirst: vi.fn(),
   update: vi.fn(),
+  actionItemUpdateMany: vi.fn(),
+  transaction: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -18,6 +20,8 @@ vi.mock("@/lib/prisma", () => ({
       findFirst: mocks.findFirst,
       update: mocks.update,
     },
+    actionItem: { updateMany: mocks.actionItemUpdateMany },
+    $transaction: mocks.transaction,
   },
 }));
 
@@ -89,6 +93,13 @@ describe("PATCH /api/admin/property-suggestions/[id]/withdraw", () => {
     mocks.getCurrentUser.mockResolvedValue({ id: "admin-1", adminRole: "super" });
     mocks.findUnique.mockResolvedValue({ id: "suggestion-1", withdrawnAt: null });
     mocks.update.mockResolvedValue({});
+    mocks.actionItemUpdateMany.mockResolvedValue({ count: 0 });
+    mocks.transaction.mockImplementation(async (callback) =>
+      callback({
+        projectPropertySuggestion: { update: mocks.update },
+        actionItem: { updateMany: mocks.actionItemUpdateMany },
+      }),
+    );
   });
 
   function withdrawRequest() {

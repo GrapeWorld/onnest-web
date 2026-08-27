@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   notificationUpsert: vi.fn(),
   notificationCreateMany: vi.fn(),
   membershipFindMany: vi.fn(),
+  actionItemUpdateMany: vi.fn(),
+  actionItemCreateMany: vi.fn(),
   transaction: vi.fn(),
 }));
 
@@ -28,6 +30,7 @@ vi.mock("@/lib/prisma", () => ({
     serviceRequestActivity: { create: mocks.activityCreate },
     notification: { upsert: mocks.notificationUpsert, createMany: mocks.notificationCreateMany },
     partnerMembership: { findMany: mocks.membershipFindMany },
+    actionItem: { updateMany: mocks.actionItemUpdateMany, createMany: mocks.actionItemCreateMany },
     $transaction: mocks.transaction,
   },
 }));
@@ -61,12 +64,13 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
       serviceType: "이사",
       status: "신규",
       partnerId: null,
+      partnerStaffId: null,
       privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
       cancelRequestedAt: null,
       projectId: "project-1",
       project: { userId: "customer-1" },
     });
-    mocks.update.mockResolvedValue({ id: "request-1", partnerId: "partner-1" });
+    mocks.update.mockResolvedValue({ id: "request-1", partnerId: "partner-1", partnerStaffId: null });
     mocks.userFindMany.mockResolvedValue([{ email: "staff@partner.example.com" }]);
     mocks.notifyPartnerStaff.mockResolvedValue(undefined);
     mocks.quoteDeleteMany.mockResolvedValue({ count: 0 });
@@ -74,6 +78,8 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
     mocks.notificationUpsert.mockResolvedValue({});
     mocks.notificationCreateMany.mockResolvedValue({ count: 0 });
     mocks.membershipFindMany.mockResolvedValue([]);
+    mocks.actionItemUpdateMany.mockResolvedValue({ count: 0 });
+    mocks.actionItemCreateMany.mockResolvedValue({ count: 0 });
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         serviceRequest: { findUnique: mocks.findUniqueRequest, update: mocks.update },
@@ -82,6 +88,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
         serviceRequestActivity: { create: mocks.activityCreate },
         notification: { upsert: mocks.notificationUpsert, createMany: mocks.notificationCreateMany },
         partnerMembership: { findMany: mocks.membershipFindMany },
+        actionItem: { updateMany: mocks.actionItemUpdateMany, createMany: mocks.actionItemCreateMany },
       }),
     );
   });
@@ -222,7 +229,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
         selectedAt: null,
         partnerStaffId: null,
       },
-      select: { id: true, status: true, owner: true, partnerId: true },
+      select: { id: true, status: true, owner: true, partnerId: true, partnerStaffId: true },
     });
   });
 
@@ -246,7 +253,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
         selectedAt: null,
         partnerStaffId: null,
       },
-      select: { id: true, status: true, owner: true, partnerId: true },
+      select: { id: true, status: true, owner: true, partnerId: true, partnerStaffId: true },
     });
   });
 
@@ -271,7 +278,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
         selectedAt: null,
         partnerStaffId: null,
       },
-      select: { id: true, status: true, owner: true, partnerId: true },
+      select: { id: true, status: true, owner: true, partnerId: true, partnerStaffId: true },
     });
   });
 
@@ -290,7 +297,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
     expect(mocks.update).toHaveBeenCalledWith({
       where: { id: "request-1" },
       data: { partnerId: "partner-1", status: "확인 중" },
-      select: { id: true, status: true, owner: true, partnerId: true },
+      select: { id: true, status: true, owner: true, partnerId: true, partnerStaffId: true },
     });
     expect(mocks.notifyPartnerStaff).not.toHaveBeenCalled();
   });
@@ -314,7 +321,7 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
         selectedAt: null,
         partnerStaffId: null,
       },
-      select: { id: true, status: true, owner: true, partnerId: true },
+      select: { id: true, status: true, owner: true, partnerId: true, partnerStaffId: true },
     });
   });
 

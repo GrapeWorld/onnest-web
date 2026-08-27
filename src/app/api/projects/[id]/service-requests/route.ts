@@ -6,6 +6,7 @@ import { checkRateLimit, formatRetryAfter } from "@/lib/rateLimit";
 import { escapeHtml, notifyAdmin } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
 import { createNotifications } from "@/lib/notifications";
+import { createActionItems } from "@/lib/actionItems";
 
 /** 서비스 연결 신청. 선택한 유형마다 한 건씩 만든다. */
 export async function POST(
@@ -67,18 +68,27 @@ export async function POST(
   const privacyAgreedAt = new Date();
 
   await prisma.$transaction(async (tx) => {
-    await tx.serviceRequest.createMany({
-      data: uniqueTypes.map((serviceType) => ({
-        projectId: id,
-        serviceType,
-        preferredDate: preferredDate ? new Date(preferredDate) : null,
-        region,
-        message: message || null,
-        contactName,
-        contactPhone,
-        privacyAgreedAt,
-      })),
-    });
+    // "업체를 배정해주세요" 할 일을 신청 건별로 만들려면(같은 폼에서
+    // 여러 서비스 유형을 한꺼번에 신청할 수 있어 건이 여러 개일 수 있다)
+    // 각 행의 id가 필요하다 — createMany는 id를 돌려주지 않아 개별
+    // create로 만든다(건수가 서비스 유형 개수만큼이라 많지 않다).
+    const created = await Promise.all(
+      uniqueTypes.map((serviceType) =>
+        tx.serviceRequest.create({
+          data: {
+            projectId: id,
+            serviceType,
+            preferredDate: preferredDate ? new Date(preferredDate) : null,
+            region,
+            message: message || null,
+            contactName,
+            contactPhone,
+            privacyAgreedAt,
+          },
+          select: { id: true },
+        }),
+      ),
+    );
 
     const admins = await tx.user.findMany({
       where: { adminRole: { in: ["super", "viewer"] } },
@@ -99,6 +109,25 @@ export async function POST(
         dedupeKey,
       })),
     );
+
+    // 할 일은 실제로 처리(업체 배정)할 수 있는 super에게만 준다 — viewer는
+    // 배정 권한이 없어 "할 일"을 줘도 처리할 수 없다.
+    const supers = admins.filter((adminUser) => adminUser.adminRole === "super");
+    for (const request of created) {
+      await createActionItems(
+        tx,
+        supers.map((adminUser) => ({
+          assigneeUserId: adminUser.id,
+          type: "ADMIN_ASSIGN_PARTNER" as const,
+          title: "업체를 배정해주세요",
+          description: `${project.name} 프로젝트의 새 서비스 신청에 업체를 배정해주세요.`,
+          internalPath: "/admin/service-leads",
+          relatedEntityType: "ServiceRequest",
+          relatedEntityId: request.id,
+          sourceKey: `ADMIN_ASSIGN_PARTNER:${request.id}`,
+        })),
+      );
+    }
   });
 
   // 알림 발송(또는 그 URL 조립)이 실패해도 이미 저장된 신청 응답은 막지 않는다.

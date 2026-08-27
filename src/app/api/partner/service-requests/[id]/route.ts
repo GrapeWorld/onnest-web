@@ -12,6 +12,9 @@ import {
   getServiceRequestCustomerNotification,
 } from "@/lib/serviceRequestNotifications";
 import { createNotification, createNotifications } from "@/lib/notifications";
+import { createActionItems, resolveActionItemsBySourceKey } from "@/lib/actionItems";
+import { getServiceRequestActionItemPlan } from "@/lib/serviceRequestActionItems";
+import { getWritablePartnerRequestRecipients } from "@/lib/serviceRequestNotifications";
 import {
   serviceRequestStatuses,
   serviceRequestCancelledStatus,
@@ -138,6 +141,36 @@ export async function PATCH(
             internalPath: `/projects/${existing.project.id}/services`,
             dedupeKey: notification.dedupeKey,
           });
+        }
+
+        const plan = getServiceRequestActionItemPlan({
+          requestId: id,
+          toStatus: status,
+          hadPendingCancelRequest: Boolean(existing.cancelRequestedAt),
+          isNewPartnerAssignment: false,
+        });
+        for (const resolution of plan.resolutions) {
+          await resolveActionItemsBySourceKey(tx, resolution.sourceKey, resolution.outcome);
+        }
+        if (plan.createForPartner && existing.partnerId) {
+          const writableRecipients = await getWritablePartnerRequestRecipients(
+            tx,
+            existing.partnerId,
+            existing.partnerStaffId,
+          );
+          await createActionItems(
+            tx,
+            writableRecipients.map((assigneeUserId) => ({
+              assigneeUserId,
+              type: plan.createForPartner!.type,
+              title: plan.createForPartner!.title,
+              description: plan.createForPartner!.description,
+              internalPath: `/partner/requests/${id}`,
+              relatedEntityType: "ServiceRequest",
+              relatedEntityId: id,
+              sourceKey: plan.createForPartner!.sourceKey,
+            })),
+          );
         }
 
         // 업체가 자발적으로(고객이 남긴 취소 요청을 처리하는 게 아니라)

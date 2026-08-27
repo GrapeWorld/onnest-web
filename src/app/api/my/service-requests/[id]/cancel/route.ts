@@ -7,7 +7,11 @@ import { escapeHtml, notifyAdmin, notifyPartnerStaff } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
 import { serviceRequestCancelledStatus } from "@/data/serviceRequests";
 import { createNotifications } from "@/lib/notifications";
-import { getReadablePartnerRequestRecipients } from "@/lib/serviceRequestNotifications";
+import {
+  getReadablePartnerRequestRecipients,
+  getWritablePartnerRequestRecipients,
+} from "@/lib/serviceRequestNotifications";
+import { createActionItems } from "@/lib/actionItems";
 
 const cancelSchema = z.object({
   reason: z.string().trim().max(500).optional(),
@@ -159,6 +163,39 @@ export async function POST(
           body: `${existing.serviceType} 서비스 신청의 취소 요청을 확인해주세요.`,
           internalPath: "/admin/service-leads",
           dedupeKey: `ADMIN_CUSTOMER_CANCEL_REQUESTED:${id}`,
+        })),
+      );
+
+      const writableRecipients = await getWritablePartnerRequestRecipients(
+        tx,
+        existing.partnerId,
+        existing.partnerStaffId,
+      );
+      await createActionItems(
+        tx,
+        writableRecipients.map((assigneeUserId) => ({
+          assigneeUserId,
+          type: "PARTNER_HANDLE_CANCEL_REQUEST" as const,
+          title: "고객의 취소 요청을 확인해주세요",
+          description: "고객이 취소를 요청했습니다. 확인 후 처리해주세요.",
+          internalPath: `/partner/requests/${id}`,
+          relatedEntityType: "ServiceRequest",
+          relatedEntityId: id,
+          sourceKey: `PARTNER_HANDLE_CANCEL_REQUEST:${id}`,
+        })),
+      );
+      const superAdmins = await tx.user.findMany({ where: { adminRole: "super" }, select: { id: true } });
+      await createActionItems(
+        tx,
+        superAdmins.map((adminUser) => ({
+          assigneeUserId: adminUser.id,
+          type: "ADMIN_HANDLE_CANCEL_REQUEST" as const,
+          title: "고객의 취소 요청을 처리해주세요",
+          description: `${existing.serviceType} 서비스 신청의 취소 요청을 확인해주세요.`,
+          internalPath: "/admin/service-leads",
+          relatedEntityType: "ServiceRequest",
+          relatedEntityId: id,
+          sourceKey: `ADMIN_HANDLE_CANCEL_REQUEST:${id}`,
         })),
       );
 

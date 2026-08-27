@@ -4,9 +4,10 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   checkRateLimit: vi.fn(),
   projectFindFirst: vi.fn(),
-  serviceRequestCreateMany: vi.fn(),
+  serviceRequestCreate: vi.fn(),
   userFindMany: vi.fn(),
   notificationCreateMany: vi.fn(),
+  actionItemCreateMany: vi.fn(),
   transaction: vi.fn(),
   notifyAdmin: vi.fn(),
 }));
@@ -21,9 +22,10 @@ vi.mock("@/lib/rateLimit", () => ({
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     project: { findFirst: mocks.projectFindFirst },
-    serviceRequest: { createMany: mocks.serviceRequestCreateMany },
+    serviceRequest: { create: mocks.serviceRequestCreate },
     user: { findMany: mocks.userFindMany },
     notification: { createMany: mocks.notificationCreateMany },
+    actionItem: { createMany: mocks.actionItemCreateMany },
     $transaction: mocks.transaction,
   },
 }));
@@ -61,15 +63,17 @@ describe("POST /api/projects/[id]/service-requests — admin notification", () =
     mocks.getCurrentUser.mockResolvedValue({ id: "user-1" });
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.projectFindFirst.mockResolvedValue({ id: "project-1", name: "합정동 전세 프로젝트" });
-    mocks.serviceRequestCreateMany.mockResolvedValue({ count: 1 });
+    mocks.serviceRequestCreate.mockResolvedValue({ id: "request-1" });
     mocks.userFindMany.mockResolvedValue([{ id: "admin-1", adminRole: "super" }]);
     mocks.notificationCreateMany.mockResolvedValue({ count: 1 });
+    mocks.actionItemCreateMany.mockResolvedValue({ count: 1 });
     mocks.notifyAdmin.mockResolvedValue(undefined);
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
-        serviceRequest: { createMany: mocks.serviceRequestCreateMany },
+        serviceRequest: { create: mocks.serviceRequestCreate },
         user: { findMany: mocks.userFindMany },
         notification: { createMany: mocks.notificationCreateMany },
+        actionItem: { createMany: mocks.actionItemCreateMany },
       }),
     );
   });
@@ -78,7 +82,7 @@ describe("POST /api/projects/[id]/service-requests — admin notification", () =
     const response = await call(baseInput());
 
     expect(response.status).toBe(201);
-    expect(mocks.serviceRequestCreateMany).toHaveBeenCalledTimes(1);
+    expect(mocks.serviceRequestCreate).toHaveBeenCalledTimes(1);
     expect(mocks.notifyAdmin).toHaveBeenCalledTimes(1);
     expect(mocks.notifyAdmin.mock.calls[0][0].subject).toContain("합정동 전세 프로젝트");
   });
@@ -89,7 +93,7 @@ describe("POST /api/projects/[id]/service-requests — admin notification", () =
     const response = await call(baseInput());
 
     expect(response.status).toBe(404);
-    expect(mocks.serviceRequestCreateMany).not.toHaveBeenCalled();
+    expect(mocks.serviceRequestCreate).not.toHaveBeenCalled();
     expect(mocks.notifyAdmin).not.toHaveBeenCalled();
   });
 

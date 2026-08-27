@@ -5,6 +5,7 @@ import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { escapeHtml, notifyInquiryCustomer } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
 import { createNotification } from "@/lib/notifications";
+import { resolveActionItemsBySourceKey } from "@/lib/actionItems";
 
 const messageSchema = z.object({
   body: z.string().trim().min(1, "메시지 내용을 입력해주세요.").max(2000),
@@ -63,6 +64,7 @@ export async function POST(
         dedupeKey: `INQUIRY_ANSWERED:${created.id}`,
       });
     }
+    await resolveActionItemsBySourceKey(tx, `ADMIN_ANSWER_INQUIRY:${id}`, "COMPLETED");
     return created;
   });
 

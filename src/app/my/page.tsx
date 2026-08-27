@@ -18,6 +18,8 @@ import { getSession } from "@/lib/session";
 import { isProviderConfigured } from "@/lib/oauth/providers";
 import { isDeleteApproved } from "@/lib/oauth/deleteApproval";
 import { listAllCustomerPropertySuggestions } from "@/lib/propertySuggestions";
+import { getOpenActionItemSummary } from "@/lib/actionItemQueries";
+import { TaskSummaryCard } from "@/components/app/TaskSummaryCard";
 
 export default async function MyPage() {
   const user = await getCurrentUser();
@@ -75,6 +77,7 @@ export default async function MyPage() {
   const inquiryCount = await prisma.inquiry.count({ where: { userId: user.id } });
   const candidatePropertyCount = await prisma.candidateProperty.count({ where: { userId: user.id } });
   const { items: sharedSuggestions, newCount: newSuggestionCount } = await listAllCustomerPropertySuggestions(user.id);
+  const taskSummary = await getOpenActionItemSummary(user.id, "CUSTOMER");
 
   const activeProject = projects.find((project) => {
     const done = project.stepStates.filter((s) => s.status === "완료").length;
@@ -132,6 +135,14 @@ export default async function MyPage() {
         <Button href={nextAction.href} className="shrink-0 bg-white text-forest hover:bg-mint">
           {nextAction.label}
         </Button>
+      </div>
+
+      <div className="mb-6">
+        <TaskSummaryCard
+          count={taskSummary.count}
+          items={taskSummary.items}
+          emptyMessage="지금 처리할 업무가 없습니다."
+        />
       </div>
 
       <div className="mb-6 flex flex-col gap-4 rounded-[24px] border border-forest/10 bg-white p-6 shadow-card sm:flex-row sm:items-center sm:justify-between">

@@ -8,6 +8,7 @@ import { getAppUrl } from "@/lib/appUrl";
 import { formatWon } from "@/lib/currency";
 import { createNotifications } from "@/lib/notifications";
 import { getReadablePartnerRequestRecipients } from "@/lib/serviceRequestNotifications";
+import { resolveActionItemsBySourceKey } from "@/lib/actionItems";
 
 const selectQuoteSchema = z.object({
   quoteId: z.string().min(1, "선택할 견적을 확인해주세요."),
@@ -95,6 +96,8 @@ export async function PATCH(
           })),
         );
       }
+
+      await resolveActionItemsBySourceKey(tx, `CUSTOMER_SELECT_QUOTE:${id}`, "COMPLETED");
 
       return {
         error: null,

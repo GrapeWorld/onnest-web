@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isAdmin, isSuperAdmin } from "@/lib/auth";
 import { adminPropertySuggestionSchema } from "@/lib/propertySuggestionSchema";
 import { notifyServiceRequestCustomer, escapeHtml } from "@/lib/email";
+import { createActionItem } from "@/lib/actionItems";
 
 /** 프로젝트에 공유된 매물 전체 목록(철회 포함). 관리자는 조회전용이어도 볼 수 있다. */
 export async function GET(request: Request, { params }: { params: Promise<{ projectId: string }> }) {
@@ -57,26 +58,39 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
     );
   }
 
-  const created = await prisma.projectPropertySuggestion.create({
-    data: {
-      projectId,
-      sourceUrl: data.sourceUrl,
-      title: data.title,
-      address: data.address || null,
-      transactionType: data.transactionType || null,
-      price: data.price ?? null,
-      deposit: data.deposit ?? null,
-      monthlyRent: data.monthlyRent ?? null,
-      area: data.area ?? null,
-      roomCount: data.roomCount ?? null,
-      availableDate: data.availableDate ? new Date(data.availableDate) : null,
-      sharedReason: data.sharedReason || null,
-      cautionNote: data.cautionNote || null,
-      adminMemo: data.adminMemo || null,
-      sharedById: admin.id,
-      sharedByName: admin.name,
-      sharedByEmail: admin.email,
-    },
+  const created = await prisma.$transaction(async (tx) => {
+    const suggestion = await tx.projectPropertySuggestion.create({
+      data: {
+        projectId,
+        sourceUrl: data.sourceUrl,
+        title: data.title,
+        address: data.address || null,
+        transactionType: data.transactionType || null,
+        price: data.price ?? null,
+        deposit: data.deposit ?? null,
+        monthlyRent: data.monthlyRent ?? null,
+        area: data.area ?? null,
+        roomCount: data.roomCount ?? null,
+        availableDate: data.availableDate ? new Date(data.availableDate) : null,
+        sharedReason: data.sharedReason || null,
+        cautionNote: data.cautionNote || null,
+        adminMemo: data.adminMemo || null,
+        sharedById: admin.id,
+        sharedByName: admin.name,
+        sharedByEmail: admin.email,
+      },
+    });
+    await createActionItem(tx, {
+      assigneeUserId: project.user.id,
+      type: "CUSTOMER_REVIEW_PROPERTY",
+      title: "공유된 매물을 확인해주세요",
+      description: `${project.name} 프로젝트에 새로운 매물이 공유되었습니다.`,
+      internalPath: `/projects/${projectId}`,
+      relatedEntityType: "ProjectPropertySuggestion",
+      relatedEntityId: suggestion.id,
+      sourceKey: `CUSTOMER_REVIEW_PROPERTY:${suggestion.id}`,
+    });
+    return suggestion;
   });
 
   // 알림 발송 실패가 공유 저장 자체를 막지 않는다 — notifyServiceRequestCustomer가
