@@ -5,7 +5,10 @@ import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import {
   partnerVerificationStatuses,
   isVerificationReasonRequired,
+  partnerVerificationStatusLabels,
 } from "@/data/partnerVerification";
+import { createNotifications } from "@/lib/notifications";
+import { sendEmail, escapeHtml } from "@/lib/email";
 
 const updateSchema = z
   .object({
@@ -40,12 +43,16 @@ export async function PATCH(
   const { id } = await params;
   const { toStatus, reason } = parsed.data;
 
-  let result: { error: "notfound" | "same" | null };
+  let result: {
+    error: "notfound" | "same" | null;
+    members?: { id: string; email: string; name: string }[];
+    partnerName?: string;
+  };
   try {
     result = await prisma.$transaction(async (tx) => {
       const existing = await tx.partner.findUnique({
         where: { id },
-        select: { id: true, verificationStatus: true },
+        select: { id: true, name: true, verificationStatus: true },
       });
       if (!existing) return { error: "notfound" as const };
       if (existing.verificationStatus === toStatus) return { error: "same" as const };
@@ -71,7 +78,28 @@ export async function PATCH(
           actorName: admin.name,
         },
       });
-      return { error: null };
+
+      const members = await tx.partnerMembership.findMany({
+        where: { partnerId: id, status: "ACTIVE" },
+        select: { user: { select: { id: true, email: true, name: true } } },
+      });
+      const statusLabel = partnerVerificationStatusLabels[toStatus];
+      await createNotifications(
+        tx,
+        members.map((member) => ({
+          recipientUserId: member.user.id,
+          type: "PARTNER_VERIFICATION_CHANGED" as const,
+          title: "업체 이용 상태가 변경되었습니다",
+          body: `업체 이용 상태가 "${statusLabel}"(으)로 변경되었습니다.`,
+          internalPath: "/partner/company",
+        })),
+      );
+
+      return {
+        error: null,
+        members: members.map((member) => member.user),
+        partnerName: existing.name,
+      };
     });
   } catch {
     return NextResponse.json(
@@ -85,6 +113,27 @@ export async function PATCH(
   }
   if (result.error === "same") {
     return NextResponse.json({ error: "이미 같은 상태입니다." }, { status: 400 });
+  }
+
+  // 이용 중지는 포털 접근 자체를 막는 변경이라(getActiveMembership이
+  // verificationStatus !== APPROVED를 거른다) 인앱 알림함을 볼 수 없을 수
+  // 있다 — 이메일로도 반드시 안내한다.
+  if (toStatus === "SUSPENDED" && result.members) {
+    for (const member of result.members) {
+      try {
+        await sendEmail({
+          to: member.email,
+          subject: "[ONNEST] 업체 이용이 중지되었습니다",
+          html: `
+            <p>${escapeHtml(member.name)}님, 안녕하세요.</p>
+            <p>${escapeHtml(result.partnerName ?? "소속 업체")}의 ONNEST 이용이 중지되었습니다.</p>
+            <p>문의사항이 있으시면 운영팀에 연락해주세요.</p>
+          `,
+        });
+      } catch (error) {
+        console.error("[email] partner verification suspended notification failed", error);
+      }
+    }
   }
 
   return NextResponse.json({ id, verificationStatus: toStatus });

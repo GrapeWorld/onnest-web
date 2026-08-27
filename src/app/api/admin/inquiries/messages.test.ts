@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   inquiryFindUnique: vi.fn(),
   messageCreate: vi.fn(),
+  notificationCreate: vi.fn(),
+  transaction: vi.fn(),
   notifyInquiryCustomer: vi.fn(),
 }));
 
@@ -15,6 +17,8 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     inquiry: { findUnique: mocks.inquiryFindUnique },
     inquiryMessage: { create: mocks.messageCreate },
+    notification: { upsert: mocks.notificationCreate },
+    $transaction: mocks.transaction,
   },
 }));
 vi.mock("@/lib/email", () => ({
@@ -49,9 +53,17 @@ describe("POST /api/admin/inquiries/[id]/messages", () => {
       id: "inquiry-1",
       name: "홍길동",
       email: "customer@example.com",
+      userId: "customer-1",
     });
     mocks.messageCreate.mockResolvedValue({ id: "message-1" });
+    mocks.notificationCreate.mockResolvedValue({});
     mocks.notifyInquiryCustomer.mockResolvedValue(undefined);
+    mocks.transaction.mockImplementation(async (callback) =>
+      callback({
+        inquiryMessage: { create: mocks.messageCreate },
+        notification: { upsert: mocks.notificationCreate },
+      }),
+    );
   });
 
   it("rejects viewer-grade admins with 403", async () => {
@@ -106,5 +118,30 @@ describe("POST /api/admin/inquiries/[id]/messages", () => {
     const response = await call({ body: "답변입니다" });
 
     expect(response.status).toBe(201);
+  });
+
+  it("creates an in-app notification for the linked customer", async () => {
+    const response = await call({ body: "답변입니다" });
+
+    expect(response.status).toBe(201);
+    expect(mocks.notificationCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ recipientUserId: "customer-1", type: "INQUIRY_ANSWERED" }),
+      }),
+    );
+  });
+
+  it("skips the in-app notification for a guest (non-linked) inquiry", async () => {
+    mocks.inquiryFindUnique.mockResolvedValue({
+      id: "inquiry-1",
+      name: "홍길동",
+      email: "customer@example.com",
+      userId: null,
+    });
+
+    const response = await call({ body: "답변입니다" });
+
+    expect(response.status).toBe(201);
+    expect(mocks.notificationCreate).not.toHaveBeenCalled();
   });
 });

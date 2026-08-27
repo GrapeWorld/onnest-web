@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { adminRoles, adminRoleLabels, type AdminRole } from "@/data/adminRole";
 import { sendEmail, escapeHtml } from "@/lib/email";
+import { createNotification } from "@/lib/notifications";
 
 const updateSchema = z.object({
   toRole: z.union([z.enum(adminRoles), z.null()]),
@@ -80,6 +81,14 @@ export async function PATCH(
             actorId: admin.id,
             actorEmail: admin.email,
           },
+        });
+        const roleLabel = toRole ? adminRoleLabels[toRole as AdminRole] : "일반 회원(권한 회수)";
+        await createNotification(tx, {
+          recipientUserId: id,
+          type: "ADMIN_ROLE_CHANGED",
+          title: "관리자 권한이 변경되었습니다",
+          body: `관리자 권한이 "${roleLabel}"(으)로 변경되었습니다.`,
+          internalPath: "/my",
         });
         return { error: null, target: { email: target.email, name: target.name } };
       },

@@ -6,7 +6,9 @@ const mocks = vi.hoisted(() => ({
   count: vi.fn(),
   userUpdate: vi.fn(),
   historyCreate: vi.fn(),
+  notificationCreate: vi.fn(),
   transaction: vi.fn(),
+  sendEmail: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -17,8 +19,13 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: { findUnique: mocks.findUnique, count: mocks.count, update: mocks.userUpdate },
     memberStatusHistory: { create: mocks.historyCreate },
+    notification: { create: mocks.notificationCreate },
     $transaction: mocks.transaction,
   },
+}));
+vi.mock("@/lib/email", () => ({
+  escapeHtml: (value: string) => value,
+  sendEmail: mocks.sendEmail,
 }));
 
 import { PATCH } from "@/app/api/admin/users/[id]/status/route";
@@ -47,16 +54,21 @@ describe("PATCH /api/admin/users/[id]/status", () => {
       id: "user-1",
       status: "ACTIVE",
       adminRole: null,
+      email: "user-1@example.com",
+      name: "회원1",
     });
     mocks.count.mockResolvedValue(1);
     mocks.userUpdate.mockResolvedValue({});
     mocks.historyCreate.mockResolvedValue({});
+    mocks.notificationCreate.mockResolvedValue({});
+    mocks.sendEmail.mockResolvedValue({ sent: true });
     // 실제 라우트는 인터랙티브 트랜잭션(콜백)을 쓴다 — tx가 곧 prisma mock과
     // 같은 함수들을 쓰도록 흉내낸다.
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         user: { findUnique: mocks.findUnique, count: mocks.count, update: mocks.userUpdate },
         memberStatusHistory: { create: mocks.historyCreate },
+        notification: { create: mocks.notificationCreate },
       }),
     );
   });
@@ -133,6 +145,41 @@ describe("PATCH /api/admin/users/[id]/status", () => {
       where: { id: "user-1" },
       data: { status: "SUSPENDED", authVersion: { increment: 1 } },
     });
+    expect(mocks.notificationCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ recipientUserId: "user-1", type: "MEMBER_STATUS_CHANGED" }) }),
+    );
+  });
+
+  it("emails the target when the new status blocks login", async () => {
+    const response = await call({ toStatus: "SUSPENDED", reason: "결제 미납" });
+
+    expect(response.status).toBe(200);
+    expect(mocks.sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "user-1@example.com" }),
+    );
+  });
+
+  it("does not email the target when the new status doesn't block login", async () => {
+    mocks.findUnique.mockResolvedValue({
+      id: "user-1",
+      status: "ACTIVE",
+      adminRole: null,
+      email: "user-1@example.com",
+      name: "회원1",
+    });
+
+    const response = await call({ toStatus: "DORMANT", reason: "장기 미접속" });
+
+    expect(response.status).toBe(200);
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("a failed notification email doesn't fail the request", async () => {
+    mocks.sendEmail.mockRejectedValue(new Error("resend down"));
+
+    const response = await call({ toStatus: "SUSPENDED", reason: "결제 미납" });
+
+    expect(response.status).toBe(200);
   });
 
   it("blocks an admin from changing their own status", async () => {

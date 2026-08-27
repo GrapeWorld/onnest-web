@@ -7,6 +7,7 @@ import { checkRateLimit, formatRetryAfter } from "@/lib/rateLimit";
 import { isQuoteMutableStatus } from "@/lib/serviceRequestQuotes";
 import { escapeHtml, notifyServiceRequestCustomer } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
+import { createNotification } from "@/lib/notifications";
 
 const quoteCreateSchema = z.object({
   title: z.string().trim().min(1, "견적 이름을 입력해주세요.").max(100),
@@ -67,7 +68,7 @@ export async function POST(
           partnerStaffId: true,
           status: true,
           serviceType: true,
-          project: { select: { id: true, user: { select: { email: true, name: true } } } },
+          project: { select: { id: true, user: { select: { id: true, email: true, name: true } } } },
         },
       });
       if (!existing) return { error: "notfound" as const };
@@ -99,6 +100,14 @@ export async function POST(
           actorRole: "PARTNER",
           partnerId: user.partnerId,
         },
+      });
+      await createNotification(tx, {
+        recipientUserId: existing.project.user.id,
+        type: "SERVICE_REQUEST_QUOTE_RECEIVED",
+        title: "새 견적이 도착했습니다",
+        body: `${quote.title} 견적을 확인하고 선택해주세요.`,
+        internalPath: `/projects/${existing.project.id}/services`,
+        dedupeKey: `SERVICE_REQUEST_QUOTE_RECEIVED:${quote.id}`,
       });
       return {
         error: null,

@@ -5,6 +5,9 @@ import { serviceRequestPatchSchema } from "@/lib/serviceRequestSchema";
 import { escapeHtml, notifyPartnerStaff } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
 import { isPartnerAssignable } from "@/data/partnerVerification";
+import { createNotification, createNotifications } from "@/lib/notifications";
+import { getServiceRequestCustomerNotification } from "@/lib/serviceRequestNotifications";
+import type { ServiceRequestStatus } from "@/data/serviceRequests";
 
 /** 관리자 전용 상태·담당자·업체 배정 변경 */
 export async function PATCH(
@@ -50,6 +53,9 @@ export async function PATCH(
             status: true,
             partnerId: true,
             privacyAgreedAt: true,
+            cancelRequestedAt: true,
+            projectId: true,
+            project: { select: { userId: true } },
           },
         });
         if (!existing) return { error: "notfound" as const };
@@ -140,10 +146,62 @@ export async function PATCH(
               partnerId: updated.partnerId,
             },
           });
+
+          const notification = getServiceRequestCustomerNotification({
+            requestId: id,
+            toStatus: updated.status as ServiceRequestStatus,
+            hadPendingCancelRequest: Boolean(existing.cancelRequestedAt),
+          });
+          if (notification) {
+            await createNotification(tx, {
+              recipientUserId: existing.project.userId,
+              type: notification.type,
+              title: notification.title,
+              body: notification.body,
+              internalPath: `/projects/${existing.projectId}/services`,
+              dedupeKey: notification.dedupeKey,
+            });
+          }
         }
 
         if (partnerChanged) {
           await tx.serviceRequestQuote.deleteMany({ where: { serviceRequestId: id } });
+        }
+
+        if (isNewPartnerAssignment) {
+          // 업체 배정 자체를 고객에게도 알린다(상태가 "신규"로 리셋되는 경우가
+          // 많아 위 상태 변경 알림과는 겹치지 않는다 — "신규"에는 문구가 없다).
+          await createNotification(tx, {
+            recipientUserId: existing.project.userId,
+            type: "SERVICE_REQUEST_PARTNER_ASSIGNED",
+            title: "업체가 배정되었습니다",
+            body: "신청하신 서비스에 업체가 배정되었습니다. 곧 확인 및 견적 안내가 진행됩니다.",
+            internalPath: `/projects/${existing.projectId}/services`,
+            dedupeKey: `SERVICE_REQUEST_PARTNER_ASSIGNED:${id}:${parsed.data.partnerId}`,
+          });
+
+          // 배정 시점에는 아직 담당 STAFF가 지정되지 않아(evaluateServiceRequestReadAccess
+          // 기준) STAFF는 상세를 조회할 수 없다 — 지금 열람 가능한 OWNER·MANAGER·
+          // VIEWER에게만 알린다. STAFF는 개별 배정 이후 포털에서 확인하게 된다.
+          const recipients = await tx.partnerMembership.findMany({
+            where: {
+              partnerId: parsed.data.partnerId!,
+              status: "ACTIVE",
+              role: { in: ["OWNER", "MANAGER", "VIEWER"] },
+            },
+            select: { userId: true },
+          });
+          await createNotifications(
+            tx,
+            recipients.map((member) => ({
+              recipientUserId: member.userId,
+              type: "PARTNER_NEW_SERVICE_REQUEST" as const,
+              title: "새로운 서비스 요청이 배정되었습니다",
+              body: "요청 내용을 확인하고 필요한 경우 견적을 등록해 주세요.",
+              internalPath: `/partner/requests/${id}`,
+              dedupeKey: `PARTNER_NEW_SERVICE_REQUEST:${id}:${parsed.data.partnerId}`,
+            })),
+          );
         }
 
         return {

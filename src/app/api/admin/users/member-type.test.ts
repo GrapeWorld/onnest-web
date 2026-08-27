@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   membershipUpdateMany: vi.fn(),
   membershipCreate: vi.fn(),
   membershipCount: vi.fn(),
+  notificationCreate: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -30,6 +31,7 @@ vi.mock("@/lib/prisma", () => ({
       create: mocks.membershipCreate,
       count: mocks.membershipCount,
     },
+    notification: { create: mocks.notificationCreate },
     $transaction: mocks.transaction,
   },
 }));
@@ -83,6 +85,7 @@ describe("PATCH /api/admin/users/[id]/member-type", () => {
           create: mocks.membershipCreate,
           count: mocks.membershipCount,
         },
+        notification: { create: mocks.notificationCreate },
       }),
     );
   });

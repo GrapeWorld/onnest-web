@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   userUpdate: vi.fn(),
   transaction: vi.fn(),
   sessionSave: vi.fn(),
+  notificationCreate: vi.fn(),
+  sendEmail: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -25,11 +27,16 @@ vi.mock("@/lib/prisma", () => ({
       delete: mocks.socialAccountDelete,
     },
     user: { update: mocks.userUpdate },
+    notification: { create: mocks.notificationCreate },
     $transaction: mocks.transaction,
   },
 }));
 vi.mock("@/lib/session", () => ({
   getSession: vi.fn(async () => ({ save: mocks.sessionSave })),
+}));
+vi.mock("@/lib/email", () => ({
+  sendEmail: mocks.sendEmail,
+  escapeHtml: (value: string) => value,
 }));
 
 import { DELETE } from "@/app/api/me/social-accounts/[id]/route";
@@ -46,6 +53,8 @@ describe("DELETE /api/me/social-accounts/[id]", () => {
     vi.clearAllMocks();
     mocks.getCurrentUser.mockResolvedValue({
       id: "user-1",
+      email: "user-1@example.com",
+      name: "회원1",
       passwordHash: "hashed-password",
     });
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
@@ -53,10 +62,13 @@ describe("DELETE /api/me/social-accounts/[id]", () => {
     mocks.socialAccountCount.mockResolvedValue(2);
     mocks.socialAccountDelete.mockResolvedValue({});
     mocks.userUpdate.mockResolvedValue({ authVersion: 5 });
+    mocks.notificationCreate.mockResolvedValue({});
+    mocks.sendEmail.mockResolvedValue({ sent: true });
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         socialAccount: { delete: mocks.socialAccountDelete },
         user: { update: mocks.userUpdate },
+        notification: { create: mocks.notificationCreate },
       }),
     );
   });
@@ -127,5 +139,27 @@ describe("DELETE /api/me/social-accounts/[id]", () => {
       select: { authVersion: true },
     });
     expect(mocks.sessionSave).toHaveBeenCalled();
+  });
+
+  it("creates an in-app notification and emails the account owner", async () => {
+    const response = await call();
+
+    expect(response.status).toBe(200);
+    expect(mocks.notificationCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ recipientUserId: "user-1", type: "SOCIAL_ACCOUNT_UNLINKED" }),
+      }),
+    );
+    expect(mocks.sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "user-1@example.com" }),
+    );
+  });
+
+  it("a failed notification email doesn't fail the request", async () => {
+    mocks.sendEmail.mockRejectedValue(new Error("resend down"));
+
+    const response = await call();
+
+    expect(response.status).toBe(200);
   });
 });

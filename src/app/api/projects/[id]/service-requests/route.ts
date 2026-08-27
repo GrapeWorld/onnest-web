@@ -5,6 +5,7 @@ import { serviceRequestSchema } from "@/lib/serviceRequestSchema";
 import { checkRateLimit, formatRetryAfter } from "@/lib/rateLimit";
 import { escapeHtml, notifyAdmin } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
+import { createNotifications } from "@/lib/notifications";
 
 /** 서비스 연결 신청. 선택한 유형마다 한 건씩 만든다. */
 export async function POST(
@@ -65,17 +66,39 @@ export async function POST(
   // agreePrivacy는 스키마에서 true만 통과하므로 여기 도달하면 동의한 것이다.
   const privacyAgreedAt = new Date();
 
-  await prisma.serviceRequest.createMany({
-    data: uniqueTypes.map((serviceType) => ({
-      projectId: id,
-      serviceType,
-      preferredDate: preferredDate ? new Date(preferredDate) : null,
-      region,
-      message: message || null,
-      contactName,
-      contactPhone,
-      privacyAgreedAt,
-    })),
+  await prisma.$transaction(async (tx) => {
+    await tx.serviceRequest.createMany({
+      data: uniqueTypes.map((serviceType) => ({
+        projectId: id,
+        serviceType,
+        preferredDate: preferredDate ? new Date(preferredDate) : null,
+        region,
+        message: message || null,
+        contactName,
+        contactPhone,
+        privacyAgreedAt,
+      })),
+    });
+
+    const admins = await tx.user.findMany({
+      where: { adminRole: { in: ["super", "viewer"] } },
+      select: { id: true, adminRole: true },
+    });
+    const dedupeKey = `ADMIN_NEW_SERVICE_REQUEST:${id}:${uniqueTypes.join(",")}`;
+    await createNotifications(
+      tx,
+      admins.map((adminUser) => ({
+        recipientUserId: adminUser.id,
+        type: "ADMIN_NEW_SERVICE_REQUEST" as const,
+        title: "새 서비스 연결 신청이 접수되었습니다",
+        body:
+          adminUser.adminRole === "super"
+            ? `${project.name} 프로젝트에 새 신청이 접수됐습니다. 확인 후 업체를 배정해주세요.`
+            : `${project.name} 프로젝트에 새 신청이 접수됐습니다.`,
+        internalPath: "/admin/service-leads",
+        dedupeKey,
+      })),
+    );
   });
 
   // 알림 발송(또는 그 URL 조립)이 실패해도 이미 저장된 신청 응답은 막지 않는다.

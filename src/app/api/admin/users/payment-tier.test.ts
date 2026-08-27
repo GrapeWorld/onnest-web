@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(),
   userUpdate: vi.fn(),
   historyCreate: vi.fn(),
+  notificationCreate: vi.fn(),
   transaction: vi.fn(),
 }));
 
@@ -16,6 +17,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: { findUnique: mocks.findUnique, update: mocks.userUpdate },
     paymentTierHistory: { create: mocks.historyCreate },
+    notification: { create: mocks.notificationCreate },
     $transaction: mocks.transaction,
   },
 }));
@@ -49,6 +51,7 @@ describe("PATCH /api/admin/users/[id]/payment-tier", () => {
       callback({
         user: { findUnique: mocks.findUnique, update: mocks.userUpdate },
         paymentTierHistory: { create: mocks.historyCreate },
+        notification: { create: mocks.notificationCreate },
       }),
     );
   });

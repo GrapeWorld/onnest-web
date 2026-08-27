@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
-import { paymentTiers } from "@/data/paymentTier";
+import { paymentTiers, paymentTierLabels } from "@/data/paymentTier";
+import { createNotification } from "@/lib/notifications";
 
 const updateSchema = z.object({
   toTier: z.enum(paymentTiers, { error: "변경할 결제 등급을 선택해주세요." }),
@@ -52,6 +53,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           adminId: admin.id,
           adminEmail: admin.email,
         },
+      });
+      await createNotification(tx, {
+        recipientUserId: id,
+        type: "PAYMENT_TIER_CHANGED",
+        title: "결제 등급이 변경되었습니다",
+        body: `결제 등급이 "${paymentTierLabels[toTier]}"(으)로 변경되었습니다.`,
+        internalPath: "/my",
       });
       return { error: null };
     });

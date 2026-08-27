@@ -7,7 +7,11 @@ import { isValidStatusTransition } from "@/lib/serviceRequestStatus";
 import { checkRateLimit, formatRetryAfter } from "@/lib/rateLimit";
 import { escapeHtml, notifyServiceRequestCustomer } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
-import { getCustomerNotificationCopy } from "@/lib/serviceRequestNotifications";
+import {
+  getCustomerNotificationCopy,
+  getServiceRequestCustomerNotification,
+} from "@/lib/serviceRequestNotifications";
+import { createNotification } from "@/lib/notifications";
 import {
   serviceRequestStatuses,
   serviceRequestCancelledStatus,
@@ -79,7 +83,8 @@ export async function PATCH(
             partnerId: true,
             partnerStaffId: true,
             serviceType: true,
-            project: { select: { id: true, user: { select: { email: true, name: true } } } },
+            cancelRequestedAt: true,
+            project: { select: { id: true, user: { select: { id: true, email: true, name: true } } } },
           },
         });
         if (!existing) return { error: "notfound" as const };
@@ -118,6 +123,23 @@ export async function PATCH(
             partnerId: user.partnerId,
           },
         });
+
+        const notification = getServiceRequestCustomerNotification({
+          requestId: id,
+          toStatus: status,
+          hadPendingCancelRequest: Boolean(existing.cancelRequestedAt),
+        });
+        if (notification) {
+          await createNotification(tx, {
+            recipientUserId: existing.project.user.id,
+            type: notification.type,
+            title: notification.title,
+            body: notification.body,
+            internalPath: `/projects/${existing.project.id}/services`,
+            dedupeKey: notification.dedupeKey,
+          });
+        }
+
         return {
           error: null,
           success: {

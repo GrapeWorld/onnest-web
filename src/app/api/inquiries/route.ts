@@ -6,6 +6,7 @@ import { inquiryTypes, spaceTypes } from "@/data/inquiries";
 import { escapeHtml, notifyAdmin, notifyInquiryCustomer } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
 import { getCurrentUser } from "@/lib/auth";
+import { createNotifications } from "@/lib/notifications";
 
 const inquirySchema = z.object({
   name: z.string().trim().min(1, "이름을 입력해주세요.").max(50),
@@ -99,6 +100,26 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    const admins = await tx.user.findMany({
+      where: { adminRole: { in: ["super", "viewer"] } },
+      select: { id: true, adminRole: true },
+    });
+    await createNotifications(
+      tx,
+      admins.map((adminUser) => ({
+        recipientUserId: adminUser.id,
+        type: "ADMIN_NEW_INQUIRY" as const,
+        title: "새 문의가 접수되었습니다",
+        body:
+          adminUser.adminRole === "super"
+            ? `${data.name}님의 문의가 접수됐습니다. 확인 후 답변해주세요.`
+            : `${data.name}님의 문의가 접수됐습니다.`,
+        internalPath: "/admin/inquiries",
+        dedupeKey: `ADMIN_NEW_INQUIRY:${created.id}`,
+      })),
+    );
+
     return created;
   });
 

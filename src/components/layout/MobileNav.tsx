@@ -10,10 +10,12 @@ export function MobileNav({
   navItems,
   isLoggedIn,
   isAdminUser,
+  unreadNotificationCount = 0,
 }: {
   navItems: readonly NavItem[];
   isLoggedIn: boolean;
   isAdminUser: boolean;
+  unreadNotificationCount?: number;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -25,8 +27,13 @@ export function MobileNav({
         aria-expanded={open}
         aria-controls="mobile-nav-panel"
         aria-label={open ? "메뉴 닫기" : "메뉴 열기"}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-forest/15 text-forest"
+        className="relative flex h-9 w-9 items-center justify-center rounded-full border border-forest/15 text-forest"
       >
+        {isLoggedIn && unreadNotificationCount > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-forest px-1 text-[10px] font-semibold text-white">
+            {unreadNotificationCount > 9 ? "9+" : unreadNotificationCount}
+          </span>
+        )}
         {open ? (
           <svg
             viewBox="0 0 24 24"
@@ -73,6 +80,20 @@ export function MobileNav({
           </nav>
           {(isAdminUser || isLoggedIn) && (
             <div className="mt-3 flex flex-col gap-1 border-t border-forest/10 pt-3 text-sm font-semibold">
+              {isLoggedIn && (
+                <Link
+                  href="/notifications"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-forest hover:bg-cream"
+                >
+                  알림
+                  {unreadNotificationCount > 0 && (
+                    <span className="rounded-full bg-forest px-2 py-0.5 text-xs font-semibold text-white">
+                      {unreadNotificationCount > 9 ? "9+" : unreadNotificationCount}
+                    </span>
+                  )}
+                </Link>
+              )}
               {isAdminUser && (
                 <Link
                   href="/admin"

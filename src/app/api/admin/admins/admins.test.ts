@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   historyCreate: vi.fn(),
   transaction: vi.fn(),
   sendEmail: vi.fn(),
+  notificationCreate: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -18,6 +19,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: { findUnique: mocks.findUnique, count: mocks.count, update: mocks.userUpdate },
     adminRoleHistory: { create: mocks.historyCreate },
+    notification: { create: mocks.notificationCreate },
     $transaction: mocks.transaction,
   },
 }));
@@ -64,6 +66,7 @@ describe("PATCH /api/admin/admins/[id]", () => {
       callback({
         user: { findUnique: mocks.findUnique, count: mocks.count, update: mocks.userUpdate },
         adminRoleHistory: { create: mocks.historyCreate },
+        notification: { create: mocks.notificationCreate },
       }),
     );
   });

@@ -9,6 +9,9 @@ const mocks = vi.hoisted(() => ({
   notifyPartnerStaff: vi.fn(),
   quoteDeleteMany: vi.fn(),
   activityCreate: vi.fn(),
+  notificationUpsert: vi.fn(),
+  notificationCreateMany: vi.fn(),
+  membershipFindMany: vi.fn(),
   transaction: vi.fn(),
 }));
 
@@ -23,6 +26,8 @@ vi.mock("@/lib/prisma", () => ({
     user: { findMany: mocks.userFindMany },
     serviceRequestQuote: { deleteMany: mocks.quoteDeleteMany },
     serviceRequestActivity: { create: mocks.activityCreate },
+    notification: { upsert: mocks.notificationUpsert, createMany: mocks.notificationCreateMany },
+    partnerMembership: { findMany: mocks.membershipFindMany },
     $transaction: mocks.transaction,
   },
 }));
@@ -57,18 +62,26 @@ describe("PATCH /api/admin/service-requests/[id] partner assignment", () => {
       status: "신규",
       partnerId: null,
       privacyAgreedAt: new Date("2026-01-01T00:00:00.000Z"),
+      cancelRequestedAt: null,
+      projectId: "project-1",
+      project: { userId: "customer-1" },
     });
     mocks.update.mockResolvedValue({ id: "request-1", partnerId: "partner-1" });
     mocks.userFindMany.mockResolvedValue([{ email: "staff@partner.example.com" }]);
     mocks.notifyPartnerStaff.mockResolvedValue(undefined);
     mocks.quoteDeleteMany.mockResolvedValue({ count: 0 });
     mocks.activityCreate.mockResolvedValue({});
+    mocks.notificationUpsert.mockResolvedValue({});
+    mocks.notificationCreateMany.mockResolvedValue({ count: 0 });
+    mocks.membershipFindMany.mockResolvedValue([]);
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         serviceRequest: { findUnique: mocks.findUniqueRequest, update: mocks.update },
         partner: { findUnique: mocks.findUniquePartner },
         serviceRequestQuote: { deleteMany: mocks.quoteDeleteMany },
         serviceRequestActivity: { create: mocks.activityCreate },
+        notification: { upsert: mocks.notificationUpsert, createMany: mocks.notificationCreateMany },
+        partnerMembership: { findMany: mocks.membershipFindMany },
       }),
     );
   });

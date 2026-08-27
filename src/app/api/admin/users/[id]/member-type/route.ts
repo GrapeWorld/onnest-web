@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
-import { memberTypes } from "@/data/memberType";
+import { memberTypes, memberTypeLabels } from "@/data/memberType";
+import { createNotification } from "@/lib/notifications";
 
 const updateSchema = z
   .object({
@@ -147,6 +148,14 @@ export async function PATCH(
           });
         }
       }
+
+      await createNotification(tx, {
+        recipientUserId: id,
+        type: "MEMBER_TYPE_CHANGED",
+        title: "회원 구분이 변경되었습니다",
+        body: `회원 구분이 "${memberTypeLabels[memberType]}"(으)로 변경되었습니다.`,
+        internalPath: "/my",
+      });
 
       return { error: null };
     }, { isolationLevel: "Serializable" });

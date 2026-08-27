@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   findUniqueRequest: vi.fn(),
   update: vi.fn(),
   activityCreate: vi.fn(),
+  notificationCreate: vi.fn(),
   transaction: vi.fn(),
   notifyServiceRequestCustomer: vi.fn(),
 }));
@@ -17,6 +18,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     serviceRequest: { findUnique: mocks.findUniqueRequest, update: mocks.update },
     serviceRequestActivity: { create: mocks.activityCreate },
+    notification: { upsert: mocks.notificationCreate },
     $transaction: mocks.transaction,
   },
 }));
@@ -50,15 +52,17 @@ describe("POST /api/admin/service-requests/[id]/no-partner-notice", () => {
       status: "신규",
       serviceType: "이사",
       projectId: "project-1",
-      project: { user: { email: "customer@example.com", name: "고객" } },
+      project: { user: { id: "customer-1", email: "customer@example.com", name: "고객" } },
     });
     mocks.update.mockResolvedValue({});
     mocks.activityCreate.mockResolvedValue({});
+    mocks.notificationCreate.mockResolvedValue({});
     mocks.notifyServiceRequestCustomer.mockResolvedValue(undefined);
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         serviceRequest: { findUnique: mocks.findUniqueRequest, update: mocks.update },
         serviceRequestActivity: { create: mocks.activityCreate },
+        notification: { upsert: mocks.notificationCreate },
       }),
     );
   });

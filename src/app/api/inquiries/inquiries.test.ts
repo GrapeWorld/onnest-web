@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   inquiryCreate: vi.fn(),
   activityCreate: vi.fn(),
+  userFindMany: vi.fn(),
+  notificationCreateMany: vi.fn(),
   transaction: vi.fn(),
   notifyAdmin: vi.fn(),
   notifyInquiryCustomer: vi.fn(),
@@ -22,6 +24,8 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     inquiry: { create: mocks.inquiryCreate },
     inquiryActivity: { create: mocks.activityCreate },
+    user: { findMany: mocks.userFindMany },
+    notification: { createMany: mocks.notificationCreateMany },
     $transaction: mocks.transaction,
   },
 }));
@@ -71,10 +75,14 @@ describe("POST /api/inquiries", () => {
       organization: null,
     });
     mocks.activityCreate.mockResolvedValue({});
+    mocks.userFindMany.mockResolvedValue([{ id: "admin-1", adminRole: "super" }]);
+    mocks.notificationCreateMany.mockResolvedValue({ count: 1 });
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         inquiry: { create: mocks.inquiryCreate },
         inquiryActivity: { create: mocks.activityCreate },
+        user: { findMany: mocks.userFindMany },
+        notification: { createMany: mocks.notificationCreateMany },
       }),
     );
     mocks.notifyAdmin.mockResolvedValue(undefined);

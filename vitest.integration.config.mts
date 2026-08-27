@@ -17,6 +17,7 @@ export default defineConfig({
       "src/lib/serviceRequestPartnerSnapshot.test.ts",
       "src/lib/partnerInvitation.test.ts",
       "src/lib/adminExport.integration.test.ts",
+      "src/lib/notifications.integration.test.ts",
     ],
     globalSetup: "./vitest.global-setup.ts",
     env: {

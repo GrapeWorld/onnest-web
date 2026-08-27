@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
-import { memberStatuses, loginBlockedStatuses } from "@/data/memberStatus";
+import { memberStatuses, loginBlockedStatuses, memberStatusLabels } from "@/data/memberStatus";
+import { createNotification } from "@/lib/notifications";
+import { escapeHtml, sendEmail } from "@/lib/email";
 
 const updateSchema = z.object({
   toStatus: z.enum(memberStatuses, { error: "변경할 상태를 선택해주세요." }),
@@ -45,13 +47,14 @@ export async function PATCH(
   // SERIALIZABLE 격리에서는 이런 충돌이 감지되면 한쪽이 자동으로 실패한다.
   let result: {
     error: "notfound" | "same" | "lastsuper" | null;
+    target?: { email: string; name: string };
   };
   try {
     result = await prisma.$transaction(
       async (tx) => {
         const target = await tx.user.findUnique({
           where: { id },
-          select: { id: true, status: true, adminRole: true },
+          select: { id: true, status: true, adminRole: true, email: true, name: true },
         });
         if (!target) return { error: "notfound" as const };
         if (target.status === toStatus) return { error: "same" as const };
@@ -93,7 +96,16 @@ export async function PATCH(
             adminEmail: admin.email,
           },
         });
-        return { error: null };
+        await createNotification(tx, {
+          recipientUserId: id,
+          type: "MEMBER_STATUS_CHANGED",
+          title: "회원 상태가 변경되었습니다",
+          body: `회원 상태가 "${memberStatusLabels[toStatus]}"(으)로 변경되었습니다.`,
+          internalPath: "/my",
+          // 같은 상태로의 재시도는 위 "same" 분기가 먼저 막으므로 dedupeKey가
+          // 없어도 안전하다 — 서로 다른 전환은 매번 새 소식이라 남겨야 한다.
+        });
+        return { error: null, target };
       },
       { isolationLevel: "Serializable" },
     );
@@ -121,6 +133,24 @@ export async function PATCH(
       { error: "마지막 남은 활성 최고관리자는 이용을 제한할 수 없습니다." },
       { status: 400 },
     );
+  }
+
+  // 로그인 자체가 막히는 상태로 바뀌면 인앱 알림함을 볼 수 없을 수 있으니
+  // 이메일로도 반드시 안내한다. 발송 실패는 이미 커밋된 상태 변경을 막지 않는다.
+  if (loginBlockedStatuses.includes(toStatus) && result.target) {
+    try {
+      await sendEmail({
+        to: result.target.email,
+        subject: "[ONNEST] 회원 상태가 변경되었습니다",
+        html: `
+          <p>안녕하세요, ${escapeHtml(result.target.name)}님.</p>
+          <p>회원 상태가 "${escapeHtml(memberStatusLabels[toStatus])}"(으)로 변경되었습니다.</p>
+          <p>문의사항이 있으시면 고객센터로 연락해주세요.</p>
+        `,
+      });
+    } catch (error) {
+      console.error("[email] member status notification failed", error);
+    }
   }
 
   return NextResponse.json({ id, status: toStatus });

@@ -5,6 +5,7 @@ import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { escapeHtml, notifyServiceRequestCustomer } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
 import { serviceRequestCancelledStatus } from "@/data/serviceRequests";
+import { createNotification } from "@/lib/notifications";
 
 const schema = z.object({
   reason: z.string().trim().min(1, "내부 사유를 입력해주세요.").max(500),
@@ -49,7 +50,7 @@ export async function POST(
           status: true,
           serviceType: true,
           projectId: true,
-          project: { select: { user: { select: { email: true, name: true } } } },
+          project: { select: { user: { select: { id: true, email: true, name: true } } } },
         },
       });
       if (!existing) return { error: "notfound" as const };
@@ -71,6 +72,14 @@ export async function POST(
           actorName: user.name,
           actorRole: "ADMIN",
         },
+      });
+      await createNotification(tx, {
+        recipientUserId: existing.project.user.id,
+        type: "SERVICE_REQUEST_NO_PARTNER",
+        title: "서비스 연결에 시간이 걸리고 있습니다",
+        body: "연결 가능한 업체를 계속 확인 중입니다. 연결되는 대로 다시 안내드립니다.",
+        internalPath: `/projects/${existing.projectId}/services`,
+        dedupeKey: `SERVICE_REQUEST_NO_PARTNER:${id}:${new Date().toISOString().slice(0, 10)}`,
       });
 
       return {

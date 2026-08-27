@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(),
   quoteCreate: vi.fn(),
   activityCreate: vi.fn(),
+  notificationUpsert: vi.fn(),
   transaction: vi.fn(),
   notifyServiceRequestCustomer: vi.fn(),
   membershipFindFirst: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock("@/lib/prisma", () => ({
     serviceRequest: { findUnique: mocks.findUnique },
     serviceRequestQuote: { create: mocks.quoteCreate },
     serviceRequestActivity: { create: mocks.activityCreate },
+    notification: { upsert: mocks.notificationUpsert },
     partnerMembership: { findFirst: mocks.membershipFindFirst },
     $transaction: mocks.transaction,
   },
@@ -63,7 +65,7 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
       partnerStaffId: null,
       status: "신규",
       serviceType: "이사",
-      project: { id: "project-1", user: { email: "customer@example.com", name: "고객" } },
+      project: { id: "project-1", user: { id: "customer-1", email: "customer@example.com", name: "고객" } },
     });
     mocks.membershipFindFirst.mockResolvedValue({
       id: "membership-1",
@@ -79,6 +81,7 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
       createdAt: new Date(),
     });
     mocks.activityCreate.mockResolvedValue({});
+    mocks.notificationUpsert.mockResolvedValue({});
     mocks.notifyServiceRequestCustomer.mockResolvedValue(undefined);
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.transaction.mockImplementation(async (callback) =>
@@ -86,6 +89,7 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
         serviceRequest: { findUnique: mocks.findUnique },
         serviceRequestQuote: { create: mocks.quoteCreate },
         serviceRequestActivity: { create: mocks.activityCreate },
+        notification: { upsert: mocks.notificationUpsert },
       }),
     );
   });
@@ -125,7 +129,7 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
       partnerId: "other-partner",
       status: "신규",
       serviceType: "이사",
-      project: { id: "project-1", user: { email: "customer@example.com", name: "고객" } },
+      project: { id: "project-1", user: { id: "customer-1", email: "customer@example.com", name: "고객" } },
     });
 
     const response = await call({ title: "기본형", amount: 500000 });
@@ -165,7 +169,7 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
       partnerStaffId: "someone-else",
       status: "신규",
       serviceType: "이사",
-      project: { id: "project-1", user: { email: "customer@example.com", name: "고객" } },
+      project: { id: "project-1", user: { id: "customer-1", email: "customer@example.com", name: "고객" } },
     });
 
     const response = await call({ title: "기본형", amount: 500000 });
@@ -179,7 +183,7 @@ describe("POST /api/partner/service-requests/[id]/quotes", () => {
       partnerId: "partner-1",
       status: "작업 예정",
       serviceType: "이사",
-      project: { id: "project-1", user: { email: "customer@example.com", name: "고객" } },
+      project: { id: "project-1", user: { id: "customer-1", email: "customer@example.com", name: "고객" } },
     });
 
     const response = await call({ title: "기본형", amount: 500000 });

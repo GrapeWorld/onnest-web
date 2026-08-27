@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { escapeHtml, notifyInquiryCustomer } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
+import { createNotification } from "@/lib/notifications";
 
 const messageSchema = z.object({
   body: z.string().trim().min(1, "메시지 내용을 입력해주세요.").max(2000),
@@ -34,21 +35,35 @@ export async function POST(
   const { id } = await params;
   const inquiry = await prisma.inquiry.findUnique({
     where: { id },
-    select: { id: true, name: true, email: true },
+    select: { id: true, name: true, email: true, userId: true },
   });
   if (!inquiry) {
     return NextResponse.json({ error: "문의를 찾을 수 없습니다." }, { status: 404 });
   }
 
-  const message = await prisma.inquiryMessage.create({
-    data: {
-      inquiryId: id,
-      senderRole: "ADMIN",
-      body: parsed.data.body,
-      senderId: admin.id,
-      senderEmail: admin.email,
-      senderName: admin.name,
-    },
+  const message = await prisma.$transaction(async (tx) => {
+    const created = await tx.inquiryMessage.create({
+      data: {
+        inquiryId: id,
+        senderRole: "ADMIN",
+        body: parsed.data.body,
+        senderId: admin.id,
+        senderEmail: admin.email,
+        senderName: admin.name,
+      },
+    });
+    // 로그인 없이(비회원) 접수한 문의는 알림함이 없어 이메일로만 안내한다.
+    if (inquiry.userId) {
+      await createNotification(tx, {
+        recipientUserId: inquiry.userId,
+        type: "INQUIRY_ANSWERED",
+        title: "문의에 답변이 등록되었습니다",
+        body: "보내주신 문의에 답변이 등록됐습니다.",
+        internalPath: `/my/inquiries/${id}`,
+        dedupeKey: `INQUIRY_ANSWERED:${created.id}`,
+      });
+    }
+    return created;
   });
 
   try {

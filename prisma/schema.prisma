@@ -69,6 +69,36 @@ model User {
   // 이 관리자가 고객 프로젝트에 직접 공유한 매물. 이름이 겹치지 않도록
   // 명시적 relation 이름을 쓴다(다른 User↔ProjectPropertySuggestion 관계는 없다).
   sharedPropertySuggestions ProjectPropertySuggestion[] @relation("PropertySuggestionSharedBy")
+  notifications Notification[]
+}
+
+// 서비스 내 알림함. Activity/History(무슨 일이 있었는지)와는 다른 축이다 —
+// "이 사람에게 지금 새 소식이 있는지"만 담당한다. 계정 삭제 시 같이
+// 지워지는 게 맞는(수신자 개인 것) 데이터라 다른 History 모델들과 달리
+// recipientUserId는 실제 FK다.
+model Notification {
+  id              String    @id @default(cuid())
+  recipientUserId String
+  recipient       User      @relation(fields: [recipientUserId], references: [id], onDelete: Cascade)
+  // src/data/notification.ts의 notificationTypes
+  type            String
+  // "SERVICE" | "ACCOUNT" | "ADMIN_OPS" (src/data/notification.ts)
+  category        String
+  title           String
+  body            String
+  // sanitizeReturnTo로 검증하는 내부 상대 경로. 목적지 페이지 자체가 항상
+  // 현재 사용자 권한을 다시 검사하므로(이 앱 전체의 기존 원칙), 알림 링크
+  // 자체는 권한을 부여하지 않는다.
+  internalPath    String
+  // 같은 소식이 중복 생성되지 않게 막는 키. null이면(진짜 매번 새 소식인
+  // 경우) 유니크 제약을 적용하지 않는다.
+  dedupeKey       String?
+  readAt          DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@unique([recipientUserId, dedupeKey])
+  @@index([recipientUserId, readAt, createdAt])
+  @@index([recipientUserId, createdAt])
 }
 
 // Google/Kakao/Naver 계정 연결. provider+providerAccountId(이메일이 아니라

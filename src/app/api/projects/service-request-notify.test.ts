@@ -5,6 +5,9 @@ const mocks = vi.hoisted(() => ({
   checkRateLimit: vi.fn(),
   projectFindFirst: vi.fn(),
   serviceRequestCreateMany: vi.fn(),
+  userFindMany: vi.fn(),
+  notificationCreateMany: vi.fn(),
+  transaction: vi.fn(),
   notifyAdmin: vi.fn(),
 }));
 
@@ -19,6 +22,9 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     project: { findFirst: mocks.projectFindFirst },
     serviceRequest: { createMany: mocks.serviceRequestCreateMany },
+    user: { findMany: mocks.userFindMany },
+    notification: { createMany: mocks.notificationCreateMany },
+    $transaction: mocks.transaction,
   },
 }));
 vi.mock("@/lib/email", () => ({
@@ -56,7 +62,16 @@ describe("POST /api/projects/[id]/service-requests — admin notification", () =
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.projectFindFirst.mockResolvedValue({ id: "project-1", name: "합정동 전세 프로젝트" });
     mocks.serviceRequestCreateMany.mockResolvedValue({ count: 1 });
+    mocks.userFindMany.mockResolvedValue([{ id: "admin-1", adminRole: "super" }]);
+    mocks.notificationCreateMany.mockResolvedValue({ count: 1 });
     mocks.notifyAdmin.mockResolvedValue(undefined);
+    mocks.transaction.mockImplementation(async (callback) =>
+      callback({
+        serviceRequest: { createMany: mocks.serviceRequestCreateMany },
+        user: { findMany: mocks.userFindMany },
+        notification: { createMany: mocks.notificationCreateMany },
+      }),
+    );
   });
 
   it("creates the service request and notifies the admin", async () => {
