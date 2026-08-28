@@ -87,6 +87,7 @@ export default async function AdminServiceLeadDetailPage({
       partner: { select: { name: true } },
       partnerStaff: { select: { name: true } },
       selectedQuoteId: true,
+      review: { select: { rating: true, comment: true, createdAt: true } },
     },
   });
   if (!request) notFound();
@@ -211,6 +212,20 @@ export default async function AdminServiceLeadDetailPage({
               </ul>
             )}
           </Card>
+
+          {request.review && (
+            <Card>
+              <h2 className="text-xl font-black text-forest">고객 후기</h2>
+              <p className="mt-2 text-lg text-amber-500">
+                {"★".repeat(request.review.rating)}
+                <span className="text-ink/20">{"★".repeat(5 - request.review.rating)}</span>
+              </p>
+              {request.review.comment && (
+                <p className="mt-2 whitespace-pre-wrap text-sm text-ink/70">{request.review.comment}</p>
+              )}
+              <p className="mt-2 text-xs text-ink/50">{formatDate(request.review.createdAt)}</p>
+            </Card>
+          )}
 
           <Card>
             <h2 className="text-xl font-black text-forest">첨부 파일</h2>

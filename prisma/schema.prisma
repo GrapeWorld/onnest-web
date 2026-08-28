@@ -9,68 +9,70 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id                             String                          @id @default(cuid())
+  email                          String                          @unique
   // 소셜 전용 회원은 비밀번호가 없다. 이메일·비밀번호 로그인 라우트는 이 값이
   // null이면 bcrypt.compare를 아예 호출하지 않고 일반 로그인 실패로 처리한다.
-  passwordHash String?
-  authVersion  Int       @default(0)
-  name         String
-  phone        String?
-  role         String    @default("user")
+  passwordHash                   String?
+  authVersion                    Int                             @default(0)
+  name                           String
+  phone                          String?
+  role                           String                          @default("user")
   // 회원 상태. ACTIVE|PENDING|DORMANT|SUSPENDED|WITHDRAWN|BLOCKED
   // (src/data/memberStatus.ts). 소프트 삭제 용도 — 관리자가 탈퇴 처리해도
   // 이 필드만 바뀌고 행 자체는 남는다. 본인이 직접 탈퇴하는 기존
   // delete-account 흐름은 여전히 실제 삭제다(별개 정책).
-  status        String    @default("ACTIVE")
-  lastLoginAt   DateTime?
+  status                         String                          @default("ACTIVE")
+  lastLoginAt                    DateTime?
   // 관리자 권한 등급. null(관리자 아님) | "super" | "viewer"
   // (src/lib/auth.ts의 isAdmin/isSuperAdmin). role(서비스 역할)과는 별개
   // 개념이라 분리했다 — "일반 회원에게 role=admin만 부여" 방식을 쓰지 않는다.
-  adminRole     String?
+  adminRole                      String?
   // 가입 시 약관·개인정보처리방침 동의 시각. 이 기능 이전 가입자는 null이다.
-  termsAgreedAt DateTime?
+  termsAgreedAt                  DateTime?
   // 일반 회원 유형. "CUSTOMER" | "PARTNER" (src/data/memberType.ts). adminRole과는
   // 별개 축이다 — 관리자 화면의 표시 분류는 adminRole을 우선 적용하고, adminRole이
   // 없을 때만 이 값으로 업체/고객을 가른다. 관리자 권한이 회수돼도 이 값은 그대로
   // 남아 있어 원래 유형으로 자연스럽게 돌아간다.
-  memberType    String    @default("CUSTOMER")
+  memberType                     String                          @default("CUSTOMER")
   // PARTNER 회원이 연결된 업체(Partner). 로그인 계정과 Partner 참조 목록을 잇는
   // 다리일 뿐, 이 관계 자체가 파트너 포털 권한을 주지 않는다.
-  partnerId     String?
-  partner       Partner?  @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  partnerId                      String?
+  partner                        Partner?                        @relation(fields: [partnerId], references: [id], onDelete: SetNull)
   // 결제 등급. "FREE" | "BASIC" | "PREMIUM" | "PROJECT_PASS" (src/data/paymentTier.ts).
   // 아직 실제 결제 연동은 없다 — 관리자가 상담·수기 결제 확인 후 표시만
   // 해두는 값이라 memberType처럼 로그인·권한에는 영향을 주지 않는다.
-  paymentTier   String    @default("FREE")
-  paymentTierHistory PaymentTierHistory[]
-  createdAt    DateTime  @default(now())
-  projects     Project[]
-  resetTokens  PasswordResetToken[]
-  statusHistory MemberStatusHistory[]
-  adminNotes    AdminMemberNote[]
-  roleHistory   AdminRoleHistory[]
-  memberTypeHistory MemberTypeHistory[]
+  paymentTier                    String                          @default("FREE")
+  paymentTierHistory             PaymentTierHistory[]
+  createdAt                      DateTime                        @default(now())
+  projects                       Project[]
+  resetTokens                    PasswordResetToken[]
+  statusHistory                  MemberStatusHistory[]
+  adminNotes                     AdminMemberNote[]
+  roleHistory                    AdminRoleHistory[]
+  memberTypeHistory              MemberTypeHistory[]
   // 이 관리자에게 배정된 문의. Inquiry.owner(레거시 자유입력 문자열)를 대체한다.
   // 이름이 겹치지 않도록 명시적 relation 이름을 쓴다(향후 다른 User↔Inquiry
   // 관계가 추가돼도 안전하게 구분된다).
-  assignedInquiries Inquiry[] @relation("InquiryAssignee")
-  socialAccounts    SocialAccount[]
+  assignedInquiries              Inquiry[]                       @relation("InquiryAssignee")
+  socialAccounts                 SocialAccount[]
   // 이 업체 직원(memberType="PARTNER")에게 담당으로 지정된 서비스 신청.
   // 이름이 겹치지 않도록 명시적 relation 이름을 쓴다.
-  assignedServiceRequests ServiceRequest[] @relation("ServiceRequestPartnerStaff")
+  assignedServiceRequests        ServiceRequest[]                @relation("ServiceRequestPartnerStaff")
   // 이 회원이 접수했거나(로그인 상태로 제출) 나중에 연결한 문의. 담당자
   // 관계(InquiryAssignee)와 겹치지 않도록 명시적 이름을 쓴다.
-  inquiries         Inquiry[]          @relation("InquiryOwner")
-  inquiryLinkTokens InquiryLinkToken[]
-  partnerMemberships PartnerMembership[]
-  candidateProperties CandidateProperty[]
-  propertyPreference  PropertyPreference?
+  inquiries                      Inquiry[]                       @relation("InquiryOwner")
+  inquiryLinkTokens              InquiryLinkToken[]
+  partnerMemberships             PartnerMembership[]
+  candidateProperties            CandidateProperty[]
+  propertyPreference             PropertyPreference?
   // 이 관리자가 고객 프로젝트에 직접 공유한 매물. 이름이 겹치지 않도록
   // 명시적 relation 이름을 쓴다(다른 User↔ProjectPropertySuggestion 관계는 없다).
-  sharedPropertySuggestions ProjectPropertySuggestion[] @relation("PropertySuggestionSharedBy")
-  notifications Notification[]
-  actionItems   ActionItem[]
+  sharedPropertySuggestions      ProjectPropertySuggestion[]     @relation("PropertySuggestionSharedBy")
+  notifications                  Notification[]
+  actionItems                    ActionItem[]
+  serviceCompletionConfirmations ServiceCompletionConfirmation[]
+  serviceReviews                 ServiceReview[]
 }
 
 // 서비스 내 알림함. Activity/History(무슨 일이 있었는지)와는 다른 축이다 —
@@ -260,51 +262,51 @@ model PasswordResetToken {
 }
 
 model Project {
-  id         String             @id @default(cuid())
-  userId     String
-  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name       String
+  id                  String                      @id @default(cuid())
+  userId              String
+  user                User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                String
   // 세부 공간유형의 한글 라벨을 저장한다(예: "아파트", "일반 사무실").
   // 예전에는 4종 고정값이었지만 지금은 src/data/projectSpace.ts의
   // 세부유형 라벨이 들어간다 — 기존 표시 코드가 그대로 문자열로 보여주므로
   // 컬럼명·타입은 바꾸지 않았다.
-  spaceType  String
+  spaceType           String
   // "residential" | "office" | "commercial" | "industrial". 새 위저드로 저장한
   // 행에는 항상 채워지지만, 이전 행에는 없을 수 있어 nullable로 둔다.
-  spaceCategory String?
+  spaceCategory       String?
   // "purchase" | "jeonse" | "monthly_rent" | "lease" | "undecided"
-  transactionType String?
-  address    String?
+  transactionType     String?
+  address             String?
   // 주소를 아직 정하지 못했다는 사용자의 명시적 선택. true면 address가
   // 비어 있어도 정상이다.
-  addressPending Boolean @default(false)
-  moveInDate DateTime?
+  addressPending      Boolean                     @default(false)
+  moveInDate          DateTime?
   // 계약 예정일. moveInDate(입주·사용 개시 예정일)와는 별개 일정이다.
-  contractDate DateTime?
+  contractDate        DateTime?
   // 일정을 아직 정하지 못했다는 사용자의 명시적 선택. true면 moveInDate·
   // contractDate가 비어 있어도 정상이다.
-  scheduleUndecided Boolean @default(false)
-  budget     String?
+  scheduleUndecided   Boolean                     @default(false)
+  budget              String?
   // "searching" | "candidate_selected" | "visit_planned" | "contract_review" |
   // "contract_completed" | "move_in_preparing" — 사용자가 스스로 신고한 현재
   // 진행 상황. 입주 10단계(ProjectStepState)와는 다른 개념으로, 생성 직후
   // 10단계 체크리스트의 시작 지점을 정하는 데만 쓴다.
-  projectStage String?
+  projectStage        String?
   // 거래유형·공간별 조건부 필드(희망가, 보증금, 권리금, 전력 용량 등).
   // 종류가 너무 많고 대부분 특정 조합에서만 쓰여 컬럼을 늘리는 대신 하나의
   // 검증된 JSON에 담는다. Postgres 전환 이후에만 안전하게 쓸 수 있는 타입이다.
-  details    Json?
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
-  stepStates ProjectStepState[]
-  checks     ProjectCheckItem[]
-  events     ProjectEvent[]
-  requests   ServiceRequest[]
-  documents  Document[]
-  handover   Handover?
+  details             Json?
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+  stepStates          ProjectStepState[]
+  checks              ProjectCheckItem[]
+  events              ProjectEvent[]
+  requests            ServiceRequest[]
+  documents           Document[]
+  handover            Handover?
   // 이 프로젝트가 매물 후보에서 시작됐다면 그 원본(CandidateProperty)을
   // 가리킨다. FK는 CandidateProperty.linkedProjectId에 있다.
-  candidateProperty CandidateProperty?
+  candidateProperty   CandidateProperty?
   // 관리자가 이 프로젝트에 맞춰 직접 골라 공유한 외부 매물 목록.
   propertySuggestions ProjectPropertySuggestion[]
 
@@ -315,31 +317,31 @@ model Project {
 // 여기에는 경로(storageKey)만 둔다. 공개 URL은 존재하지 않으며,
 // 소유권을 확인한 API가 서버 토큰으로 읽어서 중계한다.
 model Document {
-  id         String   @id @default(cuid())
-  projectId  String
-  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  filename   String
-  mimeType   String
-  size       Int
-  storageKey String
-  createdAt  DateTime @default(now())
+  id               String          @id @default(cuid())
+  projectId        String
+  project          Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  filename         String
+  mimeType         String
+  size             Int
+  storageKey       String
+  createdAt        DateTime        @default(now())
   // 특정 서비스 신청(파트너 포털)에 딸린 파일이면 채워진다. 일반 프로젝트
   // 문서함 파일은 null이다.
   serviceRequestId String?
   serviceRequest   ServiceRequest? @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
   // "QUOTE" | "PHOTO" | "CONTRACT" — 서비스 신청 파일에서만 쓴다. 일반
   // 프로젝트 문서함 파일은 null.
-  category String?
+  category         String?
   // "CUSTOMER" | "PARTNER" — 누가 올렸는지. 프로젝트 문서함은 항상 고객
   // 본인이 올리므로 기본값 CUSTOMER로 두고 별도 UPDATE 없이 기존 행에도
   // 그대로 적용된다.
-  uploadedByRole String  @default("CUSTOMER")
-  uploadedById   String?
-  uploadedByName String?
+  uploadedByRole   String          @default("CUSTOMER")
+  uploadedById     String?
+  uploadedByName   String?
   // 업로드 당시 이 요청을 담당하던 업체(서비스 신청 파일에서만 쓴다).
   // 재배정 후 다른 업체가 예전 견적서·계약서·사진을 보거나 지우지
   // 못하게 막는 스냅샷이다 — uploadedById 등과 같은 원칙.
-  partnerId String?
+  partnerId        String?
 
   @@index([projectId, createdAt])
   @@index([serviceRequestId, createdAt])
@@ -349,59 +351,97 @@ model Document {
 // 여러 개를 한 번에 신청해도 유형별로 한 건씩 만든다.
 // serviceType과 status 값은 src/data/serviceRequests.ts와 대응한다.
 model ServiceRequest {
-  id            String    @id @default(cuid())
-  projectId     String
-  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  serviceType   String
-  preferredDate DateTime?
-  region        String
-  message       String?
-  contactName   String
-  contactPhone  String
+  id                     String                         @id @default(cuid())
+  projectId              String
+  project                Project                        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  serviceType            String
+  preferredDate          DateTime?
+  region                 String
+  message                String?
+  contactName            String
+  contactPhone           String
   // "신규" | "확인 중" | "상담 완료" | "견적 전달" | "작업 예정" | "작업 완료" |
   // "취소" (src/data/serviceRequests.ts). 관리자와 배정된 업체가 같은 값을
   // 본다 — 업체 포털에서 바뀐 상태가 곧 관리자 화면의 상태다.
-  status        String    @default("신규")
-  owner         String?
+  status                 String                         @default("신규")
+  owner                  String?
   // 이 신청을 넘긴 외주 업체(이사짐센터 등). 업체 로그인 계정이 아니라
   // 관리자가 배정할 때 고르는 참조 목록(Partner)에 대한 FK다.
-  partnerId     String?
-  partner       Partner?  @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  partnerId              String?
+  partner                Partner?                       @relation(fields: [partnerId], references: [id], onDelete: SetNull)
   // 배정된 업체 안에서 이 건을 실제로 처리하는 직원(User.memberType="PARTNER").
   // partnerId와 같은 업체 소속인지는 API에서 매번 검증한다 — 스키마 제약만으로는
   // "같은 업체 소속"을 강제할 수 없다.
-  partnerStaffId String?
-  partnerStaff   User?    @relation("ServiceRequestPartnerStaff", fields: [partnerStaffId], references: [id], onDelete: SetNull)
+  partnerStaffId         String?
+  partnerStaff           User?                          @relation("ServiceRequestPartnerStaff", fields: [partnerStaffId], references: [id], onDelete: SetNull)
   // 연락처를 파트너에게 전달하는 것에 동의한 시각. 이 기능 이전 신청은 null이다.
-  privacyAgreedAt DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  activities    ServiceRequestActivity[]
-  documents     Document[]
+  privacyAgreedAt        DateTime?
+  createdAt              DateTime                       @default(now())
+  updatedAt              DateTime                       @updatedAt
+  activities             ServiceRequestActivity[]
+  documents              Document[]
   // 배정된 업체가 제시한 견적 옵션 전체(선택 여부 무관).
-  quotes          ServiceRequestQuote[] @relation("ServiceRequestQuotes")
+  quotes                 ServiceRequestQuote[]          @relation("ServiceRequestQuotes")
   // 고객이 선택한 견적(quotes 중 하나). @unique라서 같은 견적을 두 요청이
   // 동시에 선택하는 일이 DB 레벨에서 불가능하다.
-  selectedQuoteId String?               @unique
-  selectedQuote   ServiceRequestQuote?  @relation("ServiceRequestSelectedQuote", fields: [selectedQuoteId], references: [id], onDelete: SetNull)
+  selectedQuoteId        String?                        @unique
+  selectedQuote          ServiceRequestQuote?           @relation("ServiceRequestSelectedQuote", fields: [selectedQuoteId], references: [id], onDelete: SetNull)
   // 고객이 선택(또는 변경)을 완료한 시각. 선택 전에는 null.
-  selectedAt      DateTime?
+  selectedAt             DateTime?
   // 업체 배정 후 고객이 취소를 "요청"한 시각. status 자체는 바꾸지 않는다 —
   // 배정 전 취소는 status를 곧바로 "취소"로 바꾸면 되지만, 배정 후에는
   // 업체·관리자 확인이 필요해 이 필드로만 표시하고 실제 취소는 관리자·업체가
   // 기존 상태 변경 경로로 확정한다. 관리자·업체가 어떤 상태로든 바꾸면(취소
   // 확정이든, 계속 진행이든) 처리 완료로 보고 이 필드를 지운다.
-  cancelRequestedAt     DateTime?
-  cancelRequestReason   String?
+  cancelRequestedAt      DateTime?
+  cancelRequestReason    String?
   // 관리자가 "업체 연결이 어렵다"고 고객에게 안내를 보낸 시각. status는 그대로
   // 유지한다(여전히 배정을 계속 시도할 수 있으므로 "취소"로 바꾸지 않는다).
   // noPartnerReason은 관리자 내부용 메모이며 고객에게는 절대 그대로 노출하지
   // 않고, 고객 화면·이메일에는 항상 고정된 안전한 문구만 보여준다.
-  noPartnerReason       String?
-  noPartnerNoticeSentAt DateTime?
+  noPartnerReason        String?
+  noPartnerNoticeSentAt  DateTime?
+  completionConfirmation ServiceCompletionConfirmation?
+  review                 ServiceReview?
 
   @@index([status, createdAt])
   @@index([projectId, createdAt])
+  @@index([partnerId, createdAt])
+}
+
+// 고객이 "작업 완료" 신청 1건당 1회 남기는 완료 확인. 정상 완료(OK)면
+// ServiceReview로 이어지고, 문제가 있으면(ISSUE) 별점 후기 대신 기존
+// 문의(Inquiry) 작성 화면으로 안내한다 — 새 민원 처리 체계를 따로 만들지
+// 않는다. Inquiry의 satisfactionRating처럼 인라인 필드로 둘 수도 있었지만,
+// "확인"과 "후기"가 서로 다른 시점·정책(후기는 업체에 공개, 확인 결과는
+// 비공개)을 갖고 있어 모델을 분리했다.
+model ServiceCompletionConfirmation {
+  id               String         @id @default(cuid())
+  serviceRequestId String         @unique
+  serviceRequest   ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // "OK" | "ISSUE"
+  outcome          String
+  createdAt        DateTime       @default(now())
+}
+
+// 완료 확인에서 OK를 고른 고객이 남기는 1~5점 후기. 신청 1건당 1회. 업체는
+// 수정·삭제할 수 없다(자기 후기를 스스로 편집하게 두지 않는다) — 이 모델에
+// 업데이트 API를 의도적으로 만들지 않는다. 지금 단계에서는 배정된 업체의
+// 포털·관리자 화면에만 노출하고, 공개 페이지나 업체 랭킹에는 쓰지 않는다.
+model ServiceReview {
+  id               String         @id @default(cuid())
+  serviceRequestId String         @unique
+  serviceRequest   ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  partnerId        String
+  partner          Partner        @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  rating           Int
+  comment          String?
+  createdAt        DateTime       @default(now())
+
   @@index([partnerId, createdAt])
 }
 
@@ -411,18 +451,18 @@ model ServiceRequest {
 // 만들지 않는다. 가격을 조용히 고치는 대신 삭제 후 재등록하게 해
 // ServiceRequestActivity 감사 로그에 항상 흔적이 남게 한다.
 model ServiceRequestQuote {
-  id               String   @id @default(cuid())
-  serviceRequestId String
-  serviceRequest   ServiceRequest @relation("ServiceRequestQuotes", fields: [serviceRequestId], references: [id], onDelete: Cascade)
-  title            String
-  description      String?
+  id                String          @id @default(cuid())
+  serviceRequestId  String
+  serviceRequest    ServiceRequest  @relation("ServiceRequestQuotes", fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  title             String
+  description       String?
   // KRW, 원 단위 정수. 상한(10억 원)은 API 검증(zod)에서 강제한다.
-  amount           Int
+  amount            Int
   // 등록한 업체 직원의 스냅샷(ServiceRequestActivity.actorId/actorName과
   // 같은 원칙) — 나중에 직원 계정이 바뀌어도 등록 당시 이름이 남는다.
-  createdById      String?
-  createdByName    String?
-  createdAt        DateTime @default(now())
+  createdById       String?
+  createdByName     String?
+  createdAt         DateTime        @default(now())
   // 이 견적을 선택한 요청(있다면 하나뿐). ServiceRequest.selectedQuoteId 참고.
   selectedByRequest ServiceRequest? @relation("ServiceRequestSelectedQuote")
 
@@ -435,7 +475,7 @@ model ServiceRequestQuote {
 // action: STATUS_CHANGED|STAFF_ASSIGNED|STAFF_UNASSIGNED|NOTE_ADDED|CONTACT_LOGGED|
 // QUOTE_ADDED|QUOTE_REMOVED|QUOTE_SELECTED
 model ServiceRequestActivity {
-  id               String   @id @default(cuid())
+  id               String         @id @default(cuid())
   serviceRequestId String
   serviceRequest   ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
   action           String
@@ -447,10 +487,10 @@ model ServiceRequestActivity {
   // "ADMIN" | "PARTNER" | "CUSTOMER" — 관리자·업체 직원·고객 모두 같은
   // 요청에 흔적을 남길 수 있어 누가 처리자인지 구분해 둔다.
   actorRole        String
-  createdAt        DateTime @default(now())
+  createdAt        DateTime       @default(now())
   // 작성 당시 이 요청을 담당하던 업체. 재배정 후 다른 업체가 예전 내부
   // 메모·연락 기록을 보지 못하게 막는 스냅샷이다(actorId 등과 같은 원칙).
-  partnerId String?
+  partnerId        String?
 
   @@index([serviceRequestId, createdAt])
 }
@@ -458,33 +498,33 @@ model ServiceRequestActivity {
 // 이사·청소 등 실제 서비스를 수행하는 외주 업체. 로그인 계정이 아니라
 // 관리자가 리드를 배정할 때 고르는 참조 목록이다.
 model Partner {
-  id           String   @id @default(cuid())
-  name         String
+  id                         String                        @id @default(cuid())
+  name                       String
   // src/data/serviceRequests.ts의 serviceTypes 중 하나 — 이 업체가 맡는 서비스.
-  serviceType  String
-  contactName  String?
-  contactPhone String?
+  serviceType                String
+  contactName                String?
+  contactPhone               String?
   // 관리자 전용 내부 메모 — 파트너 포털에는 절대 노출되지 않는다(super
   // admin만 조회·수정). 예전에는 이 필드와 companyDescription이 memo라는
   // 이름의 컬럼 하나를 같이 썼는데, 그러면 파트너 OWNER가 관리자의 내부
   // 메모를 읽고 덮어쓸 수 있어 컬럼을 분리했다.
-  adminMemo    String?
+  adminMemo                  String?
   // 업체가 스스로 남기는 소개/메모 — 관리자 화면에서도 참고용으로 조회
   // 가능하지만, 파트너가 직접 쓰고 고치는 필드다(adminMemo와 반대).
-  companyDescription String?
+  companyDescription         String?
   // 물리적 삭제 대신 비활성화만 한다(회원 소프트 삭제와 같은 원칙) —
   // 과거 배정 기록(ServiceRequest.partnerId)이 남아있기 때문.
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  requests     ServiceRequest[]
+  active                     Boolean                       @default(true)
+  createdAt                  DateTime                      @default(now())
+  requests                   ServiceRequest[]
   // 이 업체와 연결된 로그인 계정(User.memberType="PARTNER"). 업체 자체는 로그인
   // 계정이 아니며, 이 관계는 회원 분류·연결용일 뿐 파트너 포털 권한과 무관하다.
   // PartnerMembership 도입 후에도 호환용으로 계속 동기화한다.
-  members      User[]
+  members                    User[]
   // 외부 화면·검색에 쓰는 공개 식별자. 내부 id(cuid)와 별개로 둔다.
-  partnerCode  String   @unique
-  memberships  PartnerMembership[]
-  invitations  PartnerInvitation[]
+  partnerCode                String                        @unique
+  memberships                PartnerMembership[]
+  invitations                PartnerInvitation[]
   // 아래 정산·서류 정보는 adminMemo와 같은 원칙 — 관리자가 업체 등록 시 함께
   // 입력하는 관리자 전용 정보로, 파트너 포털에는 절대 노출하지 않는다
   // (사업자등록번호·계좌정보는 companyDescription처럼 업체가 스스로 고치게
@@ -499,16 +539,17 @@ model Partner {
   // "배정 후보 풀에 노출할지"의 스위치이고 verificationStatus는 "서류·자격을
   // 관리자가 확인했는지"의 게이트다. 신규 서비스 신청에 배정하려면 둘 다
   // 만족해야 한다(active && verificationStatus == APPROVED).
-  verificationStatus String    @default("PENDING")
+  verificationStatus         String                        @default("PENDING")
   // REJECTED·SUSPENDED로 바꿀 때 남기는 사유. PENDING/APPROVED로 되돌리면
   // 의미가 없어지므로 UI에서는 최신 변경 시점의 사유만 보여준다(이력은
   // PartnerVerificationHistory에 전부 남는다).
-  verificationReason String?
-  verifiedAt         DateTime?
+  verificationReason         String?
+  verifiedAt                 DateTime?
   // 마지막으로 검증 상태를 바꾼 관리자의 스냅샷(adminMemo 등과 같은 원칙).
-  verifiedById       String?
-  verifiedByName     String?
-  verificationHistory PartnerVerificationHistory[]
+  verifiedById               String?
+  verifiedByName             String?
+  verificationHistory        PartnerVerificationHistory[]
+  reviews                    ServiceReview[]
 
   @@index([serviceType, active])
   @@index([verificationStatus])
@@ -537,20 +578,20 @@ model PartnerVerificationHistory {
 // 않고 별도 모델로 둔다. 파일 자체는 Document와 같은 원칙으로 Blob에
 // private로 저장하고, storageKey만 갖는다(공개 URL 없음).
 model PartnerVerificationDocument {
-  id         String   @id @default(cuid())
-  partnerId  String
-  partner    Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  partnerId      String
+  partner        Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   // "BUSINESS_REGISTRATION"(사업자등록증) | "BANKBOOK"(통장사본)
-  type       String
-  filename   String
-  mimeType   String
-  size       Int
-  storageKey String
+  type           String
+  filename       String
+  mimeType       String
+  size           Int
+  storageKey     String
   // 업로드한 관리자의 스냅샷(Document.uploadedById 등과 같은 원칙) — 실제
   // relation을 걸지 않아 그 관리자 계정이 나중에 바뀌거나 삭제돼도 안전하다.
   uploadedById   String?
   uploadedByName String?
-  createdAt  DateTime @default(now())
+  createdAt      DateTime @default(now())
 
   @@index([partnerId, createdAt])
 }
@@ -628,21 +669,21 @@ model ProjectCheckItem {
 
 // 프로젝트당 1개. 기본은 비공개이고, 소유자가 공유를 켤 때만 shareToken이 생긴다.
 model Handover {
-  id         String         @id @default(cuid())
-  projectId  String         @unique
-  project    Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  summary    String
-  visibility String         @default("private")
-  shareToken String?        @unique
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  items      HandoverItem[]
+  id                String                      @id @default(cuid())
+  projectId         String                      @unique
+  project           Project                     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  summary           String
+  visibility        String                      @default("private")
+  shareToken        String?                     @unique
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+  items             HandoverItem[]
   // 관리자 검수 상태. pending(검토 대기) | approved(승인) |
   // revision_requested(수정 요청) | hidden(비공개 처리). 공유 링크는
   // visibility="link"이면서 이 값이 "approved"일 때만 실제로 열린다 —
   // visibility(사용자의 공유 의도)와 이 필드(관리자의 검수 결과)는 서로
   // 독립적으로 관리된다.
-  moderationStatus  String    @default("pending")
+  moderationStatus  String                      @default("pending")
   moderationReason  String?
   moderatedAt       DateTime?
   moderatorId       String?
@@ -716,43 +757,43 @@ model RateLimitBucket {
 }
 
 model Inquiry {
-  id              String   @id @default(cuid())
-  name            String
-  organization    String?
-  email           String
-  phone           String
-  type            String
-  region          String?
-  spaceType       String?
-  message         String
-  status          String   @default("신규")
+  id                      String             @id @default(cuid())
+  name                    String
+  organization            String?
+  email                   String
+  phone                   String
+  type                    String
+  region                  String?
+  spaceType               String?
+  message                 String
+  status                  String             @default("신규")
   // 레거시 자유입력 담당자 문자열. 더 이상 쓰지 않지만(신규 배정은 assigneeId만
   // 쓴다) 과거 데이터 손실을 막기 위해 컬럼은 남겨 둔다.
-  owner           String?
+  owner                   String?
   // 실제 관리자 계정(User, adminRole이 있는 계정만)에 배정한다. owner와 달리
   // 자유 문자열이 아니라 FK라서 존재하지 않는 사람에게 배정되는 일이 없다.
-  assigneeId      String?
-  assignee        User?    @relation("InquiryAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  nextAction      String?
-  privacyAgreedAt DateTime
+  assigneeId              String?
+  assignee                User?              @relation("InquiryAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  nextAction              String?
+  privacyAgreedAt         DateTime
   // 로그인 상태로 접수하면 즉시 연결된다. 비회원 접수는 null로 남고,
   // 나중에 이메일 인증(InquiryLinkToken)을 거쳐 회원 계정에 연결할 수 있다.
-  userId          String?
-  user            User?    @relation("InquiryOwner", fields: [userId], references: [id], onDelete: SetNull)
+  userId                  String?
+  user                    User?              @relation("InquiryOwner", fields: [userId], references: [id], onDelete: SetNull)
   // 문의 종료("답변 완료") 후 1회 남기는 만족도 평가. 이력 테이블이 아니라
   // 인라인 필드로 두는 이유는 문의당 값이 하나뿐이라서다 — 제출 자체는
   // InquiryActivity에 SATISFACTION_RATED로 한 번 기록해 감사 로그를 겸한다.
-  satisfactionRating        Int?
-  satisfactionComment       String?
-  satisfactionSubmittedAt   DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  activities      InquiryActivity[]
+  satisfactionRating      Int?
+  satisfactionComment     String?
+  satisfactionSubmittedAt DateTime?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  activities              InquiryActivity[]
   // 고객·관리자 모두에게 보이는 대화 쓰레드. 관리자 전용 내부 메모인
   // InquiryActivity와는 분리된 별개 모델이다 — 섞이면 내부 메모가 고객에게
   // 노출되는 사고로 이어지기 쉽다.
-  messages        InquiryMessage[]
-  linkTokens      InquiryLinkToken[]
+  messages                InquiryMessage[]
+  linkTokens              InquiryLinkToken[]
 
   @@index([status, createdAt])
   @@index([assigneeId])
@@ -831,47 +872,47 @@ model InquiryActivity {
 // 값만 그대로 저장한다. price/deposit/monthlyRent는 ServiceRequestQuote.amount와
 // 같은 원칙으로 원 단위 정수, area는 ㎡ 소수(전용면적 84.93㎡ 등)를 담는다.
 model CandidateProperty {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String                     @id @default(cuid())
+  userId           String
+  user             User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
   // 출처 확인·원본 재방문 용도로만 쓴다. http/https만 허용(src/lib/propertyUrl.ts).
-  sourceUrl String
+  sourceUrl        String
   // 사용자가 붙인 매물 이름 또는 별칭.
-  title     String
-  address   String?
+  title            String
+  address          String?
   // "매매" | "전세" | "월세" | "기타"
-  transactionType String?
-  price       Int?
-  deposit     Int?
-  monthlyRent Int?
+  transactionType  String?
+  price            Int?
+  deposit          Int?
+  monthlyRent      Int?
   // 전용면적(㎡).
-  area      Float?
-  roomCount Int?
-  availableDate DateTime?
-  memo       String?
-  advantages String?
-  concerns   String?
+  area             Float?
+  roomCount        Int?
+  availableDate    DateTime?
+  memo             String?
+  advantages       String?
+  concerns         String?
   // "관심" | "방문 예정" | "방문 완료" | "보류" | "최종 후보"
   // (src/data/candidateProperty.ts)
-  status     String    @default("관심")
+  status           String                     @default("관심")
   // "최종 후보"로 표시(또는 실제 프로젝트로 연결)한 시각.
-  selectedAt DateTime?
+  selectedAt       DateTime?
   // 이 매물을 기반으로 실제로 만든 ONNEST 프로젝트. 프로젝트가 삭제돼도 이
   // 매물 기록 자체는 남겨야 하므로 SetNull(연결만 해제, 후보는 보존).
-  linkedProjectId String?  @unique
-  linkedProject   Project? @relation(fields: [linkedProjectId], references: [id], onDelete: SetNull)
+  linkedProjectId  String?                    @unique
+  linkedProject    Project?                   @relation(fields: [linkedProjectId], references: [id], onDelete: SetNull)
   // address를 네이버 지도(Geocoding)로 변환한 좌표 캐시. 매번 API를 다시
   // 부르지 않도록 생성·주소 변경 시 한 번만 조회해 저장한다(src/lib/naverMap.ts).
   // 지도 API가 설정되지 않았거나 실패해도 매물 저장 자체는 항상 성공해야
   // 하므로, 이 값은 항상 null일 수 있는 부가 정보로 취급한다.
-  latitude  Float?
-  longitude Float?
-  checklist       PropertyVisitCheckItem[]
+  latitude         Float?
+  longitude        Float?
+  checklist        PropertyVisitCheckItem[]
   // 이 후보가 관리자의 매물 공유(ProjectPropertySuggestion)를 저장해 만들어졌다면
   // 그 원본을 가리킨다. FK는 ProjectPropertySuggestion.savedCandidatePropertyId에 있다.
   suggestionOrigin ProjectPropertySuggestion?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
 
   @@index([userId, createdAt])
   @@index([userId, status])
@@ -882,12 +923,12 @@ model CandidateProperty {
 // label은 src/data/candidateProperty.ts의 propertyVisitChecklistItems 중
 // 하나여야 한다(임의 문자열 저장 방지, API에서 화이트리스트로 검증).
 model PropertyVisitCheckItem {
-  id                  String   @id @default(cuid())
+  id                  String            @id @default(cuid())
   candidatePropertyId String
   candidateProperty   CandidateProperty @relation(fields: [candidatePropertyId], references: [id], onDelete: Cascade)
   label               String
-  checked             Boolean  @default(false)
-  updatedAt           DateTime @updatedAt
+  checked             Boolean           @default(false)
+  updatedAt           DateTime          @updatedAt
 
   @@unique([candidatePropertyId, label])
 }
@@ -923,23 +964,23 @@ model PropertyPreference {
  * 우선이다).
  */
 model AdminDataExportHistory {
-  id         String   @id @default(cuid())
-  actorId    String
-  actorName  String
-  actorEmail String
+  id                String    @id @default(cuid())
+  actorId           String
+  actorName         String
+  actorEmail        String
   // "CUSTOMER" | "PROJECT" | "ALL_CUSTOMERS"(예약 — 이번 릴리스에서는
   // API가 발급하지 않는다. 전체 고객 일괄 내보내기는 비동기 처리 구조가
   // 필요해 별도 작업으로 남겨둔다).
-  exportType String
-  customerId String?
-  projectId  String?
-  dateFrom   DateTime?
-  dateTo     DateTime?
+  exportType        String
+  customerId        String?
+  projectId         String?
+  dateFrom          DateTime?
+  dateTo            DateTime?
   // 실제로 포함된 시트 키를 쉼표로 이어붙인 문자열(예: "PROJECT,SCHEDULE,QUOTE").
-  includedSections String
-  reason           String
-  rowCount         Int?
-  fileSize         Int?
+  includedSections  String
+  reason            String
+  rowCount          Int?
+  fileSize          Int?
   // "SUCCESS" | "FAILED"
   status            String
   failureReasonCode String?
@@ -965,18 +1006,18 @@ model ProjectPropertySuggestion {
 
   // 출처 확인·원본 재방문 용도로만 쓴다. http/https만 허용(src/lib/propertyUrl.ts).
   // 서버는 이 URL을 절대 요청(fetch)하지 않는다 — CandidateProperty와 같은 원칙.
-  sourceUrl String
-  title     String
-  address   String?
+  sourceUrl       String
+  title           String
+  address         String?
   // "매매" | "전세" | "월세" | "기타" — CandidateProperty와 같은 값 집합을 그대로 쓴다
   // (고객이 저장할 때 값 변환 없이 그대로 넘어가야 하므로).
   transactionType String?
-  price       Int?
-  deposit     Int?
-  monthlyRent Int?
-  area        Float?
-  roomCount   Int?
-  availableDate DateTime?
+  price           Int?
+  deposit         Int?
+  monthlyRent     Int?
+  area            Float?
+  roomCount       Int?
+  availableDate   DateTime?
 
   // 고객에게 그대로 노출되는 공유 사유·추가 확인 사항.
   sharedReason String?

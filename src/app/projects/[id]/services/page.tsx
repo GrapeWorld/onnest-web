@@ -24,6 +24,8 @@ export default async function ProjectServicesPage({
         include: {
           quotes: { orderBy: { createdAt: "asc" } },
           partner: { select: { name: true } },
+          completionConfirmation: { select: { outcome: true } },
+          review: { select: { rating: true, comment: true } },
           activities: {
             where: { action: { in: customerVisibleActivityActions } },
             orderBy: { createdAt: "desc" },

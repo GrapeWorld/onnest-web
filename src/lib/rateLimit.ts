@@ -36,6 +36,8 @@ export const rateLimits = {
   inquiryMessage: { windowSeconds: 3600, max: 10 },
   inquiryLinkRequest: { windowSeconds: 3600, max: 5 },
   inquirySatisfaction: { windowSeconds: 3600, max: 10 },
+  serviceCompletionConfirmation: { windowSeconds: 3600, max: 10 },
+  serviceReview: { windowSeconds: 3600, max: 10 },
   partnerInvite: { windowSeconds: 3600, max: 20 },
   partnerRequestStatus: { windowSeconds: 3600, max: 100 },
   partnerRequestStaff: { windowSeconds: 3600, max: 100 },

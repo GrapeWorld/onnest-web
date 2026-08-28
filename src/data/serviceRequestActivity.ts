@@ -9,6 +9,7 @@ export const serviceRequestActivityActions = [
   "QUOTE_SELECTED",
   "CANCEL_REQUESTED",
   "NO_PARTNER_NOTICE",
+  "COMPLETION_CONFIRMED",
 ] as const;
 export type ServiceRequestActivityAction = (typeof serviceRequestActivityActions)[number];
 
@@ -23,6 +24,7 @@ export const serviceRequestActivityActionLabels: Record<ServiceRequestActivityAc
   QUOTE_SELECTED: "견적 선택",
   CANCEL_REQUESTED: "취소 요청",
   NO_PARTNER_NOTICE: "연결 어려움 안내",
+  COMPLETION_CONFIRMED: "완료 확인",
 };
 
 /**

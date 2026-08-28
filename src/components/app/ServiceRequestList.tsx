@@ -5,6 +5,7 @@ import { isQuoteMutableStatus } from "@/lib/serviceRequestQuotes";
 import { getServiceRequestNextAction } from "@/lib/serviceRequestCustomerView";
 import { ServiceRequestQuoteOption } from "@/components/app/ServiceRequestQuoteOption";
 import { ServiceRequestCancelControl } from "@/components/app/ServiceRequestCancelControl";
+import { ServiceCompletionControl } from "@/components/app/ServiceCompletionControl";
 import { customerVisibleActivityActions } from "@/data/serviceRequestActivity";
 
 type QuoteItem = {
@@ -42,6 +43,8 @@ type ServiceRequestItem = {
   quotes: QuoteItem[];
   selectedQuoteId: string | null;
   activities?: CustomerActivityItem[];
+  completionConfirmation?: { outcome: string } | null;
+  review?: { rating: number; comment: string | null } | null;
 };
 
 const activityActionLabels: Partial<Record<string, string>> = {
@@ -187,6 +190,18 @@ export function ServiceRequestList({
                   alreadyRequested={Boolean(request.cancelRequestedAt)}
                 />
               </div>
+            )}
+
+            {request.status === "작업 완료" && (
+              <ServiceCompletionControl
+                requestId={request.id}
+                confirmation={
+                  request.completionConfirmation
+                    ? { outcome: request.completionConfirmation.outcome as "OK" | "ISSUE" }
+                    : null
+                }
+                review={request.review ?? null}
+              />
             )}
           </Card>
         );

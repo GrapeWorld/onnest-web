@@ -63,6 +63,8 @@ export default async function MyPage() {
       project: { select: { name: true } },
       quotes: { orderBy: { createdAt: "asc" } },
       partner: { select: { name: true } },
+      completionConfirmation: { select: { outcome: true } },
+      review: { select: { rating: true, comment: true } },
       // 고객에게 공개해도 되는 활동만 가져온다 — 업체 내부 메모·연락기록·
       // 담당자 배정은 여기서부터 아예 제외한다.
       activities: {

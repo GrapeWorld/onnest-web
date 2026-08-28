@@ -100,6 +100,7 @@ export default async function PartnerRequestDetailPage({
       createdAt: true,
       selectedQuoteId: true,
       project: { select: { name: true, spaceType: true } },
+      review: { select: { rating: true, comment: true, createdAt: true } },
     },
   });
   // 다른 업체 소속이거나 존재하지 않는 요청은 같은 404로 처리한다 —
@@ -300,6 +301,20 @@ export default async function PartnerRequestDetailPage({
         </div>
 
         <div className="grid gap-6">
+          {request.review && (
+            <Card>
+              <h2 className="text-xl font-black text-forest">고객 후기</h2>
+              <p className="mt-2 text-lg text-amber-500">
+                {"★".repeat(request.review.rating)}
+                <span className="text-ink/20">{"★".repeat(5 - request.review.rating)}</span>
+              </p>
+              {request.review.comment && (
+                <p className="mt-2 whitespace-pre-wrap text-sm text-ink/70">{request.review.comment}</p>
+              )}
+              <p className="mt-2 text-xs text-ink/50">{dateTimeFormatter.format(request.review.createdAt)}</p>
+            </Card>
+          )}
+
           <Card>
             <h2 className="text-xl font-black text-forest">상태 처리</h2>
             <div className="mt-4">
