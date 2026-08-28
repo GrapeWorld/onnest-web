@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
+import { DateField } from "@/components/ui/DateField";
 
 // 입주 준비에서 자주 쓰는 일정. 눌러서 이름 칸을 채운다.
 const presets = [
@@ -87,11 +88,10 @@ export function EventForm({ projectId }: { projectId: string }) {
           </label>
           <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
             날짜
-            <input
+            <DateField
               required
-              type="date"
               value={date}
-              onChange={(event) => setDate(event.target.value)}
+              onChange={setDate}
               className={fieldClass}
             />
           </label>

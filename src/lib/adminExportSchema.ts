@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { adminExportTypes, adminExportSections, ADMIN_EXPORT_MAX_DATE_RANGE_DAYS } from "@/data/adminExport";
-import { optionalDateField, isRealDate } from "@/lib/dateField";
+import { optionalDateField, dateRangeSchema } from "@/lib/dateField";
 
 export const adminExportRequestSchema = z
   .object({
@@ -19,18 +19,7 @@ export const adminExportRequestSchema = z
     if (data.exportType === "PROJECT" && !data.projectId) {
       ctx.addIssue({ code: "custom", path: ["projectId"], message: "프로젝트를 선택해주세요." });
     }
-    if (data.dateFrom && data.dateTo && isRealDate(data.dateFrom) && isRealDate(data.dateTo)) {
-      const from = new Date(`${data.dateFrom}T00:00:00.000Z`);
-      const to = new Date(`${data.dateTo}T00:00:00.000Z`);
-      if (from > to) {
-        ctx.addIssue({ code: "custom", path: ["dateTo"], message: "종료일은 시작일보다 이후여야 합니다." });
-        return;
-      }
-      const rangeDays = (to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000);
-      if (rangeDays > ADMIN_EXPORT_MAX_DATE_RANGE_DAYS) {
-        ctx.addIssue({ code: "custom", path: ["dateTo"], message: "조회 기간이 너무 깁니다. 기간을 줄여주세요." });
-      }
-    }
+    dateRangeSchema("dateFrom", "dateTo", { maxRangeDays: ADMIN_EXPORT_MAX_DATE_RANGE_DAYS })(data, ctx);
   });
 
 export type AdminExportRequestInput = z.infer<typeof adminExportRequestSchema>;

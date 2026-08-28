@@ -73,6 +73,8 @@ export function PartnerRequestContactLogForm({ requestId }: { requestId: string 
           value={contactedAt}
           onChange={(event) => setContactedAt(event.target.value)}
           disabled={saving}
+          min="2000-01-01T00:00"
+          max={nowForDateTimeLocal()}
           className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest disabled:opacity-60"
         />
       </div>

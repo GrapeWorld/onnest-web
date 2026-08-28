@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { inquiryStatuses, inquiryTypes } from "@/data/inquiries";
+import { DateField } from "@/components/ui/DateField";
 
 type AdminOption = { id: string; name: string; email: string };
 
@@ -130,19 +131,17 @@ export function InquiryFilterBar({
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-1 text-xs font-semibold text-ink/50 min-w-0">
           접수일(부터)
-          <input
-            type="date"
+          <DateField
             value={from}
-            onChange={(event) => setFrom(event.target.value)}
+            onChange={setFrom}
             className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest"
           />
         </label>
         <label className="grid gap-1 text-xs font-semibold text-ink/50 min-w-0">
           접수일(까지)
-          <input
-            type="date"
+          <DateField
             value={to}
-            onChange={(event) => setTo(event.target.value)}
+            onChange={setTo}
             className="box-border w-full min-w-0 max-w-full rounded-2xl border border-forest/15 px-4 py-3 text-base text-forest outline-none focus:border-forest"
           />
         </label>

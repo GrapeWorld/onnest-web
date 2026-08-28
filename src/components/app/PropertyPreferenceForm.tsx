@@ -9,6 +9,7 @@ import {
 } from "@/data/candidateProperty";
 import { propertyPreferenceSchema } from "@/lib/candidatePropertySchema";
 import { fieldClass, labelClass } from "./project-wizard/shared";
+import { DateField } from "@/components/ui/DateField";
 import { formatWon } from "@/lib/currency";
 import { formatDate } from "@/lib/dates";
 
@@ -291,10 +292,9 @@ export function PropertyPreferenceForm({ preference }: { preference: SavedPrefer
           </label>
           <label className={labelClass}>
             희망 입주일 <span className="font-normal text-ink/50">선택 입력</span>
-            <input
-              type="date"
+            <DateField
               value={values.desiredMoveInDate}
-              onChange={(event) => update({ desiredMoveInDate: event.target.value })}
+              onChange={(next) => update({ desiredMoveInDate: next })}
               disabled={saving}
               className={fieldClass}
             />

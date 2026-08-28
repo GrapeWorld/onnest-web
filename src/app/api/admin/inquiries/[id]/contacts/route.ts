@@ -3,15 +3,12 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isSuperAdmin } from "@/lib/auth";
 import { contactMethods } from "@/data/inquiryActivity";
+import { reasonableTimestampField } from "@/lib/dateField";
 
 const contactSchema = z.object({
   method: z.enum(contactMethods, { error: "연락 방식을 선택해주세요." }),
   result: z.string().trim().min(1, "연락 결과를 입력해주세요.").max(500),
-  contactedAt: z
-    .string()
-    .refine((value) => !Number.isNaN(new Date(value).getTime()), {
-      message: "연락 시각을 확인해주세요.",
-    }),
+  contactedAt: reasonableTimestampField("연락 시각을 확인해주세요."),
   followUp: z.string().trim().max(500).optional().or(z.literal("")),
 });
 

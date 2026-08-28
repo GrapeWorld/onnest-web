@@ -5,6 +5,7 @@ import {
   type CandidatePropertyTransactionType,
 } from "@/data/candidateProperty";
 import { fieldClass, labelClass } from "./project-wizard/shared";
+import { DateField } from "@/components/ui/DateField";
 
 export type PropertySuggestionFormValues = {
   sourceUrl: string;
@@ -135,7 +136,7 @@ export function PropertySuggestionFieldset({
         </label>
         <label className={labelClass}>
           입주 가능일 <span className="font-normal text-ink/50">선택 입력</span>
-          <input type="date" value={values.availableDate} onChange={(e) => onChange({ availableDate: e.target.value })} disabled={disabled} className={fieldClass} />
+          <DateField value={values.availableDate} onChange={(next) => onChange({ availableDate: next })} disabled={disabled} className={fieldClass} />
         </label>
       </div>
 

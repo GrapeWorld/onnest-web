@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
+import { DateField } from "@/components/ui/DateField";
 import {
   serviceTypes,
   serviceDescriptions,
@@ -129,10 +130,9 @@ export function ServiceRequestForm({
           <div className="grid gap-4 md:grid-cols-2">
             <label className="grid gap-2 text-sm font-semibold text-forest min-w-0">
               희망일 <span className="font-normal text-ink/50">선택 입력</span>
-              <input
-                type="date"
+              <DateField
                 value={preferredDate}
-                onChange={(event) => setPreferredDate(event.target.value)}
+                onChange={setPreferredDate}
                 className={fieldClass}
               />
             </label>

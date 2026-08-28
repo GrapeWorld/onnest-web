@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
+import { DateField } from "@/components/ui/DateField";
 
 export type EventRow = {
   id: string;
@@ -222,10 +223,9 @@ function EventEditCard({
         </label>
         <label className="grid gap-1 text-sm font-semibold text-forest min-w-0">
           날짜
-          <input
-            type="date"
+          <DateField
             value={date}
-            onChange={(event) => setDate(event.target.value)}
+            onChange={setDate}
             disabled={saving}
             className={`${fieldClass} disabled:opacity-60`}
           />

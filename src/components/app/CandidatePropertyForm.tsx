@@ -12,6 +12,7 @@ import {
 } from "@/data/candidateProperty";
 import { candidatePropertySchema } from "@/lib/candidatePropertySchema";
 import { fieldClass, labelClass } from "./project-wizard/shared";
+import { DateField } from "@/components/ui/DateField";
 
 export type CandidatePropertyFormValues = {
   sourceUrl: string;
@@ -272,10 +273,9 @@ export function CandidatePropertyForm({
             </label>
             <label className={labelClass}>
               입주 가능일 <span className="font-normal text-ink/50">선택 입력</span>
-              <input
-                type="date"
+              <DateField
                 value={values.availableDate}
-                onChange={(event) => update({ availableDate: event.target.value })}
+                onChange={(next) => update({ availableDate: next })}
                 disabled={loading}
                 className={fieldClass}
               />

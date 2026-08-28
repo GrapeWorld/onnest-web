@@ -3,6 +3,7 @@
 import { projectStageMeta, projectStages } from "@/data/projectSpace";
 import { cn } from "@/lib/cn";
 import { fieldClass, labelClass, type ProjectWizardValues } from "./shared";
+import { DateField } from "@/components/ui/DateField";
 
 export function ScheduleFields({
   values,
@@ -60,19 +61,17 @@ export function ScheduleFields({
         <div className="grid gap-4 sm:grid-cols-2">
           <label className={labelClass}>
             계약 예정일 <span className="font-normal text-ink/50">선택 입력</span>
-            <input
-              type="date"
+            <DateField
               value={values.contractDate}
-              onChange={(event) => onChange({ contractDate: event.target.value })}
+              onChange={(next) => onChange({ contractDate: next })}
               className={fieldClass}
             />
           </label>
           <label className={labelClass}>
             {moveInLabel} <span className="font-normal text-ink/50">선택 입력</span>
-            <input
-              type="date"
+            <DateField
               value={values.moveInDate}
-              onChange={(event) => onChange({ moveInDate: event.target.value })}
+              onChange={(next) => onChange({ moveInDate: next })}
               className={fieldClass}
             />
           </label>

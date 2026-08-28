@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { DateField } from "@/components/ui/DateField";
 import {
   adminExportSections,
   adminExportSectionLabels,
@@ -126,11 +127,10 @@ export function AdminExportForm({ scope }: { scope: Scope }) {
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-1 text-sm font-semibold text-forest">
           시작일 <span className="font-normal text-ink/50">선택 입력</span>
-          <input
-            type="date"
+          <DateField
             value={dateFrom}
-            onChange={(event) => {
-              setDateFrom(event.target.value);
+            onChange={(next) => {
+              setDateFrom(next);
               setConfirming(false);
             }}
             disabled={loading}
@@ -139,11 +139,10 @@ export function AdminExportForm({ scope }: { scope: Scope }) {
         </label>
         <label className="grid gap-1 text-sm font-semibold text-forest">
           종료일 <span className="font-normal text-ink/50">선택 입력</span>
-          <input
-            type="date"
+          <DateField
             value={dateTo}
-            onChange={(event) => {
-              setDateTo(event.target.value);
+            onChange={(next) => {
+              setDateTo(next);
               setConfirming(false);
             }}
             disabled={loading}
