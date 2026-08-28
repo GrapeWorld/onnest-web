@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/inquiry-sla",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/action-item-deadlines",
+      "schedule": "15 0 * * *"
     }
   ]
 }

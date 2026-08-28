@@ -41,6 +41,29 @@ describe("getServiceRequestActionItemPlan", () => {
     expect(plan.createForPartner?.type).toBe("PARTNER_REGISTER_COMPLETION");
   });
 
+  it("희망 작업일이 있으면 작업 완료 등록 업무의 마감으로 재사용한다", () => {
+    const preferredDate = new Date("2026-09-01T00:00:00.000Z");
+    const plan = getServiceRequestActionItemPlan({
+      requestId: "req-1",
+      toStatus: "작업 중",
+      hadPendingCancelRequest: false,
+      isNewPartnerAssignment: false,
+      preferredDate,
+    });
+    expect(plan.createForPartner?.dueAt).toBe(preferredDate);
+  });
+
+  it("희망 작업일이 없으면 작업 완료 등록 업무에 마감을 걸지 않는다", () => {
+    const plan = getServiceRequestActionItemPlan({
+      requestId: "req-1",
+      toStatus: "작업 중",
+      hadPendingCancelRequest: false,
+      isNewPartnerAssignment: false,
+      preferredDate: null,
+    });
+    expect(plan.createForPartner?.dueAt).toBeUndefined();
+  });
+
   it("작업 완료로 넘기면 견적 등록·완료 등록 업무를 닫고 고객의 견적 선택 업무를 취소한다", () => {
     const plan = getServiceRequestActionItemPlan({
       requestId: "req-1",

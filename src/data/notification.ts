@@ -21,6 +21,10 @@ export const notificationTypes = [
   "PARTNER_CANCEL_REQUESTED",
   "PARTNER_STAFF_ASSIGNED",
   "PARTNER_VERIFICATION_CHANGED",
+  // 예정일·지연(공통 — 할 일에 마감이 걸린 경우에만 발생, 현재는 업체
+  // "작업 완료 등록" 항목에서만 쓰인다)
+  "ACTION_ITEM_DUE_SOON",
+  "ACTION_ITEM_OVERDUE",
   // 계정 공통(로그인 가능 여부와 무관하게 인앱에도 남긴다)
   "MEMBER_STATUS_CHANGED",
   "MEMBER_TYPE_CHANGED",
@@ -60,6 +64,8 @@ export const notificationTypeCategory: Record<NotificationType, NotificationCate
   PARTNER_QUOTE_SELECTED: "SERVICE",
   PARTNER_CANCEL_REQUESTED: "SERVICE",
   PARTNER_STAFF_ASSIGNED: "SERVICE",
+  ACTION_ITEM_DUE_SOON: "SERVICE",
+  ACTION_ITEM_OVERDUE: "SERVICE",
   PARTNER_VERIFICATION_CHANGED: "ACCOUNT",
   MEMBER_STATUS_CHANGED: "ACCOUNT",
   MEMBER_TYPE_CHANGED: "ACCOUNT",

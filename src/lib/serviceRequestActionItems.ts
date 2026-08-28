@@ -7,6 +7,7 @@ export type ActionItemCreation = {
   title: string;
   description: string;
   sourceKey: string;
+  dueAt?: Date;
 };
 
 /**
@@ -21,8 +22,10 @@ export function getServiceRequestActionItemPlan(params: {
   toStatus: ServiceRequestStatus;
   hadPendingCancelRequest: boolean;
   isNewPartnerAssignment: boolean;
+  /** 고객이 남긴 희망 작업일. "작업 완료 등록" 할 일의 마감으로 재사용한다. */
+  preferredDate?: Date | null;
 }): { resolutions: ActionItemResolution[]; createForPartner?: ActionItemCreation } {
-  const { requestId, toStatus, hadPendingCancelRequest, isNewPartnerAssignment } = params;
+  const { requestId, toStatus, hadPendingCancelRequest, isNewPartnerAssignment, preferredDate } = params;
   const resolutions: ActionItemResolution[] = [];
   let createForPartner: ActionItemCreation | undefined;
 
@@ -62,6 +65,11 @@ export function getServiceRequestActionItemPlan(params: {
       title: "작업 완료를 등록해주세요",
       description: "작업이 끝나면 완료 처리해주세요.",
       sourceKey: `PARTNER_REGISTER_COMPLETION:${requestId}`,
+      // 고객이 밝힌 희망 작업일이 있으면 그 날을 마감으로 재사용한다 —
+      // "확인해주세요"·"견적을 등록해주세요"는 배정 직후 곧바로 처리해야
+      // 하는 일이라 희망일과 무관하지만, 이 항목은 실제로 그 날짜에
+      // 일어나는 작업의 완료 등록이라 자연스러운 마감이다.
+      dueAt: preferredDate ?? undefined,
     };
   }
 

@@ -61,6 +61,7 @@ export async function PATCH(
             partnerStaffId: true,
             privacyAgreedAt: true,
             cancelRequestedAt: true,
+            preferredDate: true,
             projectId: true,
             project: { select: { userId: true } },
           },
@@ -175,6 +176,7 @@ export async function PATCH(
             toStatus: updated.status as ServiceRequestStatus,
             hadPendingCancelRequest: Boolean(existing.cancelRequestedAt),
             isNewPartnerAssignment,
+            preferredDate: existing.preferredDate,
           });
           for (const resolution of plan.resolutions) {
             await resolveActionItemsBySourceKey(tx, resolution.sourceKey, resolution.outcome);
@@ -196,6 +198,7 @@ export async function PATCH(
                 relatedEntityType: "ServiceRequest",
                 relatedEntityId: id,
                 sourceKey: plan.createForPartner!.sourceKey,
+                dueAt: plan.createForPartner!.dueAt,
               })),
             );
           }
