@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { AppShell } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { HandoverModerationStatus } from "@/components/app/HandoverModerationStatus";
@@ -26,7 +26,7 @@ export default async function ProjectHandoverPage({
   const handover = project.handover;
 
   return (
-    <AppShell
+    <CustomerAppShell
       title="우리집 인수인계서"
       description={`${project.name} · 다음 사용자에게 남길 생활 정보입니다.`}
     >
@@ -62,6 +62,6 @@ export default async function ProjectHandoverPage({
           </p>
         </Card>
       )}
-    </AppShell>
+    </CustomerAppShell>
   );
 }

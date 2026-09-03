@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { AppShell, MetricGrid } from "@/components/app/AppShell";
+import { MetricGrid } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { ProjectStepGrid } from "@/components/app/ProjectSteps";
 import { PropertySuggestionCustomerSection } from "@/components/app/PropertySuggestionCustomerSection";
 import { Button } from "@/components/ui/Button";
@@ -40,7 +41,7 @@ export default async function ProjectPage({
     .slice(0, 3);
 
   return (
-    <AppShell
+    <CustomerAppShell
       title={project.name}
       description={`${project.spaceType} · ${project.address || "주소 미입력"}`}
     >
@@ -178,6 +179,6 @@ export default async function ProjectPage({
           내 프로젝트 목록
         </Link>
       </p>
-    </AppShell>
+    </CustomerAppShell>
   );
 }

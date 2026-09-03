@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AppShell } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { Card } from "@/components/ui/Card";
 import { InquiryLinkRequestButton } from "@/components/app/InquiryLinkRequestButton";
 import { getCurrentUser } from "@/lib/auth";
@@ -40,7 +40,7 @@ export default async function MyInquiriesPage() {
   ]);
 
   return (
-    <AppShell title="내 문의" description="보낸 문의의 진행 상황과 답변을 확인합니다.">
+    <CustomerAppShell title="내 문의" description="보낸 문의의 진행 상황과 답변을 확인합니다.">
       <Link href="/my" className="mb-6 inline-block text-sm font-semibold text-forest hover:underline">
         ← 마이페이지로
       </Link>
@@ -105,6 +105,6 @@ export default async function MyInquiriesPage() {
           ))}
         </div>
       )}
-    </AppShell>
+    </CustomerAppShell>
   );
 }

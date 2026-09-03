@@ -40,9 +40,16 @@ test("고객이 매물 후보를 등록·조회·수정·삭제할 수 있다", 
   await expect(page.getByText("서울특별시 강남구 테헤란로 123")).toBeVisible();
   await expect(page.getByText("네이버페이 부동산")).toBeVisible();
 
-  // 목록에도 나타난다.
+  // 목록에도 나타난다. 탐색 화면 자체가 선택된 매물을 목록·지도 패널
+  // 양쪽에 보여주므로(이 페이지의 핵심 요구사항), 목록 영역으로 좁혀서
+  // 찾아야 지도 패널 쪽 중복 표시와 헷갈리지 않는다. 카드를 CSS 클래스가
+  // 아니라 PropertyExplorer가 제공하는 role(list/listitem)로 찾아 스타일
+  // 클래스가 바뀌어도 테스트가 깨지지 않게 한다.
   await page.goto("/my/candidate-properties");
-  const card = page.locator(".rounded-\\[24px\\]").filter({ hasText: title });
+  const card = page
+    .getByRole("list", { name: "매물 후보 목록" })
+    .getByRole("listitem")
+    .filter({ hasText: title });
   await expect(card).toBeVisible();
 
   // 수정
@@ -134,8 +141,18 @@ test("희망 조건을 저장하면 저장한 매물과의 일치·불일치가 
   await page.getByRole("spinbutton", { name: "최소 예산(원)", exact: false }).fill("100000000");
   await page.getByRole("spinbutton", { name: "최대 예산(원)", exact: false }).fill("400000000");
   await page.getByRole("spinbutton", { name: "최소 면적(㎡)", exact: false }).fill("50");
-  await page.getByRole("button", { name: "희망 조건 저장" }).click();
-  await expect(page.getByText("희망 지역")).toBeVisible();
+  // "희망 지역"이라는 텍스트 자체는 폼이 열린 채(저장 중·실패) 있을 때도
+  // 입력창 라벨로 계속 보이므로, 그것만으로는 저장 성공을 증명하지 못한다
+  // — PUT 응답을 직접 기다리고 성공(res.ok)까지 확인한 뒤, 저장 성공 시에만
+  // 나타나는 "조건 수정" 버튼(폼이 접힌 요약 상태)으로 판단한다.
+  const [preferenceResponse] = await Promise.all([
+    page.waitForResponse(
+      (res) => res.url().includes("/api/my/property-preference") && res.request().method() === "PUT",
+    ),
+    page.getByRole("button", { name: "희망 조건 저장" }).click(),
+  ]);
+  expect(preferenceResponse.ok()).toBe(true);
+  await expect(page.getByRole("button", { name: "조건 수정" })).toBeVisible();
 
   const title = `E2E조건비교-${Date.now()}`;
   await page.goto("/my/candidate-properties/new");

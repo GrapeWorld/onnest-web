@@ -95,13 +95,19 @@ export async function POST(request: Request) {
 
   // 주소가 있으면 좌표를 미리 조회해 캐시해둔다. 지도 API 미설정·실패는
   // geocodeAddress가 항상 null로 삼키므로, 이 단계가 실패해도 위의 등록
-  // 자체는 이미 끝난 상태다(응답은 항상 성공을 반영).
+  // 자체는 이미 끝난 상태다(응답은 항상 성공을 반영). geocodeAddress는
+  // 저장 이후에 실행되는 부가 작업이라 응답이 돌아올 때까지 시간이 걸릴
+  // 수 있다 — 그 사이 사용자가 바로 이어서 주소를 수정하면(PATCH가 먼저
+  // 끝나고 새 주소로 다시 지오코딩을 시작한 뒤에) 이 오래된 조회 결과가
+  // 나중에 도착해 새 좌표를 덮어쓸 수 있다. update 대신 조건부 updateMany로
+  // "그 사이 주소가 안 바뀌었을 때만" 반영하고, count가 0이면(주소가
+  // 이미 바뀐 것) 오류가 아니라 오래된 결과를 그냥 버린다.
   if (data.address) {
     try {
       const coordinates = await geocodeAddress(data.address);
       if (coordinates) {
-        await prisma.candidateProperty.update({
-          where: { id: created.id },
+        await prisma.candidateProperty.updateMany({
+          where: { id: created.id, address: data.address },
           data: { latitude: coordinates.lat, longitude: coordinates.lng },
         });
       }

@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   findFirst: vi.fn(),
   update: vi.fn(),
+  updateMany: vi.fn(),
   deleteFn: vi.fn(),
   transaction: vi.fn(),
   checkRateLimit: vi.fn(),
@@ -13,7 +14,12 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/auth", () => ({ getCurrentUser: mocks.getCurrentUser }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    candidateProperty: { findFirst: mocks.findFirst, update: mocks.update, delete: mocks.deleteFn },
+    candidateProperty: {
+      findFirst: mocks.findFirst,
+      update: mocks.update,
+      updateMany: mocks.updateMany,
+      delete: mocks.deleteFn,
+    },
     $transaction: mocks.transaction,
   },
 }));
@@ -46,6 +52,7 @@ describe("PATCH /api/my/candidate-properties/[id]", () => {
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.findFirst.mockResolvedValue({ id: "candidate-1", status: "관심", address: "기존 주소" });
     mocks.update.mockResolvedValue({ id: "candidate-1" });
+    mocks.updateMany.mockResolvedValue({ count: 1 });
     mocks.geocodeAddress.mockResolvedValue(null);
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
@@ -120,9 +127,23 @@ describe("PATCH /api/my/candidate-properties/[id]", () => {
 
       expect(response.status).toBe(200);
       expect(mocks.geocodeAddress).toHaveBeenCalledWith("새 주소");
-      const followUpUpdate = mocks.update.mock.calls[1][0];
-      expect(followUpUpdate).toEqual({
-        where: { id: "candidate-1" },
+      // update가 아니라 조건부 updateMany를 쓴다 — 조회하는 사이 주소가 또
+      // 바뀌었으면 이 결과를 반영하지 않는다(아래 "stale" 테스트).
+      expect(mocks.updateMany).toHaveBeenCalledWith({
+        where: { id: "candidate-1", address: "새 주소" },
+        data: { latitude: 37.5, longitude: 127.0 },
+      });
+    });
+
+    it("discards a stale geocode result without erroring when the address changed again before it resolved(count 0)", async () => {
+      mocks.geocodeAddress.mockResolvedValue({ lat: 37.5, lng: 127.0 });
+      mocks.updateMany.mockResolvedValue({ count: 0 });
+
+      const response = await patchRequest({ address: "새 주소" });
+
+      expect(response.status).toBe(200);
+      expect(mocks.updateMany).toHaveBeenCalledWith({
+        where: { id: "candidate-1", address: "새 주소" },
         data: { latitude: 37.5, longitude: 127.0 },
       });
     });

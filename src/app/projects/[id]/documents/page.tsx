@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { AppShell } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { Button } from "@/components/ui/Button";
 import { DocumentManager } from "@/components/app/DocumentManager";
 import { getCurrentUser } from "@/lib/auth";
@@ -38,7 +38,7 @@ export default async function DocumentsPage({
   if (!project) notFound();
 
   return (
-    <AppShell
+    <CustomerAppShell
       title="문서함"
       description="계약서, 등기부, 입주 사진, 하자 확인 사진을 보관합니다."
       contentClassName="max-w-3xl"
@@ -60,6 +60,6 @@ export default async function DocumentsPage({
           createdAt: formatDate(doc.createdAt),
         }))}
       />
-    </AppShell>
+    </CustomerAppShell>
   );
 }

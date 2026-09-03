@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { AppShell } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { Card } from "@/components/ui/Card";
 import { InquiryMessageThread } from "@/components/app/InquiryMessageThread";
 import { InquiryMessageForm } from "@/components/app/InquiryMessageForm";
@@ -54,7 +54,7 @@ export default async function MyInquiryDetailPage({
   const canRate = inquiry.status === "답변 완료" && !inquiry.satisfactionSubmittedAt;
 
   return (
-    <AppShell title="내 문의" description="문의 진행 상황과 답변을 확인합니다.">
+    <CustomerAppShell title="내 문의" description="문의 진행 상황과 답변을 확인합니다.">
       <Link
         href="/my/inquiries"
         className="mb-6 inline-block text-sm font-semibold text-forest hover:underline"
@@ -143,6 +143,6 @@ export default async function MyInquiryDetailPage({
           )}
         </div>
       </div>
-    </AppShell>
+    </CustomerAppShell>
   );
 }

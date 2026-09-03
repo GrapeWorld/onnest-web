@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AppShell } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/cn";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { notificationFallbackPath } from "@/lib/notifications";
 import {
   actionItemOpenStatuses,
   actionItemRoleContextLabels,
@@ -48,10 +47,9 @@ export default async function TasksPage({
   });
 
   return (
-    <AppShell
+    <CustomerAppShell
       title="할 일"
       description="지금 처리해야 하는 업무를 모아 확인합니다. 알림(읽었는지)과는 별개로, 실제 업무가 처리되면 자동으로 닫힙니다."
-      navItems={[["돌아가기", notificationFallbackPath(user)]]}
     >
       <div className="mb-6 flex gap-2">
         <Link
@@ -116,6 +114,6 @@ export default async function TasksPage({
           ))}
         </ul>
       )}
-    </AppShell>
+    </CustomerAppShell>
   );
 }

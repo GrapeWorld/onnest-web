@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ExternalLink } from "lucide-react";
-import { AppShell } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { Card } from "@/components/ui/Card";
 import { CandidatePropertyDeleteControl } from "@/components/app/CandidatePropertyDeleteControl";
 import { PropertyVisitChecklist } from "@/components/app/PropertyVisitChecklist";
 import { ConvertToProjectButton } from "@/components/app/ConvertToProjectButton";
+import { StaticPropertyMap } from "@/components/app/StaticPropertyMap";
 import {
   candidatePropertyStatusClassName,
   propertyMatchResultClassName,
@@ -13,7 +14,9 @@ import {
 } from "@/data/candidateProperty";
 import { getPropertySourceLabel } from "@/lib/propertyUrl";
 import { compareCandidateToPreference } from "@/lib/propertyMatch";
+import { describeSuggestionOrigin } from "@/lib/propertySuggestionOrigin";
 import { getCurrentUser } from "@/lib/auth";
+import { isNaverMapConfigured } from "@/lib/naverMap";
 import { prisma } from "@/lib/prisma";
 import { formatWon } from "@/lib/currency";
 import { formatDate } from "@/lib/dates";
@@ -33,6 +36,11 @@ export default async function CandidatePropertyDetailPage({
       include: {
         checklist: { where: { checked: true }, select: { label: true } },
         linkedProject: { select: { id: true, name: true } },
+        // 관리자가 공유한 매물을 저장해 만들어진 후보라면 그 원본의
+        // 고객 대상 필드만 가져온다 — adminMemo·공유자 정보는 관리자
+        // 전용이라 여기서도 select에 아예 넣지 않는다(customerPropertySuggestionSelect와
+        // 같은 원칙).
+        suggestionOrigin: { select: { sharedReason: true, cautionNote: true } },
       },
     }),
     prisma.propertyPreference.findUnique({ where: { userId: user.id } }),
@@ -40,9 +48,14 @@ export default async function CandidatePropertyDetailPage({
   if (!property) notFound();
 
   const matches = compareCandidateToPreference(property, preference);
+  const mapConfigured = isNaverMapConfigured();
+  const hasCoordinates = property.latitude != null && property.longitude != null;
+  const suggestionOriginDisplay = property.suggestionOrigin
+    ? describeSuggestionOrigin(property.suggestionOrigin, property.advantages, property.concerns)
+    : null;
 
   return (
-    <AppShell title={property.title} description="저장한 매물 정보와 희망 조건 비교 결과를 확인합니다.">
+    <CustomerAppShell title={property.title} description="저장한 매물 정보와 희망 조건 비교 결과를 확인합니다.">
       <Link href="/my/candidate-properties" className="mb-6 inline-block text-sm font-semibold text-forest hover:underline">
         ← 매물 후보 목록으로
       </Link>
@@ -111,20 +124,23 @@ export default async function CandidatePropertyDetailPage({
               <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
             </a>
 
-            {property.latitude != null && property.longitude != null && (
-              <div className="mt-5">
-                <p className="text-xs font-bold text-ink/45">위치</p>
-                {/* eslint-disable-next-line @next/next/no-img-element -- 우리 서버가 프록시하는 동적 이미지라 next/image 대상이 아니다. */}
-                <img
-                  src={`/api/my/candidate-properties/${property.id}/map`}
-                  alt={`${property.address ?? property.title} 위치 지도`}
-                  width={600}
-                  height={300}
-                  className="mt-2 w-full max-w-full rounded-2xl border border-forest/10"
+            <div className="mt-5">
+              <p className="text-xs font-bold text-ink/45">위치</p>
+              <div className="mt-2 overflow-hidden rounded-2xl border border-forest/10">
+                <StaticPropertyMap
+                  candidateId={property.id}
+                  address={property.address}
+                  title={property.title}
+                  mapConfigured={mapConfigured}
+                  hasCoordinates={hasCoordinates}
+                  imgClassName="w-full max-w-full"
+                  className="h-40"
                 />
-                <p className="mt-1 text-xs text-ink/40">지도 제공: 네이버 클라우드 플랫폼</p>
               </div>
-            )}
+              {hasCoordinates && mapConfigured && (
+                <p className="mt-1 text-xs text-ink/40">지도 제공: 네이버 클라우드 플랫폼</p>
+              )}
+            </div>
 
             {(property.memo || property.advantages || property.concerns) && (
               <div className="mt-5 grid gap-3">
@@ -149,6 +165,41 @@ export default async function CandidatePropertyDetailPage({
               </div>
             )}
           </Card>
+
+          {property.suggestionOrigin && suggestionOriginDisplay && (
+            <Card>
+              <h2 className="text-lg font-black text-forest">관리자 공유 정보</h2>
+              <p className="mt-1 text-xs text-ink/50">
+                이 매물은 관리자가 프로젝트에 공유한 매물을 저장한 것입니다. ONNEST는 매물을 직접 검증하지 않습니다.
+              </p>
+              <div className="mt-4 grid gap-3">
+                {suggestionOriginDisplay.showReason && (
+                  <div className="min-w-0 rounded-2xl bg-mint/40 px-4 py-3">
+                    <p className="text-xs font-bold text-forest">관리자가 남긴 공유 이유(원문)</p>
+                    <p className="mt-1 min-w-0 whitespace-pre-wrap break-words text-sm text-forest">
+                      {property.suggestionOrigin.sharedReason}
+                    </p>
+                  </div>
+                )}
+                {suggestionOriginDisplay.showCaution && (
+                  <div className="min-w-0 rounded-2xl bg-amber-50 px-4 py-3">
+                    <p className="text-xs font-bold text-amber-800">관리자가 남긴 확인 필요 사항(원문)</p>
+                    <p className="mt-1 min-w-0 whitespace-pre-wrap break-words text-sm text-amber-800">
+                      {property.suggestionOrigin.cautionNote}
+                    </p>
+                  </div>
+                )}
+                {suggestionOriginDisplay.showReflectedNotice && (
+                  <p className="text-sm text-ink/60">
+                    공유 당시 남긴 이유·확인 필요 사항은 위 &quot;장점&quot;·&quot;걱정되는 점&quot;에 그대로 반영되어 있습니다.
+                  </p>
+                )}
+                {suggestionOriginDisplay.showEmptyNotice && (
+                  <p className="text-sm text-ink/60">관리자가 공유한 매물에서 저장했습니다. 별도로 전달된 설명은 없습니다.</p>
+                )}
+              </div>
+            </Card>
+          )}
 
           <Card>
             <h2 className="text-lg font-black text-forest">희망 조건 비교</h2>
@@ -228,6 +279,6 @@ export default async function CandidatePropertyDetailPage({
           </Card>
         </div>
       </div>
-    </AppShell>
+    </CustomerAppShell>
   );
 }

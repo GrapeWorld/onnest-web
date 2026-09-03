@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { AppShell } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { CandidatePropertyForm, type CandidatePropertyFormValues } from "@/components/app/CandidatePropertyForm";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -42,8 +42,8 @@ export default async function EditCandidatePropertyPage({
   };
 
   return (
-    <AppShell title="매물 후보 수정" description="저장된 매물 후보 정보를 확인하고 수정합니다.">
+    <CustomerAppShell title="매물 후보 수정" description="저장된 매물 후보 정보를 확인하고 수정합니다.">
       <CandidatePropertyForm mode="edit" candidateId={property.id} initialValues={initialValues} />
-    </AppShell>
+    </CustomerAppShell>
   );
 }

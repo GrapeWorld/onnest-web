@@ -298,40 +298,106 @@ Code Interception을 막는 PKCE 없이도 이미 기밀 클라이언트 수준�
 
 ## 매물 후보 지도 (네이버 클라우드 플랫폼 Maps)
 
-`/my/candidate-properties`(관심 매물)에서 저장한 주소를 지도로 보여줄 때
-쓴다. **네이버 로그인(NAVER_CLIENT_ID/SECRET)과는 완전히 다른 서비스**다 —
-로그인은 [developers.naver.com](https://developers.naver.com), 지도는
-[console.ncloud.com](https://console.ncloud.com)(네이버 클라우드 플랫폼,
-결제수단 등록 필요)에서 따로 신청해야 한다.
+`/my/candidate-properties`(매물 후보 탐색 화면)에서 저장한 주소를 지도로
+보여줄 때 쓴다. **네이버 로그인(NAVER_CLIENT_ID/SECRET)과는 완전히 다른
+서비스**다 — 로그인은 [developers.naver.com](https://developers.naver.com),
+지도는 [console.ncloud.com](https://console.ncloud.com)(네이버 클라우드
+플랫폼, 결제수단 등록 필요)에서 따로 신청해야 한다.
 
-1. NCP 콘솔에서 Maps → Application 등록. 사용할 API로 **Geocoding**(주소→좌표
-   변환)과 **Static Map**(정지 이미지 지도)을 선택한다. 확대·이동이 가능한
-   인터랙티브 지도(Dynamic Map, 클라이언트 JS SDK 방식)는 이번 구현에서는
-   쓰지 않았다 — Client ID가 브라우저에 노출되는 방식이라, 서버가 이미지를
-   대신 요청해 중계하는 Static Map 쪽이 키 노출이 전혀 없어 더 안전하다.
-2. Web 서비스 URL에 로컬(`http://localhost:3000`)과 운영 도메인을 등록한다.
-3. 발급된 Client ID/Secret을 환경변수에 등록한다.
+두 갈래로 쓴다: 서버 전용 **Geocoding**(주소→좌표 변환)·**Static Map**(정지
+이미지, 상세 화면·지도 실패 시 폴백용)과, 브라우저에서 직접 로딩하는
+**Dynamic Map**(탐색 화면의 인터랙티브 다중 마커 지도)이다. 후자는 반드시
+클라이언트에 Client ID가 노출되는 방식이지만, 이 값 자체는 비밀값이 아니다.
+
+이 지도와 관련해 서로 다른 보안 장치 두 가지를 혼동하지 않는다:
+
+- **도메인 허용 목록(Web 서비스 URL)** — NCP 쪽 **API 사용 제한**이다.
+  "이 Client ID로 어느 도메인에서 지도를 띄울 수 있는가"만 결정한다.
+  등록되지 않은 도메인에서 쓰면 인증 실패로 폴백될 뿐, 이 자체는 어떤
+  고객이 어떤 좌표를 볼 수 있는지와는 무관하다.
+- **고객 데이터 접근 권한** — 우리 서버의 **소유권 검사**다. 마커에 실릴
+  좌표 자체는 각 화면이 이미 `userId`/프로젝트 소유권으로 필터링한
+  쿼리에서만 나온다(아래 항목). NCP 콘솔 설정과 무관하게, 이 서버 쪽
+  검사가 "이 고객이 이 매물 좌표를 받을 자격이 있는가"를 결정하는
+  유일한 경계다.
+
+1. NCP 콘솔에서 Maps → Application 등록. 사용할 API로 **Geocoding**,
+   **Static Map**, **Dynamic Map** 셋 다 켠다.
+2. Web 서비스 URL을 등록한다(Dynamic Map이 실제로 뜨려면 필수 — 등록하지
+   않거나 등록된 값이 실제 접속 URL과 정확히 일치하지 않으면 지도 SDK가
+   "실패" 상태로 폴백되고, 매물 목록·정지 지도·주소 텍스트는 계속 정상
+   동작한다). **NCP 공식 Maps 문제 해결 문서 기준으로, Web 서비스 URL은
+   포트 번호와 경로(URI)를 제외한 프로토콜+호스트만 등록한다** — 예를
+   들어 `http://localhost:8080`이 아니라 `http://localhost`로,
+   `http://127.0.0.1/main`이 아니라 `http://127.0.0.1`로 등록한다. 쿼리
+   스트링·해시(fragment)도 넣지 않는다. 등록 전에는 항상 NCP 콘솔의
+   Application Services → Maps → Application → 인증 정보 화면에서 현재
+   UI가 요구하는 형식을 최종 기준으로 확인한다:
+   - 로컬 개발(`npm run dev`, 포트 무관): `http://localhost` — 포트
+     번호(3000 등)는 넣지 않는다. 이 저장소의 E2E(`npx playwright test`,
+     포트 3100)는 `NEXT_PUBLIC_NCP_MAP_CLIENT_ID`를 항상 빈 값으로
+     덮어써 지도 SDK를 아예 안 띄우므로(`playwright.config.ts`) 별도
+     등록이 필요 없다.
+   - 현재 운영 배포: `https://onnest-web.vercel.app`
+   - 커스텀 도메인 연결 후(예정, 아직 미완료): `https://onnest.co.kr`,
+     그리고 `www` 리다이렉트를 쓰기로 하면 `https://www.onnest.co.kr`도
+     별도로 추가 등록
+   - Vercel이 배포마다 만드는 임시 Preview URL(`*-<hash>.vercel.app`)은
+     매번 값이 달라져 Web 서비스 URL로 등록해 관리할 수 없다 — Dynamic
+     Map을 Preview 단계에서 확인해야 한다면, 값이 고정되는 별도 스테이징
+     도메인(예: Vercel의 프로덕션 브랜치 별칭이나 전용 서브도메인)을 두고
+     그 도메인만 등록해 검증한다.
+   - 실제로 로컬 수동 검증 중 `navermap_authFailure`(NCP 인증 실패)가
+     포트가 포함된 URL(`http://localhost:3000` 등)로 접속했을 때 재현된
+     적이 있다 — 스크립트 로딩 자체는 성공해도 등록된 Web 서비스 URL과
+     실제 접속 origin(포트 포함 여부까지)이 정확히 일치해야 인증까지
+     통과한다는 뜻이므로, 폴백이 뜨면 가장 먼저 등록된 값에 포트·경로가
+     남아있지 않은지부터 재확인한다.
+3. 발급된 Client ID/Secret을 환경변수에 등록한다. `NEXT_PUBLIC_NCP_MAP_CLIENT_ID`가
+   실제로 위 2번에서 확인한 Application의 Client ID와 같은 값인지(다른
+   Application의 키를 잘못 넣지 않았는지)도 함께 확인한다.
+4. NCP 콘솔의 Maps 이용량·과금 대시보드(Service → AI·NAVER API →
+   이용 내역/청구서)에서 Geocoding·Static Map·Dynamic Map 각각의 무료
+   할당량과 현재 사용량을 확인한다 — Dynamic Map은 사용자 브라우저가
+   직접 호출하므로 트래픽이 늘면 서버 쪽 Geocoding/Static Map과 별도로
+   빠르게 과금 구간에 들어갈 수 있다.
 
 | 이름 | 설명 |
 | --- | --- |
-| `NCP_MAP_CLIENT_ID` | NCP Maps Application의 Client ID |
-| `NCP_MAP_CLIENT_SECRET` | NCP Maps Application의 Client Secret |
+| `NCP_MAP_CLIENT_ID` | NCP Maps Application의 Client ID(서버 전용 — Geocoding·Static Map) |
+| `NCP_MAP_CLIENT_SECRET` | NCP Maps Application의 Client Secret(서버 전용, 브라우저에 절대 노출 안 함) |
+| `NEXT_PUBLIC_NCP_MAP_CLIENT_ID` | 인터랙티브 지도(Dynamic Map JS SDK)용 공개 Client ID. 값 자체는 위 `NCP_MAP_CLIENT_ID`와 같아도 되지만 **반드시 별도 환경변수로 등록**한다(NEXT_PUBLIC_ 접두사가 붙은 값은 빌드 시 클라이언트 번들에 그대로 들어간다) |
 
-**동작 방식과 안전장치** (`src/lib/naverMap.ts`):
+**동작 방식과 안전장치**:
 
-- Geocoding·Static Map 요청은 모두 서버에서만 호출한다. Client Secret은
-  브라우저로 전달되지 않으며, 지도 이미지도 `GET /api/my/candidate-properties/
-  [id]/map`이 소유권을 확인한 뒤 좌표를 DB 캐시(`CandidateProperty.latitude/
-  longitude`)에서 읽어 대신 요청해 그대로 흘려보낸다 — 클라이언트가 임의의
-  좌표를 넣어 이 라우트를 익명 지도 프록시로 악용할 수 없다.
-- 매물 등록·수정 시 주소가 있으면(또는 실제로 바뀌면) 좌표를 한 번만 조회해
-  캐시한다. 조회에 실패하거나(네트워크 오류·타임아웃·매칭 결과 없음) 아예
-  키가 설정돼 있지 않아도 예외를 던지지 않고 항상 null을 돌려주므로, 매물
-  저장 자체는 지도 API 상태와 무관하게 항상 성공한다.
+- Geocoding·Static Map 요청은 모두 서버에서만 호출한다(`src/lib/naverMap.ts`).
+  Client Secret은 브라우저로 전달되지 않으며, 정지 지도 이미지도
+  `GET /api/my/candidate-properties/[id]/map`이 소유권을 확인한 뒤 좌표를
+  DB 캐시(`CandidateProperty.latitude/longitude`)에서 읽어 대신 요청해
+  그대로 흘려보낸다 — 클라이언트가 임의의 좌표를 넣어 이 라우트를 익명 지도
+  프록시로 악용할 수 없다.
+- 인터랙티브 지도(`src/components/app/property-explorer/NaverMapLoader.ts`,
+  `InteractivePropertyMap.tsx`)는 공개 Client ID로 브라우저가 직접
+  `oapi.map.naver.com`에서 SDK 스크립트를 지연 로딩한다(지도 화면이 실제로
+  보일 때만) — 서버를 거치지 않으므로 Client Secret이 이 경로에는 아예
+  등장하지 않는다. 마커는 로그인한 고객 자신의 매물과, 그 고객의 프로젝트에
+  공유된 매물의 좌표만 쓴다(서버 쿼리가 이미 `userId`/프로젝트 소유권으로
+  범위를 좁힌 뒤 내려주는 값이라 업체·다른 고객에게는 애초에 조회되지
+  않는다).
+- 매물 등록·수정(고객이 직접 저장하는 `CandidateProperty`), 관리자의 매물
+  공유·수정(`ProjectPropertySuggestion`) 모두 주소가 있으면(또는 실제로
+  바뀌면) 좌표를 한 번만 조회해 캐시한다. 조회에 실패하거나(네트워크
+  오류·타임아웃·매칭 결과 없음) 아예 키가 설정돼 있지 않아도 예외를 던지지
+  않고 항상 null을 돌려주므로, 저장·공유 자체는 지도 API 상태와 무관하게
+  항상 성공한다. 기존에 저장된 행은 이번 변경으로 일괄 재조회하지 않는다 —
+  좌표가 없던 행은 계속 null로 남고, 다음에 그 주소를 수정하면 그때 채워진다.
 - `NCP_MAP_CLIENT_ID`/`NCP_MAP_CLIENT_SECRET` 둘 중 하나만 설정되면
   `validateServerEnv()`가 시작 시점에 바로 실패시킨다(설정 실수 방지, 소셜
-  로그인 provider 쌍과 같은 원칙). 둘 다 없으면 지도 섹션 자체가 화면에
-  나타나지 않고 주소는 항상 텍스트로만 표시된다 — 화면이 깨지지 않는다.
+  로그인 provider 쌍과 같은 원칙). `NEXT_PUBLIC_NCP_MAP_CLIENT_ID`는 이
+  쌍과 독립적인 선택값이다 — 없으면 인터랙티브 지도가 곧바로 "미설정"
+  상태로 폴백되고, 선택된 매물 하나만 기존 정지 지도(직접 저장·관리자
+  공유에서 저장한 매물)나 주소 텍스트(아직 저장 전인 공유 매물)로 보인다.
+  세 값이 전부 없으면 주소는 항상 텍스트로만 표시된다 — 화면이 깨지지 않는다.
 - Static Map 이미지 자체에 네이버 측 표시가 포함되는지와 별개로, 화면에도
   "지도 제공: 네이버 클라우드 플랫폼" 캡션을 함께 표시해 출처 표시 의무를
   보수적으로 지킨다.
@@ -339,9 +405,13 @@ Code Interception을 막는 PKCE 없이도 이미 기밀 클라이언트 수준�
 ### 배포 전 확인
 
 ```text
-[ ] NCP 콘솔에 로컬·운영 도메인이 모두 Web 서비스 URL로 등록됐는지
-[ ] 실제 주소로 매물을 등록해 지도가 뜨는지, 매물 저장 자체는 항상 성공하는지
-[ ] 환경변수를 지운 상태에서도(로컬 등) 페이지가 깨지지 않고 주소 텍스트만 보이는지
+[ ] NCP 콘솔에 로컬·운영 도메인이 Web 서비스 URL로 등록됐는지(정지 지도용 서버 키 + 인터랙티브 지도용 공개 키 둘 다) — 포트 번호·경로 없이 프로토콜+호스트만 등록했는지(예: `http://localhost`, `https://onnest.co.kr`)
+[ ] NCP 콘솔에서 이 Application에 Geocoding·Static Map·Dynamic Map API가 모두 켜져 있는지
+[ ] NCP 콘솔의 이용량·과금 대시보드에서 무료 할당량 대비 현재 사용량과 과금 발생 여부를 확인했는지
+[ ] 실제 주소로 매물을 등록·공유해 지도가 뜨는지, 등록·공유 자체는 항상 성공하는지
+[ ] 매물 탐색 화면에서 검색·필터 결과에 맞춰 지도 마커가 바뀌는지, 목록 카드↔마커 선택이 서로 맞물리는지
+[ ] NEXT_PUBLIC_NCP_MAP_CLIENT_ID를 지운 상태에서도(로컬 등) 탐색 화면이 깨지지 않고 선택된 매물의 정지 지도/주소 텍스트로 대체되는지
+[ ] 환경변수를 전부 지운 상태에서도(로컬 등) 페이지가 깨지지 않고 주소 텍스트만 보이는지
 [ ] NCP 콘솔의 Maps 이용약관·표시 의무 최신 내용 재확인(정책은 바뀔 수 있다)
 ```
 

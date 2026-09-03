@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { AppShell } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { HandoverForm } from "@/components/app/HandoverForm";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -24,7 +24,7 @@ export default async function HandoverWritePage({
   );
 
   return (
-    <AppShell
+    <CustomerAppShell
       title="우리집 인수인계서 작성"
       description="3분이면 작성할 수 있습니다. 사람 평가가 아니라 공간과 생활 경험을 남깁니다."
     >
@@ -35,6 +35,6 @@ export default async function HandoverWritePage({
           initialNotes={initialNotes}
         />
       </div>
-    </AppShell>
+    </CustomerAppShell>
   );
 }

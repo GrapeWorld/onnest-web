@@ -36,6 +36,11 @@ export default defineConfig({
       // 같은 방식으로 "미설정" 경로를 타는 것과 같은 원칙이다.
       NCP_MAP_CLIENT_ID: "",
       NCP_MAP_CLIENT_SECRET: "",
+      // 인터랙티브 지도(Dynamic Map JS SDK)용 공개 키도 같은 이유로 끈다 —
+      // E2E는 항상 "지도 SDK 미설정" 폴백 경로를 결정적으로 검증해야 하고,
+      // 외부 지도 스크립트 CDN에 실제로 접속하면(도메인 미등록 시 인증
+      // 실패 등) 네트워크 상태에 따라 결과가 흔들릴 수 있다.
+      NEXT_PUBLIC_NCP_MAP_CLIENT_ID: "",
     },
   },
   projects: [

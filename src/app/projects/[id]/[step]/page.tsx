@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { AppShell } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { ProjectStepDetail } from "@/components/app/ProjectSteps";
 import { getProjectStep } from "@/data/projectSteps";
 import { getCurrentUser } from "@/lib/auth";
@@ -26,7 +26,7 @@ export default async function ProjectStepPage({
     .map((check) => check.label);
 
   return (
-    <AppShell title={step.title} description={step.pageDescription}>
+    <CustomerAppShell title={step.title} description={step.pageDescription}>
       <p className="mb-6 text-sm font-semibold text-ink/60">
         {project.name} · {project.spaceType}
       </p>
@@ -36,6 +36,6 @@ export default async function ProjectStepPage({
         status={status}
         checkedItems={checkedItems}
       />
-    </AppShell>
+    </CustomerAppShell>
   );
 }

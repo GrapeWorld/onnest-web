@@ -92,8 +92,12 @@ export async function PATCH(
     try {
       const coordinates = await geocodeAddress(newAddress);
       if (coordinates) {
-        await prisma.candidateProperty.update({
-          where: { id },
+        // 조회하는 사이 주소가 또 바뀌었을 수 있다(연속 수정, 동시 요청 등) —
+        // 지금 이 조회가 시작된 주소(newAddress)가 여전히 현재 값일 때만
+        // 반영한다. count 0이면 더 최신 수정이 이미 있었다는 뜻이라 이
+        // 오래된 결과는 조용히 버린다(오류 아님).
+        await prisma.candidateProperty.updateMany({
+          where: { id, address: newAddress },
           data: { latitude: coordinates.lat, longitude: coordinates.lng },
         });
       }

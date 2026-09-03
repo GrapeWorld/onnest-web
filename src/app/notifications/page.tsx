@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AppShell } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { NotificationListItem } from "@/components/app/NotificationListItem";
 import { MarkAllNotificationsReadButton } from "@/components/app/MarkAllNotificationsReadButton";
 import { cn } from "@/lib/cn";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { notificationFallbackPath } from "@/lib/notifications";
 import type { NotificationCategory } from "@/data/notification";
 
 /**
@@ -42,10 +41,9 @@ export default async function NotificationsPage({
   });
 
   return (
-    <AppShell
+    <CustomerAppShell
       title="알림"
       description="서비스 이용 중 발생한 소식을 모아 확인합니다."
-      navItems={[["돌아가기", notificationFallbackPath(user)]]}
     >
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2">
@@ -85,6 +83,6 @@ export default async function NotificationsPage({
           ))}
         </ul>
       )}
-    </AppShell>
+    </CustomerAppShell>
   );
 }

@@ -68,7 +68,11 @@ test("최고관리자가 조회전용 관리자를 지정·회수하고, 기존 
   await grantedCard.getByPlaceholder("변경 사유 (필수)").fill("지원 종료");
   await grantedCard.getByRole("combobox").selectOption("__revoke__");
   await grantedCard.getByRole("button", { name: "변경 내용 확인" }).click();
-  await page.getByRole("button", { name: "변경 확정" }).click();
+  const [revokeResponse] = await Promise.all([
+    page.waitForResponse((res) => res.url().includes(`/api/admin/admins/${targetId}`) && res.request().method() === "PATCH"),
+    page.getByRole("button", { name: "변경 확정" }).click(),
+  ]);
+  expect(revokeResponse.status()).toBe(200);
 
   // 4. 회수 이전에 발급된 viewer의 세션 쿠키를 그대로 다시 써도, 다음
   // 요청부터 관리자 화면(일반 /admin 포함) 접근이 즉시 막힌다 — 로그아웃도

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import type { SpaceCategory, TransactionType } from "@/data/projectSpace";
 import {
@@ -18,8 +19,10 @@ import { SummaryCard } from "./SummaryCard";
 import {
   emptyProjectWizardValues,
   PROJECT_DRAFT_STORAGE_KEY,
-  SOURCE_CANDIDATE_STORAGE_KEY,
+  readSourceCandidateInfo,
+  clearSourceCandidateInfo,
   type ProjectWizardValues,
+  type SourceCandidateInfo,
 } from "./shared";
 
 /**
@@ -49,12 +52,21 @@ export function ProjectWizard() {
   // 마운트 시 localStorage에 남은 임시 저장 값을 복원한다(뒤로가기·새로고침에도
   // 유지 — 규칙 14, 15). 서버/DB는 건드리지 않는다(사용자 확인: localStorage만).
   const [values, setValues] = useState<ProjectWizardValues>(loadDraft);
+  const [sourceCandidate, setSourceCandidate] = useState<SourceCandidateInfo | null>(readSourceCandidateInfo);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [error, setError] = useState<string | null>(null);
+  const [conflict, setConflict] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
   const nameEdited = useRef(Boolean(values.name));
+
+  function disconnectCandidate() {
+    clearSourceCandidateInfo();
+    setSourceCandidate(null);
+    setConflict(false);
+    setError(null);
+  }
 
   function update(patch: Partial<ProjectWizardValues>) {
     if (patch.name !== undefined) nameEdited.current = true;
@@ -106,6 +118,7 @@ export function ProjectWizard() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+    setConflict(false);
 
     const parsed = projectWizardSchema.safeParse(values);
     if (!parsed.success) {
@@ -117,25 +130,26 @@ export function ProjectWizard() {
     try {
       // 매물 후보에서 "이 매물로 프로젝트 만들기"로 들어온 경우에만 존재한다
       // (ConvertToProjectButton). 있으면 함께 보내 생성 직후 그 후보와 연결한다
-      // — 서버가 소유권을 다시 확인하므로 위조된 id를 보내도 연결되지 않는다.
-      const sourceCandidatePropertyId = window.localStorage.getItem(SOURCE_CANDIDATE_STORAGE_KEY);
+      // — 서버가 소유권·연결 가능 여부를 다시 확인하므로 위조되거나 이미
+      // 연결된 id를 보내면 프로젝트 생성 자체가 거절된다(409).
       const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...parsed.data,
-          ...(sourceCandidatePropertyId ? { sourceCandidatePropertyId } : {}),
+          ...(sourceCandidate ? { sourceCandidatePropertyId: sourceCandidate.id } : {}),
         }),
       });
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.error ?? "저장에 실패했습니다.");
+        if (res.status === 409) setConflict(true);
         return;
       }
 
       window.localStorage.removeItem(PROJECT_DRAFT_STORAGE_KEY);
-      window.localStorage.removeItem(SOURCE_CANDIDATE_STORAGE_KEY);
+      clearSourceCandidateInfo();
       router.push(`/projects/${data.id}`);
       router.refresh();
     } catch {
@@ -148,6 +162,24 @@ export function ProjectWizard() {
   return (
     <div>
       <Stepper current={step} />
+
+      {sourceCandidate && (
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-forest/15 bg-mint/30 p-4 sm:flex-row sm:items-start sm:justify-between">
+          <p className="min-w-0 whitespace-pre-wrap break-words text-sm font-semibold text-forest">
+            {sourceCandidate.title
+              ? `"${sourceCandidate.title}" 매물 후보에서 프로젝트를 만들고 있습니다.\n프로젝트 생성이 완료되면 이 매물과 연결됩니다.`
+              : "저장한 매물 후보에서 프로젝트를 만들고 있습니다.\n프로젝트 생성이 완료되면 이 매물과 연결됩니다."}
+          </p>
+          <button
+            type="button"
+            onClick={disconnectCandidate}
+            className="min-h-11 shrink-0 rounded-full border border-forest/20 bg-white px-4 text-xs font-semibold text-forest hover:border-forest/40"
+          >
+            매물 연결 해제
+          </button>
+        </div>
+      )}
+
       <Card>
         <form onSubmit={handleSubmit} className="grid gap-6 min-w-0" noValidate>
           {step === 1 && (
@@ -175,6 +207,23 @@ export function ProjectWizard() {
             </p>
           )}
           {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
+          {conflict && sourceCandidate && (
+            <div className="flex flex-wrap gap-3 rounded-2xl bg-red-50 px-4 py-3">
+              <button
+                type="button"
+                onClick={disconnectCandidate}
+                className="min-h-11 rounded-full border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 hover:border-red-400"
+              >
+                연결 해제하고 계속 진행
+              </button>
+              <Link
+                href={`/my/candidate-properties/${sourceCandidate.id}`}
+                className="inline-flex min-h-11 items-center rounded-full border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 hover:border-red-400"
+              >
+                매물 상세로 돌아가기
+              </Link>
+            </div>
+          )}
           {draftSaved && (
             <p className="text-sm font-semibold text-forest">임시 저장했습니다.</p>
           )}

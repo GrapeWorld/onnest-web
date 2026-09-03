@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { AppShell } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { ProjectForm } from "@/components/app/ProjectForm";
 import { ProjectDeleteControl } from "@/components/app/ProjectDeleteControl";
 import { getCurrentUser } from "@/lib/auth";
@@ -53,7 +53,7 @@ export default async function EditProjectPage({
   };
 
   return (
-    <AppShell
+    <CustomerAppShell
       title="프로젝트 수정"
       description="공간 유형, 거래 조건, 일정을 수정합니다."
       contentClassName="max-w-3xl"
@@ -72,6 +72,6 @@ export default async function EditProjectPage({
           }}
         />
       </div>
-    </AppShell>
+    </CustomerAppShell>
   );
 }

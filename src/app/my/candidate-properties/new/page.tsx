@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { AppShell } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { CandidatePropertyForm, emptyCandidatePropertyValues, type CandidatePropertyFormValues } from "@/components/app/CandidatePropertyForm";
 import { getCurrentUser } from "@/lib/auth";
 import { getCustomerPropertySuggestion } from "@/lib/propertySuggestions";
@@ -44,8 +44,8 @@ export default async function NewCandidatePropertyPage({
   }
 
   return (
-    <AppShell title="매물 후보 추가" description={description}>
+    <CustomerAppShell title="매물 후보 추가" description={description}>
       <CandidatePropertyForm mode="create" initialValues={initialValues} suggestionId={suggestionId} />
-    </AppShell>
+    </CustomerAppShell>
   );
 }

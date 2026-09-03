@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { AppShell } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EventForm } from "@/components/app/EventForm";
@@ -47,7 +47,7 @@ export default async function CalendarPage({
   const missed = rows.filter((row) => !row.done && row.past);
 
   return (
-    <AppShell
+    <CustomerAppShell
       title="입주 일정"
       description="계약일, 전입신고, 확정일자, 청소, 이사, 인터넷 설치 일정을 한 화면에 모읍니다."
     >
@@ -110,6 +110,6 @@ export default async function CalendarPage({
           <EventList projectId={project.id} events={done} />
         </section>
       )}
-    </AppShell>
+    </CustomerAppShell>
   );
 }

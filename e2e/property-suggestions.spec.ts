@@ -234,7 +234,17 @@ test("이미 매물 후보로 저장된 공유 건은 다시 저장할 수 없�
   await page.getByRole("textbox", { name: "원본 매물 URL" }).fill(listingUrl);
   await page.getByRole("textbox", { name: "매물명 또는 별칭" }).fill("저장테스트매물");
   await page.getByRole("button", { name: "공유 내용 확인" }).click();
-  await page.getByRole("button", { name: "고객에게 공유하기" }).click();
+  // 클릭 직후 화면에 "저장테스트매물" 텍스트가 잠깐 보여도 실제 저장(POST)이
+  // 끝났다는 보장은 아니다 — 곧바로 Prisma로 DB를 조회하면 응답이 아직
+  // 커밋되기 전 상태를 읽는 경합이 생긴다. POST 응답을 직접 기다리고
+  // 성공 여부까지 확인한 뒤에만 DB를 조회한다.
+  const [shareResponse] = await Promise.all([
+    page.waitForResponse(
+      (res) => res.url().includes(`/api/admin/projects/${projectId}/property-suggestions`) && res.request().method() === "POST",
+    ),
+    page.getByRole("button", { name: "고객에게 공유하기" }).click(),
+  ]);
+  expect(shareResponse.ok()).toBe(true);
   await expect(page.getByText("저장테스트매물").first()).toBeVisible();
 
   const prisma = new PrismaClient({ datasources: { db: { url: E2E_DATABASE_URL } } });

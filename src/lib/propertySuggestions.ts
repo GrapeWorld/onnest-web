@@ -18,6 +18,8 @@ export const customerPropertySuggestionSelect = {
   area: true,
   roomCount: true,
   availableDate: true,
+  latitude: true,
+  longitude: true,
   sharedReason: true,
   cautionNote: true,
   customerStatus: true,

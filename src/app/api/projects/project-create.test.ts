@@ -141,20 +141,45 @@ describe("POST /api/projects — 매물 후보 연결(sourceCandidatePropertyId)
     });
   });
 
-  it("still creates the project even if the candidate link update matches nothing (e.g. another user's id)", async () => {
+  it("rolls back the whole transaction (no project, no step state) when the candidate link update matches nothing", async () => {
     mocks.candidateUpdateMany.mockResolvedValue({ count: 0 });
 
     const response = await call(baseInput({ sourceCandidatePropertyId: "someone-elses-candidate" }));
     const data = await response.json();
 
-    expect(response.status).toBe(201);
-    expect(data.id).toBe("project-1");
+    expect(response.status).toBe(409);
+    expect(data.error).toBe(
+      "이 매물 후보를 프로젝트에 연결할 수 없습니다. 이미 연결되었거나 사용할 수 없는 매물인지 확인해주세요.",
+    );
   });
 
-  it("ignores a non-string sourceCandidatePropertyId instead of throwing", async () => {
+  it("returns 409 for a nonexistent candidate id (same updateMany-count-0 path, same safe message)", async () => {
+    mocks.candidateUpdateMany.mockResolvedValue({ count: 0 });
+
+    const response = await call(baseInput({ sourceCandidatePropertyId: "does-not-exist" }));
+
+    expect(response.status).toBe(409);
+  });
+
+  it("returns 409 when the candidate is already linked to another project (same updateMany-count-0 path)", async () => {
+    mocks.candidateUpdateMany.mockResolvedValue({ count: 0 });
+
+    const response = await call(baseInput({ sourceCandidatePropertyId: "already-linked-candidate" }));
+
+    expect(response.status).toBe(409);
+  });
+
+  it("rejects a non-string sourceCandidatePropertyId with 400 before starting the transaction", async () => {
     const response = await call(baseInput({ sourceCandidatePropertyId: 12345 }));
 
-    expect(response.status).toBe(201);
-    expect(mocks.candidateUpdateMany).not.toHaveBeenCalled();
+    expect(response.status).toBe(400);
+    expect(mocks.transaction).not.toHaveBeenCalled();
+  });
+
+  it("rejects an empty-string sourceCandidatePropertyId with 400 before starting the transaction", async () => {
+    const response = await call(baseInput({ sourceCandidatePropertyId: "" }));
+
+    expect(response.status).toBe(400);
+    expect(mocks.transaction).not.toHaveBeenCalled();
   });
 });

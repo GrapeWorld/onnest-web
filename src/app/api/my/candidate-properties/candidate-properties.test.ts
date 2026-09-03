@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   findFirst: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
+  updateMany: vi.fn(),
   checkRateLimit: vi.fn(),
   geocodeAddress: vi.fn(),
   suggestionFindFirst: vi.fn(),
@@ -20,6 +21,7 @@ vi.mock("@/lib/prisma", () => ({
       findFirst: mocks.findFirst,
       create: mocks.create,
       update: mocks.update,
+      updateMany: mocks.updateMany,
     },
     projectPropertySuggestion: {
       findFirst: mocks.suggestionFindFirst,
@@ -81,6 +83,7 @@ describe("POST /api/my/candidate-properties", () => {
     mocks.create.mockResolvedValue({ id: "candidate-1" });
     mocks.geocodeAddress.mockResolvedValue(null);
     mocks.update.mockResolvedValue({});
+    mocks.updateMany.mockResolvedValue({ count: 1 });
     mocks.suggestionFindFirst.mockResolvedValue(null);
     mocks.suggestionUpdate.mockResolvedValue({});
   });
@@ -150,8 +153,11 @@ describe("POST /api/my/candidate-properties", () => {
 
     expect(response.status).toBe(201);
     expect(mocks.geocodeAddress).toHaveBeenCalledWith("서울특별시 강남구");
-    expect(mocks.update).toHaveBeenCalledWith({
-      where: { id: "candidate-1" },
+    // update가 아니라 조건부 updateMany를 쓴다 — 조회하는 사이 주소가
+    // 바뀌었으면(다른 요청이 먼저 끝나는 경합) 이 오래된 결과가 반영되지
+    // 않아야 한다(아래 "stale" 테스트).
+    expect(mocks.updateMany).toHaveBeenCalledWith({
+      where: { id: "candidate-1", address: "서울특별시 강남구" },
       data: { latitude: 37.5, longitude: 127.0 },
     });
   });
@@ -160,13 +166,26 @@ describe("POST /api/my/candidate-properties", () => {
     mocks.geocodeAddress.mockResolvedValue(null);
     const response = await POST(postRequest({ ...validPayload, address: "존재하지 않는 주소" }));
     expect(response.status).toBe(201);
-    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 
   it("still returns 201 (core save unaffected) when geocoding itself throws", async () => {
     mocks.geocodeAddress.mockRejectedValue(new Error("map api down"));
     const response = await POST(postRequest({ ...validPayload, address: "서울특별시 강남구" }));
     expect(response.status).toBe(201);
+  });
+
+  it("discards a stale geocode result without erroring when the address already changed by the time it resolves(count 0)", async () => {
+    mocks.geocodeAddress.mockResolvedValue({ lat: 37.5, lng: 127.0 });
+    mocks.updateMany.mockResolvedValue({ count: 0 });
+
+    const response = await POST(postRequest({ ...validPayload, address: "서울특별시 강남구" }));
+
+    expect(response.status).toBe(201);
+    expect(mocks.updateMany).toHaveBeenCalledWith({
+      where: { id: "candidate-1", address: "서울특별시 강남구" },
+      data: { latitude: 37.5, longitude: 127.0 },
+    });
   });
 
   it("blocks a duplicate sourceUrl already saved by the same user", async () => {

@@ -6,9 +6,12 @@ const mocks = vi.hoisted(() => ({
   suggestionFindMany: vi.fn(),
   suggestionFindFirst: vi.fn(),
   suggestionCreate: vi.fn(),
+  suggestionUpdate: vi.fn(),
+  suggestionUpdateMany: vi.fn(),
   actionItemCreate: vi.fn(),
   transaction: vi.fn(),
   notifyServiceRequestCustomer: vi.fn(),
+  geocodeAddress: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -23,6 +26,8 @@ vi.mock("@/lib/prisma", () => ({
       findMany: mocks.suggestionFindMany,
       findFirst: mocks.suggestionFindFirst,
       create: mocks.suggestionCreate,
+      update: mocks.suggestionUpdate,
+      updateMany: mocks.suggestionUpdateMany,
     },
     actionItem: { upsert: mocks.actionItemCreate },
     $transaction: mocks.transaction,
@@ -32,6 +37,7 @@ vi.mock("@/lib/email", () => ({
   notifyServiceRequestCustomer: mocks.notifyServiceRequestCustomer,
   escapeHtml: (value: string) => value,
 }));
+vi.mock("@/lib/naverMap", () => ({ geocodeAddress: mocks.geocodeAddress }));
 
 import { GET, POST } from "@/app/api/admin/projects/[projectId]/property-suggestions/route";
 
@@ -82,8 +88,11 @@ describe("POST /api/admin/projects/[projectId]/property-suggestions", () => {
       user: { id: "customer-1", email: "customer@example.com", name: "고객" },
     });
     mocks.suggestionFindFirst.mockResolvedValue(null);
-    mocks.suggestionCreate.mockResolvedValue({ id: "suggestion-1" });
+    mocks.suggestionCreate.mockResolvedValue({ id: "suggestion-1", address: "경상남도 거제시" });
+    mocks.suggestionUpdate.mockResolvedValue({});
+    mocks.suggestionUpdateMany.mockResolvedValue({ count: 1 });
     mocks.actionItemCreate.mockResolvedValue({});
+    mocks.geocodeAddress.mockResolvedValue(null);
     mocks.transaction.mockImplementation(async (callback) =>
       callback({
         projectPropertySuggestion: { create: mocks.suggestionCreate },
@@ -145,5 +154,52 @@ describe("POST /api/admin/projects/[projectId]/property-suggestions", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
 
     global.fetch = originalFetch;
+  });
+
+  it("geocodes the address after creating, and caches the coordinates", async () => {
+    mocks.geocodeAddress.mockResolvedValue({ lat: 34.88, lng: 128.62 });
+
+    const response = await POST(req(validInput), { params });
+
+    expect(response.status).toBe(201);
+    expect(mocks.geocodeAddress).toHaveBeenCalledWith("경상남도 거제시");
+    // update가 아니라 조건부 updateMany를 쓴다 — 조회하는 사이 관리자가
+    // 주소를 다시 수정했으면 이 결과를 반영하지 않는다(아래 "stale" 테스트).
+    expect(mocks.suggestionUpdateMany).toHaveBeenCalledWith({
+      where: { id: "suggestion-1", address: "경상남도 거제시" },
+      data: { latitude: 34.88, longitude: 128.62 },
+    });
+  });
+
+  it("still returns 201 (share already succeeded) when geocoding finds nothing", async () => {
+    mocks.geocodeAddress.mockResolvedValue(null);
+    const response = await POST(req(validInput), { params });
+    expect(response.status).toBe(201);
+    expect(mocks.suggestionUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("discards a stale geocode result without erroring when the address already changed(count 0)", async () => {
+    mocks.geocodeAddress.mockResolvedValue({ lat: 34.88, lng: 128.62 });
+    mocks.suggestionUpdateMany.mockResolvedValue({ count: 0 });
+
+    const response = await POST(req(validInput), { params });
+
+    expect(response.status).toBe(201);
+    expect(mocks.suggestionUpdateMany).toHaveBeenCalledWith({
+      where: { id: "suggestion-1", address: "경상남도 거제시" },
+      data: { latitude: 34.88, longitude: 128.62 },
+    });
+  });
+
+  it("still returns 201 (share unaffected) when geocoding itself throws", async () => {
+    mocks.geocodeAddress.mockRejectedValue(new Error("map api down"));
+    const response = await POST(req(validInput), { params });
+    expect(response.status).toBe(201);
+  });
+
+  it("does not attempt geocoding when no address is given", async () => {
+    mocks.suggestionCreate.mockResolvedValue({ id: "suggestion-1", address: null });
+    await POST(req({ ...validInput, address: "" }), { params });
+    expect(mocks.geocodeAddress).not.toHaveBeenCalled();
   });
 });

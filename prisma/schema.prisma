@@ -1018,6 +1018,13 @@ model ProjectPropertySuggestion {
   area            Float?
   roomCount       Int?
   availableDate   DateTime?
+  // 관리자가 입력한 address를 네이버 지도(Geocoding)로 변환한 좌표 캐시.
+  // CandidateProperty.latitude/longitude와 같은 원칙 — 서버가 sourceUrl을
+  // 절대 요청하지 않는 것처럼, 이 좌표도 관리자가 직접 입력한 address만
+  // 변환한 값이다. 지도 API가 미설정이거나 실패해도 공유 저장 자체는 항상
+  // 성공해야 하므로 이 값은 항상 null일 수 있는 부가 정보로 취급한다.
+  latitude        Float?
+  longitude       Float?
 
   // 고객에게 그대로 노출되는 공유 사유·추가 확인 사항.
   sharedReason String?

@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { AppShell } from "@/components/app/AppShell";
+import { CustomerAppShell } from "@/components/app/CustomerAppShell";
 import { Button } from "@/components/ui/Button";
 import { ServiceRequestForm } from "@/components/app/ServiceRequestForm";
 import { ServiceRequestList } from "@/components/app/ServiceRequestList";
@@ -39,7 +39,7 @@ export default async function ProjectServicesPage({
   if (!project) notFound();
 
   return (
-    <AppShell
+    <CustomerAppShell
       title="입주 서비스 연결"
       description="이사, 청소, 인터넷, 보수 등 입주 일정에 맞춰 필요한 서비스를 신청합니다."
     >
@@ -73,6 +73,6 @@ export default async function ProjectServicesPage({
           }))}
         />
       </section>
-    </AppShell>
+    </CustomerAppShell>
   );
 }

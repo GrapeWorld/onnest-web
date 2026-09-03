@@ -19,6 +19,7 @@ export default defineConfig({
       "src/lib/adminExport.integration.test.ts",
       "src/lib/notifications.integration.test.ts",
       "src/lib/actionItems.integration.test.ts",
+      "src/lib/propertySuggestions.integration.test.ts",
     ],
     globalSetup: "./vitest.global-setup.ts",
     env: {

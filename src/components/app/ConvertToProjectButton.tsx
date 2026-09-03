@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   emptyProjectWizardValues,
   PROJECT_DRAFT_STORAGE_KEY,
-  SOURCE_CANDIDATE_STORAGE_KEY,
+  writeSourceCandidateInfo,
   type ProjectWizardValues,
 } from "./project-wizard/shared";
 import { formatWon } from "@/lib/currency";
@@ -38,7 +38,7 @@ export function ConvertToProjectButton({
     };
 
     window.localStorage.setItem(PROJECT_DRAFT_STORAGE_KEY, JSON.stringify(draft));
-    window.localStorage.setItem(SOURCE_CANDIDATE_STORAGE_KEY, candidateId);
+    writeSourceCandidateInfo({ id: candidateId, title });
     router.push("/projects/new");
   }
 

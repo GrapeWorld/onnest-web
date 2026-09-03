@@ -24,7 +24,14 @@ export type CandidatePropertyCardItem = {
   status: string;
 };
 
-function priceSummary(item: CandidatePropertyCardItem) {
+export type PriceSummaryInput = {
+  transactionType: string | null;
+  price: number | null;
+  deposit: number | null;
+  monthlyRent: number | null;
+};
+
+export function priceSummary(item: PriceSummaryInput) {
   if (item.transactionType === "매매" && item.price != null) return `${formatWon(item.price)}원`;
   if (item.deposit != null && item.monthlyRent != null) {
     return `${formatWon(item.deposit)} / ${formatWon(item.monthlyRent)}원`;

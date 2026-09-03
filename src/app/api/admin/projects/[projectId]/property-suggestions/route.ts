@@ -4,6 +4,7 @@ import { getCurrentUser, isAdmin, isSuperAdmin } from "@/lib/auth";
 import { adminPropertySuggestionSchema } from "@/lib/propertySuggestionSchema";
 import { notifyServiceRequestCustomer, escapeHtml } from "@/lib/email";
 import { createActionItem } from "@/lib/actionItems";
+import { geocodeAddress } from "@/lib/naverMap";
 
 /** 프로젝트에 공유된 매물 전체 목록(철회 포함). 관리자는 조회전용이어도 볼 수 있다. */
 export async function GET(request: Request, { params }: { params: Promise<{ projectId: string }> }) {
@@ -92,6 +93,28 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
     });
     return suggestion;
   });
+
+  // 주소가 있으면 좌표를 미리 조회해 캐시해둔다. CandidateProperty 등록과
+  // 같은 원칙 — geocodeAddress는 미설정·실패·타임아웃 어떤 이유로도 예외를
+  // 던지지 않고 null을 돌려주므로, 이 단계가 실패해도 위의 공유 저장 자체는
+  // 이미 끝난 상태다(응답은 항상 성공을 반영한다). 조회하는 사이 관리자가
+  // 이 공유 건의 주소를 다시 수정했을 수 있어(PATCH가 이 요청보다 먼저
+  // 끝나고 새 주소로 지오코딩을 다시 시작하는 경우 등), 조건부 updateMany로
+  // "그 사이 주소가 안 바뀌었을 때만" 반영한다 — count 0은 오래된 결과를
+  // 버렸다는 뜻일 뿐 오류가 아니다.
+  if (created.address) {
+    try {
+      const coordinates = await geocodeAddress(created.address);
+      if (coordinates) {
+        await prisma.projectPropertySuggestion.updateMany({
+          where: { id: created.id, address: created.address },
+          data: { latitude: coordinates.lat, longitude: coordinates.lng },
+        });
+      }
+    } catch (error) {
+      console.error("[naver-map] failed to cache coordinates on suggestion create", error);
+    }
+  }
 
   // 알림 발송 실패가 공유 저장 자체를 막지 않는다 — notifyServiceRequestCustomer가
   // 이미 실패를 삼키므로 별도 try/catch 없이 그대로 호출한다.
